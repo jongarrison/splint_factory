@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import SignOutButton from "@/components/auth/SignOutButton"
 
 export default async function Home() {
@@ -21,6 +22,12 @@ export default async function Home() {
               <span className="text-sm text-gray-700">
                 Welcome, {session.user?.name || session.user?.email}!
               </span>
+              <Link 
+                href="/profile" 
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                My Profile
+              </Link>
               <SignOutButton />
             </div>
           </div>
