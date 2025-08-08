@@ -10,6 +10,12 @@ export default function ProfilePage() {
     name: '',
     email: '',
   });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
   // Update form data when profile loads
@@ -26,11 +32,50 @@ export default function ProfilePage() {
     e.preventDefault();
     setSuccessMessage('');
     
-    const result = await updateProfile(formData);
+    // Validate password fields if changing password
+    if (showPasswordSection) {
+      if (!passwordData.currentPassword || !passwordData.newPassword) {
+        return; // Form validation will handle this
+      }
+      
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        // You could set an error state here
+        return;
+      }
+      
+      if (passwordData.newPassword.length < 6) {
+        // You could set an error state here
+        return;
+      }
+    }
+
+    const updateData = {
+      ...formData,
+      ...(showPasswordSection && passwordData.currentPassword && passwordData.newPassword ? {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      } : {}),
+    };
+    
+    const result = await updateProfile(updateData);
     
     if (result.success) {
-      setSuccessMessage('Profile updated successfully!');
+      setSuccessMessage(
+        showPasswordSection 
+          ? 'Profile and password updated successfully!' 
+          : 'Profile updated successfully!'
+      );
       setTimeout(() => setSuccessMessage(''), 3000);
+      
+      // Clear password fields on success
+      if (showPasswordSection) {
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+        setShowPasswordSection(false);
+      }
     }
   };
 
@@ -42,6 +87,13 @@ export default function ProfilePage() {
         email: profile.email,
       });
     }
+    // Reset password fields
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
+    setShowPasswordSection(false);
   };
 
   if (loading) {
@@ -129,6 +181,75 @@ export default function ProfilePage() {
               />
             </div>
 
+            {/* Password Section */}
+            <div className="border-t pt-6 mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Password</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordSection(!showPasswordSection)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  {showPasswordSection ? 'Cancel Password Change' : 'Change Password'}
+                </button>
+              </div>
+
+              {showPasswordSection && (
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      id="currentPassword"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      required={showPasswordSection}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      id="newPassword"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      minLength={6}
+                      required={showPasswordSection}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">Must be at least 6 characters long</p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white ${
+                        passwordData.newPassword && passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword
+                          ? 'border-red-300 focus:ring-red-500'
+                          : 'border-gray-300'
+                      }`}
+                      required={showPasswordSection}
+                    />
+                    {passwordData.newPassword && passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword && (
+                      <p className="text-sm text-red-600 mt-1">Passwords do not match</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {profile && (
               <div className="text-sm text-gray-600">
                 <p>Member since: {new Date(profile.createdAt).toLocaleDateString()}</p>
@@ -141,10 +262,13 @@ export default function ProfilePage() {
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                disabled={updating}
+                disabled={updating || (showPasswordSection && passwordData.newPassword !== passwordData.confirmPassword)}
                 className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                {updating ? 'Updating...' : 'Update Profile'}
+                {updating 
+                  ? (showPasswordSection ? 'Updating Profile & Password...' : 'Updating Profile...') 
+                  : (showPasswordSection ? 'Update Profile & Password' : 'Update Profile')
+                }
               </button>
               <button
                 type="button"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 // GET /api/profile - Get current user's profile
 export async function GET() {
@@ -54,7 +55,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, email } = body;
+    const { name, email, currentPassword, newPassword } = body;
 
     // Basic validation
     if (!name || !email) {
@@ -69,6 +70,44 @@ export async function PUT(request: NextRequest) {
         { error: 'Invalid email format' },
         { status: 400 }
       );
+    }
+
+    // If password update is requested, validate passwords
+    if (newPassword) {
+      if (!currentPassword) {
+        return NextResponse.json(
+          { error: 'Current password is required to change password' },
+          { status: 400 }
+        );
+      }
+
+      if (newPassword.length < 6) {
+        return NextResponse.json(
+          { error: 'New password must be at least 6 characters long' },
+          { status: 400 }
+        );
+      }
+
+      // Verify current password
+      const currentUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { password: true },
+      });
+
+      if (!currentUser?.password) {
+        return NextResponse.json(
+          { error: 'No password set for this account' },
+          { status: 400 }
+        );
+      }
+
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, currentUser.password);
+      if (!isCurrentPasswordValid) {
+        return NextResponse.json(
+          { error: 'Current password is incorrect' },
+          { status: 400 }
+        );
+      }
     }
 
     // Check if email is already taken by another user
@@ -86,14 +125,27 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Prepare update data
+    const updateData: {
+      name: string;
+      email: string;
+      updatedAt: Date;
+      password?: string;
+    } = {
+      name,
+      email,
+      updatedAt: new Date(),
+    };
+
+    // Hash new password if provided
+    if (newPassword) {
+      updateData.password = await bcrypt.hash(newPassword, 12);
+    }
+
     // Update the user
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: {
-        name,
-        email,
-        updatedAt: new Date(),
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
