@@ -2,7 +2,11 @@
 
 import { signOut } from "next-auth/react"
 
-export default function SignOutButton() {
+interface SignOutButtonProps {
+  variant?: 'browser' | 'electron';
+}
+
+export default function SignOutButton({ variant = 'browser' }: SignOutButtonProps) {
   return (
     <button
       onClick={() => signOut()}
