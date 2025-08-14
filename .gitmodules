@@ -1,0 +1,3 @@
+[submodule "external-info/splint_client"]
+	path = external-info/splint_client
+	url = git@github.com:jongarrison/splint_client.git
