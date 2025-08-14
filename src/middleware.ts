@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth'
 // Define public routes that don't require authentication
 const publicRoutes = ['/login', '/register', '/api/auth']
 
-// Define routes that should redirect to dashboard if already authenticated
+// Define routes that should redirect to home if already authenticated
 const authRoutes = ['/login', '/register']
 
 export default async function middleware(request: NextRequest) {

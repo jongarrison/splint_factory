@@ -3,14 +3,25 @@
 <!-- Use this file to provide workspace-specific custom instructions to Copilot. For more details, visit https://code.visualstudio.com/docs/copilot/copilot-customization#_use-a-githubcopilotinstructionsmd-file -->
 
 ## Project Goals
-- Create a web application (front end and api) for medical splint geometry generation and 3d printing control
-- Users will be able to input splint geometry parameters (mostly hand geomtry)
-- Web server will store the splint input parameters for retrieval by the 3D geometry generation service
-- Web server will receive 3D files from the geomtry generation service and store them for the 3D printing slicing service
-- Web server will store sliced 3D files for printing
-- Users will access the website in two ways:
-    - Web browser (responsive design)
-    - Electron desktop application (focused on 3D print queue viewing and 3D printer control)
+Create a **single page application** that adapts its functionality based on the client type:
+
+### **Two Usage Scenarios:**
+1. **Electron Desktop App** (Bambu 3D Printer Control)
+   - Runs on the same network as a Bambu 3D printer
+   - Primary focus: 3D print queue management and printer control
+   - Shows print jobs submitted from web browsers
+   - Controls printer operations (start, pause, monitor progress)
+
+2. **Web Browser Access** (Splint Design & Job Creation)
+   - Users input splint geometry parameters (hand geometry)
+   - Generate 3D print jobs that appear in the Electron app's print queue
+   - Web-based design interface for creating splint specifications
+
+### **System Architecture:**
+- **Minimal Pages**: Main app on `/` root route, dedicated auth pages (`/login`, `/register`)
+- **Adaptive Interface**: Root page adapts UI/functionality based on client detection (Electron vs Browser)
+- **Backend Services**: Store splint parameters, 3D files, and print queue data
+- **3D Pipeline**: Geometry generation → Slicing → Print queue → Printer control
 
 
 ## Project Technology Overview
