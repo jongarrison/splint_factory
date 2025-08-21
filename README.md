@@ -1,5 +1,12 @@
 # Splint Factory
 
+Splint factory is a website that will run in two main contexts:
+1. It will be accessed from normal browsers for the purpose of generating 3d geometry files that end up in a print queue
+2. It wil be accessed by an electron app running on a raspberry pi which runs on the same network as a Bambu P1S printer. The electron app will monitor the print queue and allow a user to initiate a print. The electron app will display the status of the continuing print.
+
+
+# Technical Background
+
 A modern Next.js 15 full-stack web application with user authentication, built with TypeScript, Tailwind CSS, and Prisma ORM.
 
 ## 🚀 Features

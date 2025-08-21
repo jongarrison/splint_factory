@@ -13,6 +13,7 @@ interface PrinterStatus {
   progress?: number;
   currentJob?: string;
   error?: string;
+  needsConfiguration?: boolean;
   [key: string]: unknown; // Allow additional properties
 }
 
@@ -46,7 +47,11 @@ interface ElectronAPI {
   getEnvironmentInfo: () => Promise<SystemInfo>;
   
   // Bambu printer operations
-  getPrinterStatusInfo: (printerConfig: PrinterConfig) => Promise<PrinterStatus>;
+  getPrinterStatusInfo: (printerConfig?: PrinterConfig) => Promise<PrinterStatus>;
+  
+  // Printer configuration management
+  loadPrinterConfig: () => Promise<{ success: boolean; config?: PrinterConfig; error?: string; path?: string }>;
+  savePrinterConfig: (config: PrinterConfig) => Promise<{ success: boolean; error?: string; path?: string }>;
   
   // File operations
   readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
