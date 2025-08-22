@@ -162,7 +162,7 @@ export default function ProfilePage() {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -176,8 +176,39 @@ export default function ProfilePage() {
                 id="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
+              />
+            </div>
+
+            {/* Organization Information */}
+            <div>
+              <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-1">
+                Organization
+              </label>
+              <input
+                type="text"
+                id="organization"
+                value={profile?.organization?.name || 'No organization assigned'}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-600 bg-gray-50 cursor-not-allowed"
+              />
+              {profile?.organization?.description && (
+                <p className="mt-1 text-sm text-gray-500">{profile.organization.description}</p>
+              )}
+            </div>
+
+            {/* Role Information */}
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                Role
+              </label>
+              <input
+                type="text"
+                id="role"
+                value={profile?.role ? profile.role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) : 'Member'}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-600 bg-gray-50 cursor-not-allowed"
               />
             </div>
 
@@ -205,7 +236,7 @@ export default function ProfilePage() {
                       id="currentPassword"
                       value={passwordData.currentPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required={showPasswordSection}
                     />
                   </div>
@@ -219,7 +250,7 @@ export default function ProfilePage() {
                       id="newPassword"
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       minLength={6}
                       required={showPasswordSection}
                     />
@@ -235,7 +266,7 @@ export default function ProfilePage() {
                       id="confirmPassword"
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white ${
+                      className={`w-full px-3 py-2 border rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         passwordData.newPassword && passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword
                           ? 'border-red-300 focus:ring-red-500'
                           : 'border-gray-300'

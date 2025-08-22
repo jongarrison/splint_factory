@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const session = await auth();
     
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -16,11 +16,20 @@ export async function GET() {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { email: session.user.email },
       select: {
         id: true,
         name: true,
         email: true,
+        role: true,
+        organizationId: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          }
+        },
         createdAt: true,
       },
     });
@@ -47,7 +56,7 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
     
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -90,7 +99,7 @@ export async function PUT(request: NextRequest) {
 
       // Verify current password
       const currentUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
+        where: { email: session.user.email },
         select: { password: true },
       });
 
@@ -114,7 +123,7 @@ export async function PUT(request: NextRequest) {
     const existingUser = await prisma.user.findFirst({
       where: {
         email,
-        NOT: { id: session.user.id },
+        NOT: { email: session.user.email },
       },
     });
 
@@ -144,12 +153,21 @@ export async function PUT(request: NextRequest) {
 
     // Update the user
     const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { email: session.user.email },
       data: updateData,
       select: {
         id: true,
         name: true,
         email: true,
+        role: true,
+        organizationId: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          }
+        },
         createdAt: true,
         updatedAt: true,
       },

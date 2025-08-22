@@ -1,0 +1,1 @@
+npx prisma studio --browser none --port 5555

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useState, useEffect, useRef } from 'react';
 import SignOutButton from '@/components/auth/SignOutButton';
 
 interface HeaderProps {
@@ -10,11 +11,30 @@ interface HeaderProps {
 
 export default function Header({ variant = 'browser' }: HeaderProps) {
   const { data: session } = useSession();
+  const [showAdminDropdown, setShowAdminDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isDarkMode = variant === 'electron';
   const baseClasses = isDarkMode 
     ? 'bg-gray-800 border-gray-700 text-white' 
     : 'bg-white border-gray-200 text-gray-900';
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowAdminDropdown(false);
+      }
+    };
+
+    if (showAdminDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAdminDropdown]);
 
   return (
     <nav className={`shadow-lg border-b ${baseClasses}`}>
@@ -65,6 +85,49 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
                     >
                       My Projects
                     </Link>
+                    
+                    {/* Admin Dropdown - Phase 2: Only show in browser version */}
+                    {variant === 'browser' && (
+                      <div className="relative" ref={dropdownRef}>
+                        <button
+                          onClick={() => setShowAdminDropdown(!showAdminDropdown)}
+                          className={`${isDarkMode ? 'text-yellow-400 hover:text-yellow-300' : 'text-orange-600 hover:text-orange-800'} px-3 py-2 text-sm font-medium flex items-center`}
+                        >
+                          Management
+                          <svg className="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        
+                        {showAdminDropdown && (
+                          <div className={`absolute right-0 mt-2 w-56 rounded-md shadow-lg ${isDarkMode ? 'bg-gray-700 ring-gray-600' : 'bg-white ring-black'} ring-1 ring-opacity-5 z-50`}>
+                            <div className="py-1">
+                              <Link
+                                href="/admin"
+                                onClick={() => setShowAdminDropdown(false)}
+                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                              >
+                                Organizations
+                              </Link>
+                              <Link
+                                href="/admin/users"
+                                onClick={() => setShowAdminDropdown(false)}
+                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                              >
+                                User Management
+                              </Link>
+                              <Link
+                                href="/admin/invitations"
+                                onClick={() => setShowAdminDropdown(false)}
+                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                              >
+                                Invitations
+                              </Link>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
               </div>

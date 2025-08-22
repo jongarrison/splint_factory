@@ -58,7 +58,7 @@ interface ElectronAPI {
   writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
   
   // Network requests
-  makeRequest: (url: string, options?: any) => Promise<any>;
+  makeRequest: (url: string, options?: unknown) => Promise<unknown>;
   
   // Common command shortcuts
   commands: {

@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 
 // Define public routes that don't require authentication
-const publicRoutes = ['/login', '/register', '/api/auth']
+const publicRoutes = ['/login', '/register', '/api/auth', '/api/register']
 
 // Define routes that should redirect to home if already authenticated
 const authRoutes = ['/login', '/register']
@@ -34,6 +34,16 @@ export default async function middleware(request: NextRequest) {
     // Get the session
     const session = await auth()
 
+    // Get user organization info for data isolation (Phase 1)
+    let organizationId = null
+    let userRole = null
+    if (session?.user?.id) {
+      // Note: In a real app, we'd get this from the session token
+      // For Phase 1, we'll add this to the response headers for later use
+      organizationId = 'placeholder' // Will be populated properly in Phase 2
+      userRole = 'MEMBER'
+    }
+
     // Log every request with auth state and user info
     const userInfo = session?.user ? 
       `User: ${session.user.name || session.user.email || 'Unknown'}` : 
@@ -60,10 +70,16 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.redirect(homeUrl)
     }
 
-    // Add debug header and continue
+    // Add debug header and organization context (Phase 1)
     const response = NextResponse.next()
     response.headers.set('x-middleware-status', 'success')
     response.headers.set('x-middleware-auth', authState)
+    
+    // Phase 1: Add organization context to headers for future use
+    if (organizationId) {
+      response.headers.set('x-organization-id', organizationId)
+      response.headers.set('x-user-role', userRole || 'MEMBER')
+    }
     
     return response
   } catch (error) {
