@@ -1,17 +1,26 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [invitationToken, setInvitationToken] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const invitation = searchParams.get('invitation')
+    if (invitation) {
+      setInvitationToken(invitation)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,6 +43,7 @@ export default function RegisterPage() {
           name,
           email,
           password,
+          invitationToken,
         }),
       })
 
@@ -56,8 +66,13 @@ export default function RegisterPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
+            {invitationToken ? "Join Organization" : "Create your account"}
           </h2>
+          {invitationToken && (
+            <p className="mt-2 text-center text-sm text-blue-600">
+              You&apos;ve been invited to join an organization
+            </p>
+          )}
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{" "}
             <Link
@@ -152,5 +167,13 @@ export default function RegisterPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center"><div>Loading...</div></div>}>
+      <RegisterForm />
+    </Suspense>
   )
 }
