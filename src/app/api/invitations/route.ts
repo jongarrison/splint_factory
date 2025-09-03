@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { organizationId, role = 'MEMBER', maxUses, expiresInDays = 7 } = body
+    const { organizationId, expiresInDays = 7 } = body
 
     // Get user with organization and role
     const user = await prisma.user.findUnique({
@@ -100,8 +100,6 @@ export async function POST(request: NextRequest) {
         expiresAt,
         organizationId,
         createdByUserId: user.id,
-        // Note: We're not storing role and maxUses in this version yet
-        // They would need to be added to the schema
       },
       include: {
         createdBy: { select: { id: true, name: true, email: true } },

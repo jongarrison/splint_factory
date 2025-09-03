@@ -35,10 +35,8 @@ export default function InvitationsPage() {
   const [creating, setCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   
-  // Form state
+    // Form state
   const [selectedOrgId, setSelectedOrgId] = useState('');
-  const [selectedRole, setSelectedRole] = useState('MEMBER');
-  const [maxUses, setMaxUses] = useState<number | ''>('');
   const [expiresInDays, setExpiresInDays] = useState<number | ''>(7);
 
   useEffect(() => {
@@ -76,8 +74,6 @@ export default function InvitationsPage() {
         },
         body: JSON.stringify({
           organizationId: selectedOrgId,
-          role: selectedRole,
-          maxUses: maxUses || null,
           expiresInDays: expiresInDays || 7,
         }),
       });
@@ -90,10 +86,8 @@ export default function InvitationsPage() {
 
       setInvitations([data, ...invitations]);
       setShowCreateForm(false);
-      // Reset form
+            // Reset form
       setSelectedOrgId('');
-      setSelectedRole('MEMBER');
-      setMaxUses('');
       setExpiresInDays(7);
     } catch (err: unknown) {
       console.error('Error creating invitation:', err);
@@ -222,38 +216,6 @@ export default function InvitationsPage() {
                       <option key={org.id} value={org.id}>{org.name}</option>
                     ))}
                   </select>
-                </div>
-
-                <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                    Default Role
-                  </label>
-                  <select
-                    id="role"
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="MEMBER">Member</option>
-                    <option value="ORG_ADMIN">Organization Admin</option>
-                    <option value="SYSTEM_ADMIN">System Admin</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="maxUses" className="block text-sm font-medium text-gray-700 mb-2">
-                    Max Uses (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    id="maxUses"
-                    value={maxUses}
-                    onChange={(e) => setMaxUses(e.target.value ? parseInt(e.target.value) : '')}
-                    className="w-full p-3 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Unlimited"
-                    min="1"
-                  />
                 </div>
 
                 <div>
