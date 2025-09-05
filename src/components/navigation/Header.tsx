@@ -130,6 +130,13 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
                               >
                                 Named Geometry Designs
                               </Link>
+                              <Link
+                                href="/admin/api-keys"
+                                onClick={() => setShowAdminDropdown(false)}
+                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                              >
+                                API Keys
+                              </Link>
                             </div>
                           </div>
                         )}
