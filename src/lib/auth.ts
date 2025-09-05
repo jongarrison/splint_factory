@@ -42,6 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
+          role: user.role, // Include role in the returned user object
         }
       }
     })
@@ -50,8 +51,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string
-        session.user.email = token.email as string
-        session.user.name = token.name as string
+        session.user.email = token.email!
+        session.user.name = token.name
+        session.user.role = token.role as string
       }
       return session
     },
@@ -60,6 +62,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id
         token.email = user.email
         token.name = user.name
+        token.role = user.role
       }
       return token
     }

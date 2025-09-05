@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "geometry-input-parameter-schema",
+  "title": "Geometry Input Parameter Schema",
+  "description": "Schema for defining input parameters required for named geometry designs in the 3D printer queue system",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "InputName": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+$",
+        "minLength": 1,
+        "maxLength": 50,
+        "description": "Name of the geometry parameter. Only lowercase letters and numbers allowed."
+      },
+      "InputDescription": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 250,
+        "description": "Description of what this input parameter represents"
+      },
+      "InputType": {
+        "type": "string",
+        "enum": ["Float", "Integer", "Text"],
+        "description": "Data type for this parameter"
+      },
+      "TextMinLen": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 250,
+        "description": "Minimum length for Text type parameters (required when InputType is Text)"
+      },
+      "TextMaxLen": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 250,
+        "description": "Maximum length for Text type parameters (required when InputType is Text)"
+      },
+      "NumberMin": {
+        "type": "number",
+        "description": "Minimum value for Integer or Float type parameters"
+      },
+      "NumberMax": {
+        "type": "number",
+        "description": "Maximum value for Integer or Float type parameters"
+      }
+    },
+    "required": ["InputName", "InputDescription", "InputType"],
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "properties": {
+            "InputType": { "const": "Text" }
+          }
+        },
+        "then": {
+          "required": ["TextMinLen", "TextMaxLen"]
+        },
+        "else": {
+          "not": {
+            "anyOf": [
+              { "required": ["TextMinLen"] },
+              { "required": ["TextMaxLen"] }
+            ]
+          }
+        }
+      },
+      {
+        "if": {
+          "properties": {
+            "InputType": { "enum": ["Integer", "Float"] }
+          }
+        },
+        "then": {
+          "anyOf": [
+            { "required": ["NumberMin"] },
+            { "required": ["NumberMax"] },
+            { "required": ["NumberMin", "NumberMax"] }
+          ]
+        },
+        "else": {
+          "not": {
+            "anyOf": [
+              { "required": ["NumberMin"] },
+              { "required": ["NumberMax"] }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "minItems": 0,
+  "maxItems": 50
+}

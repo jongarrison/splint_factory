@@ -59,6 +59,7 @@ model User {
   invitedUsers        User[]        @relation("UserInvitations")
   createdInvitations  InvitationLink[] @relation("InvitationCreator")
   usedInvitation      InvitationLink?  @relation("InvitationUsage")
+  createdGeometries   NamedGeometry[]
   
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -81,6 +82,19 @@ model InvitationLink {
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model NamedGeometry {
+  id                              String   @id @default(cuid())
+  GeometryName                    String   @unique
+  GeometryAlgorithmName           String
+  GeometryInputParameterSchema    String   // JSON string conforming to geometry-input-parameter-schema.json
+  CreatorID                       String   // References User.id
+  CreationTime                    DateTime @default(now())
+  
+  creator                         User     @relation(fields: [CreatorID], references: [id])
+  
+  @@map("NamedGeometry")
 }
 
 enum UserRole {
