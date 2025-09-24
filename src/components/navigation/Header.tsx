@@ -137,6 +137,20 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
                               >
                                 API Keys
                               </Link>
+                              <Link
+                                href="/admin/geometry-jobs"
+                                onClick={() => setShowAdminDropdown(false)}
+                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                              >
+                                Geometry Jobs
+                              </Link>
+                              <Link
+                                href="/admin/print-queue"
+                                onClick={() => setShowAdminDropdown(false)}
+                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                              >
+                                Print Queue
+                              </Link>
                             </div>
                           </div>
                         )}

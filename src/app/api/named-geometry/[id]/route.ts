@@ -6,7 +6,7 @@ import { GeometryInputParameterSchema } from '@/types/geometry-input-parameter';
 // GET /api/named-geometry/[id] - Get specific named geometry
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -15,8 +15,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const namedGeometry = await prisma.namedGeometry.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         creator: {
           select: {
@@ -45,7 +47,7 @@ export async function GET(
 // PUT /api/named-geometry/[id] - Update named geometry (SYSTEM_ADMIN only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -67,9 +69,11 @@ export async function PUT(
       );
     }
 
+    const { id } = await params;
+
     // Check if geometry exists
     const existingGeometry = await prisma.namedGeometry.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!existingGeometry) {
@@ -149,7 +153,7 @@ export async function PUT(
     }
 
     const updatedGeometry = await prisma.namedGeometry.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         GeometryName,
         GeometryAlgorithmName,
@@ -189,7 +193,7 @@ export async function PUT(
 // DELETE /api/named-geometry/[id] - Delete named geometry (SYSTEM_ADMIN only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -211,9 +215,11 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params;
+
     // Check if geometry exists
     const existingGeometry = await prisma.namedGeometry.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!existingGeometry) {
@@ -221,7 +227,7 @@ export async function DELETE(
     }
 
     await prisma.namedGeometry.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     console.log(`Deleted NamedGeometry: ${existingGeometry.GeometryName} by user ${session.user.id}`);

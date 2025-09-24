@@ -36,6 +36,7 @@ model Organization {
   users           User[]
   invitationLinks InvitationLink[]
   apiKeys         ApiKey[]
+  geometryJobs    GeometryProcessingQueue[]
 }
 
 model User {
@@ -62,6 +63,7 @@ model User {
   usedInvitation      InvitationLink?  @relation("InvitationUsage")
   createdGeometries   NamedGeometry[]
   createdApiKeys      ApiKey[]      @relation("CreatedApiKeys")
+  createdGeometryJobs GeometryProcessingQueue[] @relation("CreatedGeometryJobs")
   
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -95,6 +97,7 @@ model NamedGeometry {
   CreationTime                    DateTime @default(now())
   
   creator                         User     @relation(fields: [CreatorID], references: [id])
+  geometryJobs                    GeometryProcessingQueue[] @relation("NamedGeometryJobs")
   
   @@map("NamedGeometry")
 }
@@ -112,6 +115,40 @@ model ApiKey {
   
   organization   Organization? @relation(fields: [organizationId], references: [id])
   creator        User          @relation("CreatedApiKeys", fields: [createdBy], references: [id])
+}
+
+model GeometryProcessingQueue {
+  id                          String    @id @default(cuid())
+  GeometryID                  String    // References NamedGeometry.id
+  CreatorID                   String    // References User.id
+  OwningOrganizationID        String    // References Organization.id
+  CreationTime                DateTime  @default(now())
+  GeometryInputParameterData  String    // JSON data conforming to GeometryInputParameterSchema
+  ProcessStartedTime          DateTime? // When processing first attempted
+  ProcessCompletedTime        DateTime? // When processing finished
+  isProcessSuccessful         Boolean   @default(false)
+  isEnabled                   Boolean   @default(true)
+  CustomerNote                String?   // Up to 500 characters
+  CustomerID                  String?   // Up to 20 characters
+  
+  geometry                    NamedGeometry @relation("NamedGeometryJobs", fields: [GeometryID], references: [id])
+  creator                     User          @relation("CreatedGeometryJobs", fields: [CreatorID], references: [id])
+  owningOrganization          Organization  @relation(fields: [OwningOrganizationID], references: [id])
+  printQueue                  PrintQueue[]
+}
+
+model PrintQueue {
+  id                          String    @id @default(cuid())
+  GeometryProcessingQueueID   String    // References GeometryProcessingQueue.id
+  GeometryFileContents        Bytes?    // 3MF file binary data
+  GeometryFileName            String?   // Name of the geometry file
+  PrintFileContents           Bytes?    // gcode file binary data
+  PrintFileName               String?   // Name of the print file
+  PrintStartedTime            DateTime? // When print was first attempted
+  PrintCompletedTime          DateTime? // When print was finished
+  isPrintSuccessful           Boolean   @default(false)
+  
+  geometryProcessingQueue     GeometryProcessingQueue @relation(fields: [GeometryProcessingQueueID], references: [id])
 }
 
 enum UserRole {

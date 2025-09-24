@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Header from '@/components/navigation/Header';
 
 interface User {
   id: string;
@@ -23,6 +26,8 @@ interface Organization {
 }
 
 export default function UsersPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +39,17 @@ export default function UsersPage() {
   const [selectedRole, setSelectedRole] = useState<string>('all');
 
   useEffect(() => {
+    if (status === 'loading') return;
+    
+    if (!session?.user) {
+      router.push('/login');
+      return;
+    }
+
+    fetchData();
+  }, [session, status, router]);
+
+  const fetchData = () => {
     Promise.all([
       fetch('/api/users').then(res => res.json()),
       fetch('/api/organizations').then(res => res.json())
@@ -53,7 +69,7 @@ export default function UsersPage() {
         setError(err.message);
       })
       .finally(() => setLoading(false));
-  }, []);
+  };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     setUpdating(userId);
@@ -152,15 +168,12 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-20 bg-gray-200 rounded"></div>
-              ))}
-            </div>
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading users...</p>
           </div>
         </div>
       </div>
@@ -168,8 +181,9 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
@@ -186,8 +200,14 @@ export default function UsersPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-            <div className="text-red-800">{error}</div>
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
+            <button 
+              onClick={() => setError('')}
+              className="ml-2 text-red-500 hover:text-red-700"
+            >
+              ✕
+            </button>
           </div>
         )}
 

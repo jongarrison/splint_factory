@@ -1,0 +1,323 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Header from '@/components/navigation/Header';
+
+interface GeometryJob {
+  id: string;
+  CreationTime: string;
+  GeometryInputParameterData: string;
+  CustomerNote?: string;
+  CustomerID?: string;
+  ProcessStartedTime?: string;
+  ProcessCompletedTime?: string;
+  isProcessSuccessful: boolean;
+  isEnabled: boolean;
+  geometry: {
+    GeometryName: string;
+    GeometryAlgorithmName: string;
+    GeometryInputParameterSchema: string;
+  };
+  creator: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  owningOrganization: {
+    name: string;
+  };
+}
+
+export default function GeometryJobDetailPage({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [job, setJob] = useState<GeometryJob | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [id, setId] = useState<string>('');
+
+  useEffect(() => {
+    params.then(p => setId(p.id));
+  }, [params]);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    
+    if (!session?.user) {
+      router.push('/login');
+      return;
+    }
+
+    if (id) {
+      fetchJob();
+    }
+  }, [session, status, router, id]);
+
+  const fetchJob = async () => {
+    try {
+      const response = await fetch(`/api/geometry-jobs/${id}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Geometry job not found');
+        }
+        throw new Error('Failed to fetch geometry job');
+      }
+      const data = await response.json();
+      setJob(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch geometry job');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
+
+  const getStatusBadge = (job: GeometryJob) => {
+    if (!job.isEnabled) {
+      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Disabled</span>;
+    }
+    if (job.ProcessCompletedTime && job.isProcessSuccessful) {
+      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>;
+    }
+    if (job.ProcessCompletedTime && !job.isProcessSuccessful) {
+      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failed</span>;
+    }
+    if (job.ProcessStartedTime) {
+      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Processing</span>;
+    }
+    return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Pending</span>;
+  };
+
+  const parseParameterData = (data: string) => {
+    try {
+      return JSON.parse(data);
+    } catch {
+      return {};
+    }
+  };
+
+  const parseParameterSchema = (schema: string) => {
+    try {
+      return JSON.parse(schema);
+    } catch {
+      return [];
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading geometry job...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold text-gray-900">Geometry Job Details</h1>
+              <Link
+                href="/admin/geometry-jobs"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+              >
+                ← Back to Jobs
+              </Link>
+            </div>
+          </div>
+          
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!job) {
+    return null;
+  }
+
+  const parameterData = parseParameterData(job.GeometryInputParameterData);
+  const parameterSchema = parseParameterSchema(job.geometry.GeometryInputParameterSchema);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Geometry Job Details</h1>
+              <p className="mt-2 text-gray-600">
+                View details for geometry processing job
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <Link
+                href={`/admin/geometry-jobs/${job.id}/edit`}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium"
+              >
+                Edit Job
+              </Link>
+              <Link
+                href="/admin/geometry-jobs"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+              >
+                ← Back to Jobs
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Status and Basic Info */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Job Information</h2>
+            </div>
+            <div className="px-6 py-4">
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Status</dt>
+                  <dd className="mt-1">{getStatusBadge(job)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Job ID</dt>
+                  <dd className="mt-1 text-sm text-gray-900 font-mono">{job.id}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Created</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{formatDate(job.CreationTime)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Created By</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{job.creator.name || job.creator.email}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Organization</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{job.owningOrganization.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Enabled</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{job.isEnabled ? 'Yes' : 'No'}</dd>
+                </div>
+                {job.ProcessStartedTime && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Processing Started</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{formatDate(job.ProcessStartedTime)}</dd>
+                  </div>
+                )}
+                {job.ProcessCompletedTime && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Processing Completed</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{formatDate(job.ProcessCompletedTime)}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          </div>
+
+          {/* Customer Information */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Customer Information</h2>
+            </div>
+            <div className="px-6 py-4">
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Customer ID</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{job.CustomerID || 'Not specified'}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Customer Note</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{job.CustomerNote || 'No note provided'}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          {/* Geometry Information */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Geometry Configuration</h2>
+            </div>
+            <div className="px-6 py-4">
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Geometry Name</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{job.geometry.GeometryName}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Algorithm</dt>
+                  <dd className="mt-1 text-sm text-gray-900 font-mono">{job.geometry.GeometryAlgorithmName}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          {/* Parameter Values */}
+          {parameterSchema.length > 0 && (
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Parameter Values</h2>
+              </div>
+              <div className="px-6 py-4">
+                <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {parameterSchema.map((param: any) => (
+                    <div key={param.InputName}>
+                      <dt className="text-sm font-medium text-gray-500">{param.InputDescription}</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        <span className="font-mono">
+                          {parameterData[param.InputName] !== undefined 
+                            ? String(parameterData[param.InputName])
+                            : 'Not set'
+                          }
+                        </span>
+                        <span className="ml-2 text-xs text-gray-500">
+                          ({param.InputType})
+                        </span>
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </div>
+          )}
+
+          {/* Raw Data (for debugging) */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Raw Parameter Data</h2>
+            </div>
+            <div className="px-6 py-4">
+              <pre className="text-sm bg-gray-100 p-3 rounded overflow-x-auto">
+                {JSON.stringify(parameterData, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
