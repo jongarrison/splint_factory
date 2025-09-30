@@ -287,9 +287,9 @@ export default function PrintQueuePage() {
                         </td>
                       </tr>
                     ))}
-                  </tbody>
+                    </tbody>
                 </table>
-              )
+              </div>
             )}
           </div>
         </div>
