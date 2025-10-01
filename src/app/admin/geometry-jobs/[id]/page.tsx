@@ -16,6 +16,8 @@ interface GeometryJob {
   ProcessCompletedTime?: string;
   isProcessSuccessful: boolean;
   isEnabled: boolean;
+  GeometryFileName?: string | null;
+  PrintFileName?: string | null;
   geometry: {
     GeometryName: string;
     GeometryAlgorithmName: string;
@@ -272,6 +274,34 @@ export default function GeometryJobDetailPage({
                   <dt className="text-sm font-medium text-gray-500">Algorithm</dt>
                   <dd className="mt-1 text-sm text-gray-900 font-mono">{job.geometry.GeometryAlgorithmName}</dd>
                 </div>
+                {job.GeometryFileName && (
+                  <div className="md:col-span-1">
+                    <dt className="text-sm font-medium text-gray-500">Geometry File</dt>
+                    <dd className="mt-1 text-sm text-gray-900 flex items-center gap-3">
+                      <span className="font-mono truncate" title={job.GeometryFileName}>{job.GeometryFileName}</span>
+                      <a
+                        href={`/api/geometry-jobs/${job.id}/geometry-file`}
+                        className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium"
+                      >
+                        Download
+                      </a>
+                    </dd>
+                  </div>
+                )}
+                {job.PrintFileName && (
+                  <div className="md:col-span-1">
+                    <dt className="text-sm font-medium text-gray-500">Print File</dt>
+                    <dd className="mt-1 text-sm text-gray-900 flex items-center gap-3">
+                      <span className="font-mono truncate" title={job.PrintFileName}>{job.PrintFileName}</span>
+                      <a
+                        href={`/api/geometry-jobs/${job.id}/print-file`}
+                        className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium"
+                      >
+                        Download
+                      </a>
+                    </dd>
+                  </div>
+                )}
               </dl>
             </div>
           </div>
