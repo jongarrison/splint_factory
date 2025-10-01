@@ -34,24 +34,9 @@ export async function GET(
       include: {
         geometryProcessingQueue: {
           include: {
-            geometry: {
-              select: {
-                GeometryName: true,
-                GeometryAlgorithmName: true
-              }
-            },
-            creator: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
-            },
-            owningOrganization: {
-              select: {
-                name: true
-              }
-            }
+            geometry: { select: { GeometryName: true, GeometryAlgorithmName: true } },
+            creator: { select: { id: true, name: true, email: true } },
+            owningOrganization: { select: { name: true } }
           }
         }
       }
@@ -66,19 +51,21 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Return without binary data unless specifically requested
+    // Return without binary data unless specifically requested (files live on geometryProcessingQueue)
     const includeFiles = request.nextUrl.searchParams.get('includeFiles') === 'true';
-    
+    const gpq: any = (printQueueEntry as any).geometryProcessingQueue;
     const response = {
       ...printQueueEntry,
-      GeometryFileContents: includeFiles && printQueueEntry.GeometryFileContents 
-        ? printQueueEntry.GeometryFileContents.toString('base64') 
-        : (printQueueEntry.GeometryFileContents ? '[Binary Data]' : null),
-      PrintFileContents: includeFiles && printQueueEntry.PrintFileContents 
-        ? printQueueEntry.PrintFileContents.toString('base64') 
-        : (printQueueEntry.PrintFileContents ? '[Binary Data]' : null),
-      hasGeometryFile: !!printQueueEntry.GeometryFileContents,
-      hasPrintFile: !!printQueueEntry.PrintFileContents
+      GeometryFileName: gpq?.GeometryFileName ?? null,
+      PrintFileName: gpq?.PrintFileName ?? null,
+      GeometryFileContents: includeFiles && gpq?.GeometryFileContents
+        ? gpq.GeometryFileContents.toString('base64')
+        : (gpq?.GeometryFileContents ? '[Binary Data]' : null),
+      PrintFileContents: includeFiles && gpq?.PrintFileContents
+        ? gpq.PrintFileContents.toString('base64')
+        : (gpq?.PrintFileContents ? '[Binary Data]' : null),
+      hasGeometryFile: !!gpq?.GeometryFileContents,
+      hasPrintFile: !!gpq?.PrintFileContents
     };
 
     return NextResponse.json(response);

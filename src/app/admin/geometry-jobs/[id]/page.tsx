@@ -311,7 +311,7 @@ export default function GeometryJobDetailPage({
               <h2 className="text-lg font-medium text-gray-900">Raw Parameter Data</h2>
             </div>
             <div className="px-6 py-4">
-              <pre className="text-sm bg-gray-100 p-3 rounded overflow-x-auto">
+              <pre className="display-field">
                 {JSON.stringify(parameterData, null, 2)}
               </pre>
             </div>

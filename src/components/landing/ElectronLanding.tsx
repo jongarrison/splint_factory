@@ -144,7 +144,7 @@ export default function ElectronLanding() {
                 <p className="text-sm text-gray-300">Loading...</p>
               ) : (
                 <>
-                  <pre className="text-xs text-gray-300 whitespace-pre-wrap overflow-auto max-h-32 mb-3">
+                  <pre className="display-field text-xs whitespace-pre-wrap overflow-auto max-h-32 mb-3">
                     {output}
                   </pre>
                   <button 
@@ -160,7 +160,7 @@ export default function ElectronLanding() {
 
             <div className="bg-gray-800 p-6 rounded-lg">
               <h3 className="text-lg font-semibold mb-2">System Info</h3>
-              <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+              <pre className="display-field text-xs whitespace-pre-wrap">
                 {systemInfo || 'Loading system info...'}
               </pre>
             </div>

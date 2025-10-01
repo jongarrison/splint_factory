@@ -269,7 +269,7 @@ export default function NamedGeometryListPage() {
               </button>
             </div>
             <div className="px-6 py-4 flex-1 overflow-auto">
-              <pre className="text-sm text-gray-700 whitespace-pre-wrap">
+              <pre className="display-field whitespace-pre-wrap">
                 {formatSchema(
                   geometries.find(g => g.id === showSchemaModal)?.GeometryInputParameterSchema || ''
                 )}

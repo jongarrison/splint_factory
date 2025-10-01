@@ -29,9 +29,9 @@ export async function POST(request: NextRequest) {
       GeometryProcessingQueueID,
       isSuccess,
       errorMessage,
-      GeometryFileContents, // Base64 encoded 3MF file
+      GeometryFileContents, // Base64 encoded 3MF/STL/OBJ/3MF file
       GeometryFileName,
-      PrintFileContents,    // Base64 encoded gcode file  
+      PrintFileContents,    // Base64 encoded print file (e.g., 3MF with gcode)
       PrintFileName
     } = body;
 
@@ -65,8 +65,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validate file size limits (10MB as specified in requirements)
+  // Validate file size limits (10MB as specified in requirements)
     const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
+  const maxFileNameLen = 255;
+  const invalidName = /[\\/]/; // prevent path traversal
     
     if (GeometryFileContents) {
       try {
@@ -98,17 +100,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate filenames (length and path traversal chars)
+    if (GeometryFileName && (GeometryFileName.length > maxFileNameLen || invalidName.test(GeometryFileName))) {
+      return NextResponse.json({ error: 'Invalid GeometryFileName' }, { status: 400 });
+    }
+    if (PrintFileName && (PrintFileName.length > maxFileNameLen || invalidName.test(PrintFileName))) {
+      return NextResponse.json({ error: 'Invalid PrintFileName' }, { status: 400 });
+    }
+
     const currentTime = new Date();
 
     // Start transaction to update geometry processing queue and create print queue entry if successful
     const result = await prisma.$transaction(async (tx) => {
-      // Update the geometry processing queue entry
+      // Update the geometry processing queue entry (including any produced files)
       const updatedGeometryJob = await tx.geometryProcessingQueue.update({
         where: { id: GeometryProcessingQueueID },
-        data: {
+        data: ({
           ProcessCompletedTime: currentTime,
-          isProcessSuccessful: isSuccess
-        },
+          isProcessSuccessful: isSuccess,
+          GeometryFileContents: GeometryFileContents ? Buffer.from(GeometryFileContents, 'base64') : undefined,
+          GeometryFileName: GeometryFileName ?? undefined,
+          PrintFileContents: PrintFileContents ? Buffer.from(PrintFileContents, 'base64') : undefined,
+          PrintFileName: PrintFileName ?? undefined
+        }) as any,
         include: {
           geometry: {
             select: {
@@ -121,15 +135,11 @@ export async function POST(request: NextRequest) {
 
       let printQueueEntry = null;
 
-      // If processing was successful and files are provided, create print queue entry
-      if (isSuccess && (GeometryFileContents || PrintFileContents)) {
+      // If processing was successful, create print queue entry referencing this job
+      if (isSuccess) {
         printQueueEntry = await tx.printQueue.create({
           data: {
-            GeometryProcessingQueueID,
-            GeometryFileContents: GeometryFileContents ? Buffer.from(GeometryFileContents, 'base64') : null,
-            GeometryFileName: GeometryFileName || null,
-            PrintFileContents: PrintFileContents ? Buffer.from(PrintFileContents, 'base64') : null,
-            PrintFileName: PrintFileName || null
+            GeometryProcessingQueueID
           }
         });
       }
@@ -160,10 +170,10 @@ export async function POST(request: NextRequest) {
     if (result.printQueueEntry) {
       response.printQueueEntry = {
         id: result.printQueueEntry.id,
-        hasGeometryFile: !!result.printQueueEntry.GeometryFileContents,
-        hasPrintFile: !!result.printQueueEntry.PrintFileContents,
-        GeometryFileName: result.printQueueEntry.GeometryFileName,
-        PrintFileName: result.printQueueEntry.PrintFileName
+        hasGeometryFile: !!GeometryFileContents,
+        hasPrintFile: !!PrintFileContents,
+        GeometryFileName: GeometryFileName || null,
+        PrintFileName: PrintFileName || null
       };
     }
 

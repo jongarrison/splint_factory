@@ -156,11 +156,13 @@
   * "Create/Edit Geometry Processing Job" a web form that allows editing an existing geometry processing  job (record in GeometryProcessingQueue) or creating a new geometry processing  job. The form will allow normal editing of the fields in the GeometryProcessingQueue table (id is visible, but not editable) 
     * GeometryID will be presented to the user as a list of GeometryName values from table NamedGeometry. Users will select the nicely readable GeometryName values, but the id associated with the GeometryName will be was is saved in GeometryID
     * The part of this to pay the most attention to will be collecting the GeometryInputParameterData which is json data that conforms to the GeometryInputParameterSchema referenced by the selected GeometryID. When the form is loaded form fields will need to be created and populated as necessary for the provided json data. When the form is submitted these fields will need to be converted into json to be sent via the api.
+    * GeometryFileContents, GeometryFileName, PrintFileContents, and PrintFileName will not currently be user editable, but they should be visible and users should be able to download the files when present. These files will normally be provided by an external process (splint_geo_processor). 
 
 * API needed for GeometryProcessingQueue:
-  * getNextGeometryJob - the splint_geo_processor will request the next job that needs to be processed. The oldest Job that does not have a ProcessStartedTime and isEnabled is true.
-  * reportGeometryResult - the splint_geo_processor will report the results of processing a job. isProcessSuccessful and ProcessCompletedTime will be recorded. This function will also receive the resulting files from the splint_geo_processor when processing is successful. Upon a successful geometry processing result, a new and associated entry should be created in the PrintQueue (described below) that indicates that a job is ready to be 3D printed.
-  * API functions need to validate that users interacting with the API must be part of the organization that the record is associated with.
+  * API functions need to validate that users/proceses interacting with the API must be part of the organization that the record is associated with. Both user sessions and the API Key system will be used for authorization.
+  * The API will have functions to serve the requirements of the web pages described above. More specifically, the api will also have these functions to support the external splint_geo_processor requirements:
+    * getNextGeometryJob - the splint_geo_processor will request the next job that needs to be processed. The oldest Job that does not have a ProcessStartedTime and isEnabled is true.
+    * reportGeometryResult - the splint_geo_processor will report the results of processing a job. isProcessSuccessful and ProcessCompletedTime will be recorded. This function will also receive the resulting files from the splint_geo_processor when processing is successful. Upon a successful geometry processing result, a new and associated entry should be created in the PrintQueue (described below) that indicates that a job is ready to be 3D printed.
 
 ## Print Queue (DB table name: "PrintQueue")
 
@@ -177,11 +179,16 @@
   * CreationTime - field capturing the timestamp when this entry was created.
 
 * Web pages necessary for PrintQueue data:
-  * "Print Queue List" view page. Displays the list of print queue records for the current user's organization owned PrintQueue entries. This list should by default show all print jobs that have not been successfully printed. Users should be able to set isPrintSuccessful for records that have a non-null PrintCompletedTime. This page will be shown and will be the most important part of the Electronjs app's view (but will also be available to the normal web version of the site). When being accessed via the ElectronJs client, there will be a "Print" button next to each row that allows the starting of an actual print.
+  * "Print Queue List" view page. 
+    * Displays the list of print queue records for the current user's organization owned PrintQueue entries. This list should by default show all print jobs that have not been successfully printed. Users should be able to set isPrintSuccessful for records that have a non-null PrintCompletedTime. This page will be shown and will be the most important part of the Electronjs app's view (but will also be available to the normal web version of the site). 
+    * When being accessed via the ElectronJs client, there will be a "Print" button next to each row that allows the starting of an actual print. The non-ElectronJS version will not show Print buttons
+    * The print buttons will interact with the local 3D printer api provided by the ElectronJS based sprint_client project.
   * "Print Queue History" view page. Displays the most recent print jobs first and has a paginated view of all print jobs. It will be possible to reprint a historical print job. When reprinting based on an old entry, a new PrintQueue record will be created referencing the same GeometryProcessingQueueID as the original PrintQueue entry.
 
 * API needed for PrintQueue:
-  * getOpenPrintJobs - These are print jobs that still need to be printed.
-  * reportPrintResult - Reports the print completion result: PrintCompletedTime
-  * reportAcceptance - Reports the user's acceptance of the completed print. This means they have inspected the printed object and have decided it is good.
-  * getHistoricalPrintJobs - Pagination aware list of print jobs ordered by newest first (by CreationTime)
+  * API functions need to validate that users/proceses interacting with the API must be part of the organization that the record is associated with. Both user sessions and the API Key system will be used for authorization.
+  * The API will have functions to serve the requirements of the web pages described above. More specifically, the api will also have these functions to support the external splint_geo_processor requirements:
+    * getOpenPrintJobs - These are print jobs that still need to be printed.
+    * reportPrintResult - Reports the print completion result: PrintCompletedTime
+    * reportAcceptance - Reports the user's acceptance of the completed print. This means they have inspected the printed object and have decided it is good.
+    * getHistoricalPrintJobs - Pagination aware list of print jobs ordered by newest first (by CreationTime)

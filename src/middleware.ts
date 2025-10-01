@@ -3,7 +3,8 @@ import type { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 
 // Define public routes that don't require authentication
-const publicRoutes = ['/login', '/register', '/api/auth', '/api/register']
+// Include '/api' so API routes rely on route-level auth (API keys or session) instead of middleware redirects
+const publicRoutes = ['/login', '/register', '/api', '/api/auth', '/api/register']
 
 // Define routes that should redirect to home if already authenticated
 const authRoutes = ['/login', '/register']

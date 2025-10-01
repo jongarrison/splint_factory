@@ -33,24 +33,9 @@ export async function GET() {
       include: {
         geometryProcessingQueue: {
           include: {
-            geometry: {
-              select: {
-                GeometryName: true,
-                GeometryAlgorithmName: true
-              }
-            },
-            creator: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
-            },
-            owningOrganization: {
-              select: {
-                name: true
-              }
-            }
+            geometry: { select: { GeometryName: true, GeometryAlgorithmName: true } },
+            creator: { select: { id: true, name: true, email: true } },
+            owningOrganization: { select: { name: true } }
           }
         }
       },
@@ -60,14 +45,20 @@ export async function GET() {
       ]
     });
 
-    // Format response to exclude binary file contents for list view
-    const formattedQueue = printQueue.map(item => ({
-      ...item,
-      GeometryFileContents: item.GeometryFileContents ? '[Binary Data]' : null,
-      PrintFileContents: item.PrintFileContents ? '[Binary Data]' : null,
-      hasGeometryFile: !!item.GeometryFileContents,
-      hasPrintFile: !!item.PrintFileContents
-    }));
+    // Format response to exclude binary file contents for list view.
+    // Files now live on geometryProcessingQueue.
+    const formattedQueue = printQueue.map(item => {
+      const gpq: any = (item as any).geometryProcessingQueue;
+      return {
+        ...item,
+        GeometryFileName: gpq?.GeometryFileName ?? null,
+        PrintFileName: gpq?.PrintFileName ?? null,
+        hasGeometryFile: !!gpq?.GeometryFileContents,
+        hasPrintFile: !!gpq?.PrintFileContents,
+        GeometryFileContents: undefined,
+        PrintFileContents: undefined
+      };
+    });
 
     return NextResponse.json(formattedQueue);
   } catch (error) {
@@ -130,58 +121,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Validate file size limits (10MB as specified in requirements)
+    // Validate file size limits (10MB as specified in requirements) if files are provided.
     const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
-    
     if (GeometryFileContents) {
       const geometryBuffer = Buffer.from(GeometryFileContents, 'base64');
       if (geometryBuffer.length > maxFileSize) {
-        return NextResponse.json({ 
-          error: 'Geometry file exceeds 10MB limit' 
-        }, { status: 400 });
+        return NextResponse.json({ error: 'Geometry file exceeds 10MB limit' }, { status: 400 });
       }
     }
-    
     if (PrintFileContents) {
       const printBuffer = Buffer.from(PrintFileContents, 'base64');
       if (printBuffer.length > maxFileSize) {
-        return NextResponse.json({ 
-          error: 'Print file exceeds 10MB limit' 
-        }, { status: 400 });
+        return NextResponse.json({ error: 'Print file exceeds 10MB limit' }, { status: 400 });
       }
     }
 
-    const printQueueEntry = await prisma.printQueue.create({
-      data: {
-        GeometryProcessingQueueID,
-        GeometryFileContents: GeometryFileContents ? Buffer.from(GeometryFileContents, 'base64') : null,
-        GeometryFileName: GeometryFileName || null,
-        PrintFileContents: PrintFileContents ? Buffer.from(PrintFileContents, 'base64') : null,
-        PrintFileName: PrintFileName || null
-      },
-      include: {
-        geometryProcessingQueue: {
-          include: {
-            geometry: {
-              select: {
-                GeometryName: true,
-                GeometryAlgorithmName: true
-              }
-            }
-          }
-        }
+    // In the new model, files are stored on the GeometryProcessingQueue.
+    // If files are provided here, persist them to the GeometryProcessingQueue first, then create a PrintQueue entry.
+    const result = await prisma.$transaction(async (tx) => {
+      if (GeometryFileContents || PrintFileContents || GeometryFileName || PrintFileName) {
+        await tx.geometryProcessingQueue.update({
+          where: { id: GeometryProcessingQueueID },
+          data: ({
+            ...(GeometryFileContents !== undefined ? { GeometryFileContents: GeometryFileContents ? Buffer.from(GeometryFileContents, 'base64') : null } : {}),
+            ...(GeometryFileName !== undefined ? { GeometryFileName: GeometryFileName || null } : {}),
+            ...(PrintFileContents !== undefined ? { PrintFileContents: PrintFileContents ? Buffer.from(PrintFileContents, 'base64') : null } : {}),
+            ...(PrintFileName !== undefined ? { PrintFileName: PrintFileName || null } : {})
+          }) as any
+        });
       }
+
+      const created = await tx.printQueue.create({
+        data: { GeometryProcessingQueueID },
+        include: { geometryProcessingQueue: true }
+      });
+
+      return created;
     });
 
-    console.log(`Created print queue entry for geometry processing job ${GeometryProcessingQueueID}`);
+  console.log(`Created print queue entry for geometry processing job ${GeometryProcessingQueueID}`);
     
     // Return without binary data in response
+    const gpq: any = (result as any).geometryProcessingQueue;
     const response = {
-      ...printQueueEntry,
-      GeometryFileContents: printQueueEntry.GeometryFileContents ? '[Binary Data]' : null,
-      PrintFileContents: printQueueEntry.PrintFileContents ? '[Binary Data]' : null,
-      hasGeometryFile: !!printQueueEntry.GeometryFileContents,
-      hasPrintFile: !!printQueueEntry.PrintFileContents
+      ...result,
+      GeometryFileName: gpq?.GeometryFileName ?? null,
+      PrintFileName: gpq?.PrintFileName ?? null,
+      hasGeometryFile: !!gpq?.GeometryFileContents,
+      hasPrintFile: !!gpq?.PrintFileContents,
+      GeometryFileContents: undefined,
+      PrintFileContents: undefined
     };
 
     return NextResponse.json(response, { status: 201 });

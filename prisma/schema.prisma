@@ -130,6 +130,11 @@ model GeometryProcessingQueue {
   isEnabled                   Boolean   @default(true)
   CustomerNote                String?   // Up to 500 characters
   CustomerID                  String?   // Up to 20 characters
+  // New: Files produced by geometry processing are stored on this record
+  GeometryFileContents        Bytes?    // 3MF/STL/OBJ/3MF binary data
+  GeometryFileName            String?   // Name of the geometry file
+  PrintFileContents           Bytes?    // Print file (e.g., 3MF containing gcode) binary data
+  PrintFileName               String?   // Name of the print file
   
   geometry                    NamedGeometry @relation("NamedGeometryJobs", fields: [GeometryID], references: [id])
   creator                     User          @relation("CreatedGeometryJobs", fields: [CreatorID], references: [id])
@@ -140,10 +145,6 @@ model GeometryProcessingQueue {
 model PrintQueue {
   id                          String    @id @default(cuid())
   GeometryProcessingQueueID   String    // References GeometryProcessingQueue.id
-  GeometryFileContents        Bytes?    // 3MF file binary data
-  GeometryFileName            String?   // Name of the geometry file
-  PrintFileContents           Bytes?    // gcode file binary data
-  PrintFileName               String?   // Name of the print file
   PrintStartedTime            DateTime? // When print was first attempted
   PrintCompletedTime          DateTime? // When print was finished
   isPrintSuccessful           Boolean   @default(false)
