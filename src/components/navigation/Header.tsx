@@ -59,17 +59,22 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
                 {variant === 'electron' ? (
                   <>
                     <Link 
-                      href="/" 
+                      href="/admin/print-queue" 
                       className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} px-3 py-2 text-sm font-medium`}
                     >
                       Print Queue
                     </Link>
-                    <Link 
-                      href="/" 
+                    <button
+                      onClick={() => {
+                        // Open the local printer manager via Electron API
+                        if (typeof window !== 'undefined' && (window as any).electronAPI) {
+                          (window as any).electronAPI.executeCommand('printer-manager', []);
+                        }
+                      }}
                       className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} px-3 py-2 text-sm font-medium`}
                     >
                       Printer Status
-                    </Link>
+                    </button>
                   </>
                 ) : (
                   <>

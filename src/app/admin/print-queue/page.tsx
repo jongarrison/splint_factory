@@ -41,6 +41,8 @@ export default function PrintQueuePage() {
   const [printQueue, setPrintQueue] = useState<PrintQueueEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isElectronClient, setIsElectronClient] = useState(false);
+  const [printingJobId, setPrintingJobId] = useState<string | null>(null);
 
   const fetchPrintQueue = async () => {
     try {
@@ -57,6 +59,11 @@ export default function PrintQueuePage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Detect if running in Electron client
+    setIsElectronClient(typeof window !== 'undefined' && !!(window as any).electronAPI);
+  }, []);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -133,10 +140,91 @@ export default function PrintQueuePage() {
     }
   };
 
+  const handlePrint = async (entry: PrintQueueEntry) => {
+    if (!isElectronClient) {
+      setError('Printing is only available in the Electron client');
+      return;
+    }
+
+    try {
+      setPrintingJobId(entry.id);
+      setError(null);
+
+      // Get the geometry processing queue ID to download the print file
+      const geometryJobId = entry.geometryProcessingQueue.id;
+      
+      // Get session cookie for authentication
+      const sessionCookie = document.cookie;
+      
+      // Generate a job name from the geometry and customer info
+      const jobName = `${entry.geometryProcessingQueue.geometry.GeometryName.replace(/\s+/g, '_')}_${entry.geometryProcessingQueue.CustomerID || 'customer'}`;
+
+      // Call the Electron API to print
+      const electronAPI = (window as any).electronAPI;
+      const result = await electronAPI.printing.printGeometryJob(
+        geometryJobId,
+        sessionCookie,
+        jobName
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || 'Print failed');
+      }
+
+      // Update the print queue entry to mark as started
+      await fetch(`/api/print-queue/${entry.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          PrintStartedTime: new Date().toISOString(),
+        }),
+      });
+
+      // Refresh the list
+      await fetchPrintQueue();
+      
+      alert(`Print job "${result.jobName}" started successfully!`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start print');
+      console.error('Print error:', err);
+    } finally {
+      setPrintingJobId(null);
+    }
+  };
+
+  const handleDelete = async (entryId: string) => {
+    if (!confirm('Are you sure you want to delete this print job? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/print-queue/${entryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isEnabled: false,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete print job');
+      }
+
+      // Refresh the list (the deleted entry will be filtered out)
+      fetchPrintQueue();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete print job');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
+        <Header variant={isElectronClient ? 'electron' : 'browser'} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -149,14 +237,27 @@ export default function PrintQueuePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header variant={isElectronClient ? 'electron' : 'browser'} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Print Queue</h1>
-          <p className="mt-2 text-gray-600">
-            Manage 3D print jobs ready for printing. This interface is optimized for the Electron app.
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Print Queue</h1>
+              <p className="mt-2 text-gray-600">
+                Manage 3D print jobs ready for printing.
+              </p>
+            </div>
+            {isElectronClient && (
+              <div className="bg-purple-100 border border-purple-300 text-purple-800 px-4 py-2 rounded-lg flex items-center space-x-2">
+                <span className="text-2xl">🖨️</span>
+                <div>
+                  <div className="font-semibold text-sm">Printer Client Active</div>
+                  <div className="text-xs">Direct printing enabled</div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -261,14 +362,32 @@ export default function PrintQueuePage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex flex-col space-y-2">
-                            {!entry.PrintStartedTime && (
-                              <button
-                                onClick={() => handleStartPrint(entry.id)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
-                              >
-                                Start Print
-                              </button>
+                            {/* Print button - shows for all users but only enabled in Electron client */}
+                            {!entry.PrintStartedTime && entry.hasPrintFile && (
+                              <div className="relative group">
+                                <button
+                                  onClick={() => isElectronClient ? handlePrint(entry) : null}
+                                  disabled={!isElectronClient || printingJobId === entry.id}
+                                  className={`${
+                                    !isElectronClient || printingJobId === entry.id
+                                      ? 'bg-gray-400 cursor-not-allowed'
+                                      : 'bg-purple-600 hover:bg-purple-700'
+                                  } text-white px-3 py-1 rounded text-xs font-semibold w-full`}
+                                  title={!isElectronClient ? 'This feature only works from the 3D printer\'s splint computer' : ''}
+                                >
+                                  {printingJobId === entry.id ? 'Printing...' : '🖨️ Print'}
+                                </button>
+                                {!isElectronClient && (
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                    <div className="relative">
+                                      This feature only works from the 3D printer's splint computer
+                                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             )}
+                            
                             {entry.PrintCompletedTime && !entry.isPrintSuccessful && (
                               <button
                                 onClick={() => handleMarkPrintSuccessful(entry.id)}
@@ -283,6 +402,12 @@ export default function PrintQueuePage() {
                             >
                               View Details
                             </Link>
+                            <button
+                              onClick={() => handleDelete(entry.id)}
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs"
+                            >
+                              Delete
+                            </button>
                           </div>
                         </td>
                       </tr>

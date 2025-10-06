@@ -49,10 +49,17 @@ export default function PrintQueueDetailPage({
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [id, setId] = useState<string>('');
+  const [isElectronClient, setIsElectronClient] = useState(false);
+  const [printingJobId, setPrintingJobId] = useState<string | null>(null);
 
   useEffect(() => {
     params.then(p => setId(p.id));
   }, [params]);
+
+  useEffect(() => {
+    // Detect if running in Electron client
+    setIsElectronClient(typeof window !== 'undefined' && !!(window as any).electronAPI);
+  }, []);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -100,6 +107,60 @@ export default function PrintQueueDetailPage({
       return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">Printing</span>;
     }
     return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">Ready to Print</span>;
+  };
+
+  const handlePrint = async () => {
+    if (!entry || !isElectronClient) {
+      setError('Printing is only available in the Electron client');
+      return;
+    }
+
+    try {
+      setPrintingJobId(entry.id);
+      setError(null);
+
+      // Get the geometry processing queue ID to download the print file
+      const geometryJobId = entry.geometryProcessingQueue.id;
+      
+      // Get session cookie for authentication
+      const sessionCookie = document.cookie;
+      
+      // Generate a job name from the geometry and customer info
+      const jobName = `${entry.geometryProcessingQueue.geometry.GeometryName.replace(/\s+/g, '_')}_${entry.geometryProcessingQueue.CustomerID || 'customer'}`;
+
+      // Call the Electron API to print
+      const electronAPI = (window as any).electronAPI;
+      const result = await electronAPI.printing.printGeometryJob(
+        geometryJobId,
+        sessionCookie,
+        jobName
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || 'Print failed');
+      }
+
+      // Update the print queue entry to mark as started
+      await fetch(`/api/print-queue/${entry.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          PrintStartedTime: new Date().toISOString(),
+        }),
+      });
+
+      // Refresh the entry
+      await fetchEntry();
+      
+      alert(`Print job "${result.jobName}" started successfully!`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start print');
+      console.error('Print error:', err);
+    } finally {
+      setPrintingJobId(null);
+    }
   };
 
   const handleStartPrint = async () => {
@@ -194,6 +255,38 @@ export default function PrintQueueDetailPage({
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this print job? This action cannot be undone.')) {
+      return;
+    }
+
+    setUpdating(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`/api/print-queue/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isEnabled: false,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete print job');
+      }
+
+      // Redirect back to the list after successful deletion
+      router.push('/admin/print-queue');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete print job');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const parseParameterData = (data: string) => {
     try {
       return JSON.parse(data);
@@ -213,7 +306,7 @@ export default function PrintQueueDetailPage({
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
+        <Header variant={isElectronClient ? 'electron' : 'browser'} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -227,7 +320,7 @@ export default function PrintQueueDetailPage({
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
+        <Header variant={isElectronClient ? 'electron' : 'browser'} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <div className="flex justify-between items-center">
@@ -258,7 +351,7 @@ export default function PrintQueueDetailPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header variant={isElectronClient ? 'electron' : 'browser'} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -303,14 +396,29 @@ export default function PrintQueueDetailPage({
             </div>
             <div className="px-6 py-4">
               <div className="flex flex-wrap gap-3">
-                {!entry.PrintStartedTime && (
-                  <button
-                    onClick={handleStartPrint}
-                    disabled={updating}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
-                  >
-                    {updating ? 'Starting...' : 'Start Print'}
-                  </button>
+                {!entry.PrintStartedTime && entry.hasPrintFile && (
+                  <div className="relative group">
+                    <button
+                      onClick={() => isElectronClient ? handlePrint() : null}
+                      disabled={!isElectronClient || printingJobId === entry.id}
+                      className={`${
+                        !isElectronClient || printingJobId === entry.id
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-purple-600 hover:bg-purple-700'
+                      } text-white px-4 py-2 rounded text-sm font-medium`}
+                      title={!isElectronClient ? 'This feature only works from the 3D printer\'s splint computer' : ''}
+                    >
+                      {printingJobId === entry.id ? 'Printing...' : '🖨️ Print'}
+                    </button>
+                    {!isElectronClient && (
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        <div className="relative">
+                          This feature only works from the 3D printer's splint computer
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
                 
                 {entry.PrintStartedTime && !entry.PrintCompletedTime && (
@@ -341,6 +449,14 @@ export default function PrintQueueDetailPage({
                     {updating ? 'Updating...' : 'Mark Successful'}
                   </button>
                 )}
+                
+                <button
+                  onClick={handleDelete}
+                  disabled={updating}
+                  className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                >
+                  {updating ? 'Deleting...' : 'Delete'}
+                </button>
               </div>
             </div>
           </div>

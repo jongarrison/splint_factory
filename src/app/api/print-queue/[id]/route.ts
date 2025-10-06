@@ -127,6 +127,8 @@ export async function PUT(
       PrintStartedTime,
       PrintCompletedTime,
       isPrintSuccessful,
+      printNote,
+      isEnabled,
       GeometryFileContents,
       GeometryFileName,
       PrintFileContents,
@@ -167,6 +169,14 @@ export async function PUT(
     
     if (isPrintSuccessful !== undefined) {
       updateData.isPrintSuccessful = isPrintSuccessful;
+    }
+    
+    if (printNote !== undefined) {
+      updateData.printNote = printNote;
+    }
+    
+    if (isEnabled !== undefined) {
+      updateData.isEnabled = isEnabled;
     }
     
     if (GeometryFileContents !== undefined) {

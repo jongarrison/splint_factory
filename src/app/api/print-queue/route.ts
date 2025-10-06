@@ -26,6 +26,7 @@ export async function GET() {
 
     const printQueue = await prisma.printQueue.findMany({
       where: {
+        isEnabled: true, // Only show enabled (non-deleted) entries
         geometryProcessingQueue: {
           OwningOrganizationID: user.organizationId
         }

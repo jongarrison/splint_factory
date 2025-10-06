@@ -148,6 +148,9 @@ model PrintQueue {
   PrintStartedTime            DateTime? // When print was first attempted
   PrintCompletedTime          DateTime? // When print was finished
   isPrintSuccessful           Boolean   @default(false)
+  printNote                   String?   // Optional notes about the print (255 char max)
+  isEnabled                   Boolean   @default(true) // Flag for soft deleting the entry
+  CreationTime                DateTime  @default(now()) // When this entry was created
   
   geometryProcessingQueue     GeometryProcessingQueue @relation(fields: [GeometryProcessingQueueID], references: [id])
 }
