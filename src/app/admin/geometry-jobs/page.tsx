@@ -123,11 +123,10 @@ export default function GeometryJobsPage() {
         )}
 
         <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900">Processing Queue</h2>
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-center items-center">
             <Link
               href="/admin/geometry-jobs/new"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded text-sm font-medium"
             >
               Create New Job
             </Link>

@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/print-queue - List print queue entries for user's organization
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     
@@ -24,13 +24,25 @@ export async function GET() {
       return NextResponse.json({ error: 'User must be part of an organization' }, { status: 403 });
     }
 
+    // Check for optional geometry job ID filter
+    const { searchParams } = new URL(request.url);
+    const geometryJobId = searchParams.get('geometryJobId');
+
+    // Build where clause
+    const whereClause: any = {
+      isEnabled: true, // Only show enabled (non-deleted) entries
+      geometryProcessingQueue: {
+        OwningOrganizationID: user.organizationId
+      }
+    };
+
+    // Add geometry job filter if provided
+    if (geometryJobId) {
+      whereClause.GeometryProcessingQueueID = geometryJobId;
+    }
+
     const printQueue = await prisma.printQueue.findMany({
-      where: {
-        isEnabled: true, // Only show enabled (non-deleted) entries
-        geometryProcessingQueue: {
-          OwningOrganizationID: user.organizationId
-        }
-      },
+      where: whereClause,
       include: {
         geometryProcessingQueue: {
           include: {
