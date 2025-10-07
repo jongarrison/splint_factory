@@ -241,15 +241,7 @@ export default function PrintQueuePage() {
       
       <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
         <div className="mb-2 sm:mb-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Print Queue</h1>
-            {isElectronClient && (
-              <div className="bg-purple-100 border border-purple-300 text-purple-800 px-2 py-1 rounded flex items-center space-x-1 text-xs">
-                <span className="text-lg">🖨️</span>
-                <span className="font-semibold hidden sm:inline">Printer</span>
-              </div>
-            )}
-          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Print Queue</h1>
         </div>
 
         {error && (
