@@ -225,10 +225,10 @@ export default function PrintQueuePage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header variant={isElectronClient ? 'electron' : 'browser'} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading print queue...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-600">Loading...</p>
           </div>
         </div>
       </div>
@@ -239,29 +239,21 @@ export default function PrintQueuePage() {
     <div className="min-h-screen bg-gray-50">
       <Header variant={isElectronClient ? 'electron' : 'browser'} />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Print Queue</h1>
-              <p className="mt-2 text-gray-600">
-                Manage 3D print jobs ready for printing.
-              </p>
-            </div>
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
+        <div className="mb-2 sm:mb-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Print Queue</h1>
             {isElectronClient && (
-              <div className="bg-purple-100 border border-purple-300 text-purple-800 px-4 py-2 rounded-lg flex items-center space-x-2">
-                <span className="text-2xl">🖨️</span>
-                <div>
-                  <div className="font-semibold text-sm">Printer Client Active</div>
-                  <div className="text-xs">Direct printing enabled</div>
-                </div>
+              <div className="bg-purple-100 border border-purple-300 text-purple-800 px-2 py-1 rounded flex items-center space-x-1 text-xs">
+                <span className="text-lg">🖨️</span>
+                <span className="font-semibold hidden sm:inline">Printer</span>
               </div>
             )}
           </div>
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mb-2 bg-red-50 border border-red-200 text-red-700 px-2 py-2 rounded text-sm">
             {error}
             <button 
               onClick={() => setError(null)}
@@ -272,12 +264,12 @@ export default function PrintQueuePage() {
           </div>
         )}
 
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900">Active Print Jobs</h2>
+        <div className="bg-white shadow rounded">
+          <div className="px-2 py-2 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="text-base font-medium text-gray-900">Active Jobs</h2>
             <button
               onClick={fetchPrintQueue}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded text-xs font-medium"
             >
               Refresh
             </button>
@@ -285,83 +277,34 @@ export default function PrintQueuePage() {
           
           <div className="overflow-x-auto">
             {printQueue.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-gray-500 text-lg">No print jobs in queue</div>
-                <p className="text-gray-400 mt-2">Print jobs will appear here after geometry processing is completed.</p>
+              <div className="text-center py-8">
+                <div className="text-gray-500 text-base">No print jobs in queue</div>
+                <p className="text-gray-400 mt-1 text-sm">Jobs appear after processing.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Geometry
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Customer Info
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Files
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         Actions
+                      </th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Job
+                      </th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">
+                        Customer
+                      </th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Status
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {printQueue.map((entry) => (
                       <tr key={entry.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {entry.geometryProcessingQueue.geometry.GeometryName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {entry.geometryProcessingQueue.geometry.GeometryAlgorithmName}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {entry.geometryProcessingQueue.CustomerID ? 
-                              `ID: ${entry.geometryProcessingQueue.CustomerID}` : 'No ID'}
-                          </div>
-                          {entry.geometryProcessingQueue.CustomerNote && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {entry.geometryProcessingQueue.CustomerNote}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex flex-col space-y-1">
-                            {entry.hasGeometryFile && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                3MF: {entry.GeometryFileName || 'geometry.3mf'}
-                              </span>
-                            )}
-                            {entry.hasPrintFile && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                GCode: {entry.PrintFileName || 'print.gcode'}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(entry)}
-                          {entry.PrintStartedTime && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              Started: {formatDate(entry.PrintStartedTime)}
-                            </div>
-                          )}
-                          {entry.PrintCompletedTime && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              Completed: {formatDate(entry.PrintCompletedTime)}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex flex-col space-y-2">
+                        <td className="px-2 py-2 whitespace-nowrap">
+                          <div className="flex flex-row sm:flex-col gap-1">
                             {/* Print button - shows for all users but only enabled in Electron client */}
                             {!entry.PrintStartedTime && entry.hasPrintFile && (
                               <div className="relative group">
@@ -372,17 +315,14 @@ export default function PrintQueuePage() {
                                     !isElectronClient || printingJobId === entry.id
                                       ? 'bg-gray-400 cursor-not-allowed'
                                       : 'bg-purple-600 hover:bg-purple-700'
-                                  } text-white px-3 py-1 rounded text-xs font-semibold w-full`}
+                                  } text-white px-2 py-1 rounded text-xs font-semibold min-w-[60px]`}
                                   title={!isElectronClient ? 'This feature only works from the 3D printer\'s splint computer' : ''}
                                 >
-                                  {printingJobId === entry.id ? 'Printing...' : '🖨️ Print'}
+                                  {printingJobId === entry.id ? '...' : '🖨️ Print'}
                                 </button>
                                 {!isElectronClient && (
-                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                    <div className="relative">
-                                      This feature only works from the 3D printer's splint computer
-                                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                                    </div>
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 max-w-[200px]">
+                                    Printer only
                                   </div>
                                 )}
                               </div>
@@ -391,24 +331,58 @@ export default function PrintQueuePage() {
                             {entry.PrintCompletedTime && !entry.isPrintSuccessful && (
                               <button
                                 onClick={() => handleMarkPrintSuccessful(entry.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs"
+                                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs min-w-[60px]"
                               >
-                                Mark Successful
+                                ✓ Done
                               </button>
                             )}
                             <Link
                               href={`/admin/print-queue/${entry.id}`}
-                              className="text-blue-600 hover:text-blue-900 text-xs"
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs text-center min-w-[60px]"
                             >
-                              View Details
+                              Details
                             </Link>
                             <button
                               onClick={() => handleDelete(entry.id)}
-                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs"
+                              className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs min-w-[60px]"
                             >
                               Delete
                             </button>
                           </div>
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
+                            {entry.geometryProcessingQueue.geometry.GeometryName}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate max-w-[200px]">
+                            {entry.geometryProcessingQueue.geometry.GeometryAlgorithmName}
+                          </div>
+                          <div className="flex gap-1 mt-1">
+                            {entry.hasPrintFile && (
+                              <span className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-green-100 text-green-800">
+                                GCode
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 hidden sm:table-cell">
+                          <div className="text-xs text-gray-900 truncate max-w-[150px]">
+                            {entry.geometryProcessingQueue.CustomerID ? 
+                              `ID: ${entry.geometryProcessingQueue.CustomerID}` : 'No ID'}
+                          </div>
+                          {entry.geometryProcessingQueue.CustomerNote && (
+                            <div className="text-xs text-gray-500 truncate max-w-[150px]">
+                              {entry.geometryProcessingQueue.CustomerNote}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 py-2">
+                          {getStatusBadge(entry)}
+                          {entry.PrintStartedTime && (
+                            <div className="text-xs text-gray-500 mt-1 hidden sm:block">
+                              {formatDate(entry.PrintStartedTime)}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
