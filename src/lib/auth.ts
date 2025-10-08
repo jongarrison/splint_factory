@@ -7,6 +7,18 @@ import bcrypt from "bcryptjs"
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  trustHost: true, // Trust all hosts - needed for production with custom domains
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: false, // Allow cookies over HTTP for local network
+      }
+    }
+  },
   providers: [
     Credentials({
       name: "credentials",
