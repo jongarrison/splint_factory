@@ -151,6 +151,8 @@ model PrintQueue {
   printNote                   String?   // Optional notes about the print (255 char max)
   isEnabled                   Boolean   @default(true) // Flag for soft deleting the entry
   CreationTime                DateTime  @default(now()) // When this entry was created
+  progress                    Float?    // Print progress percentage (0-100)
+  progressLastReportTime      DateTime? // When progress was last updated
   
   geometryProcessingQueue     GeometryProcessingQueue @relation(fields: [GeometryProcessingQueueID], references: [id])
 }

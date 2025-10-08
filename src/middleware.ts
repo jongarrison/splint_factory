@@ -18,8 +18,8 @@ export default async function middleware(request: NextRequest) {
   
   // Try multiple logging approaches
   console.log(logMessage)
-  console.warn(logMessage) // Sometimes warn() shows when log() doesn't
-  console.error(`� MIDDLEWARE TRACE: ${request.method} ${pathname}`) // Error usually shows
+  // console.warn(logMessage) // Sometimes warn() shows when log() doesn't
+  // console.error(`� MIDDLEWARE TRACE: ${request.method} ${pathname}`) // Error usually shows
   
   // Check if the route is public
   const isPublicRoute = publicRoutes.some(route => 

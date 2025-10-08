@@ -15,6 +15,8 @@ interface PrintQueueEntry {
   isPrintSuccessful: boolean;
   hasGeometryFile: boolean;
   hasPrintFile: boolean;
+  progress?: number | null;
+  progressLastReportTime?: string | null;
   geometryProcessingQueue: {
     id: string;
     CreationTime: string;
@@ -74,6 +76,52 @@ export default function PrintQueueDetailPage({
     }
   }, [session, status, router, id]);
 
+  // Connect to Server-Sent Events for real-time progress updates
+  useEffect(() => {
+    if (!id) return;
+
+    let eventSource: EventSource | null = null;
+
+    const connectSSE = () => {
+      try {
+        eventSource = new EventSource('/api/print-queue/events');
+
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'progress' && data.id === id) {
+              // Update this entry's progress
+              setEntry((prev) => 
+                prev ? {
+                  ...prev,
+                  progress: data.progress,
+                  progressLastReportTime: data.progressLastReportTime,
+                } : null
+              );
+            }
+          } catch (err) {
+            // Ignore heartbeat messages and connection confirmations
+          }
+        };
+
+        eventSource.onerror = () => {
+          eventSource?.close();
+          // Reconnect after 5 seconds
+          setTimeout(connectSSE, 5000);
+        };
+      } catch (err) {
+        console.error('Error connecting to SSE:', err);
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      eventSource?.close();
+    };
+  }, [id]);
+
   const fetchEntry = async () => {
     try {
       const response = await fetch(`/api/print-queue/${id}`);
@@ -104,7 +152,8 @@ export default function PrintQueueDetailPage({
       return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-red-100 text-red-800">Print Failed</span>;
     }
     if (entry.PrintStartedTime) {
-      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">Printing</span>;
+      const progressText = entry.progress != null ? ` ${entry.progress.toFixed(1)}%` : '';
+      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">Printing{progressText}</span>;
     }
     return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">Ready to Print</span>;
   };
@@ -401,7 +450,7 @@ export default function PrintQueueDetailPage({
                     <button
                       onClick={() => isElectronClient ? handlePrint() : null}
                       disabled={!isElectronClient || printingJobId === entry.id}
-                      className={`${
+                      className={`action-print ${
                         !isElectronClient || printingJobId === entry.id
                           ? 'bg-gray-400 cursor-not-allowed'
                           : 'bg-purple-600 hover:bg-purple-700'
@@ -426,14 +475,14 @@ export default function PrintQueueDetailPage({
                     <button
                       onClick={handleMarkSuccessful}
                       disabled={updating}
-                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                      className="action-mark-successful bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
                     >
                       {updating ? 'Updating...' : 'Mark Successful'}
                     </button>
                     <button
                       onClick={handleMarkFailed}
                       disabled={updating}
-                      className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                      className="action-mark-failed bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
                     >
                       {updating ? 'Updating...' : 'Mark Failed'}
                     </button>
@@ -444,7 +493,7 @@ export default function PrintQueueDetailPage({
                   <button
                     onClick={handleMarkSuccessful}
                     disabled={updating}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                    className="action-mark-successful bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
                   >
                     {updating ? 'Updating...' : 'Mark Successful'}
                   </button>
@@ -453,11 +502,56 @@ export default function PrintQueueDetailPage({
                 <button
                   onClick={handleDelete}
                   disabled={updating}
-                  className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                  className="action-delete bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
                 >
                   {updating ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
+              
+              {/* Progress Bar and Info */}
+              {entry.PrintStartedTime && !entry.PrintCompletedTime && (
+                <div className="mt-6 border-t border-gray-200 pt-4">
+                  {entry.progress != null && (
+                    <div className="print-progress-section">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-gray-700">Print Progress</span>
+                        <span className="progress-percentage text-sm font-semibold text-gray-900">{entry.progress.toFixed(1)}%</span>
+                      </div>
+                      <div className="progress-bar w-full bg-gray-200 rounded-full h-4">
+                        <div 
+                          className="progress-bar-fill bg-blue-600 h-4 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, Math.max(0, entry.progress))}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {entry.progressLastReportTime && (
+                    <div className="last-updated-time mt-3 text-sm text-gray-600">
+                      Last updated: <span className="timestamp">{formatDate(entry.progressLastReportTime)}</span>
+                      {(() => {
+                        const lastUpdate = new Date(entry.progressLastReportTime);
+                        const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
+                        
+                        if (minutesAgo < 1) {
+                          return <span className="time-indicator time-recent ml-2 text-green-600 font-medium">(just now)</span>;
+                        } else if (minutesAgo < 60) {
+                          return <span className="time-indicator time-minutes ml-2 text-gray-500">(<span className="time-value">{minutesAgo}</span>m ago)</span>;
+                        } else {
+                          const hoursAgo = Math.floor(minutesAgo / 60);
+                          return <span className="time-indicator time-hours ml-2 text-orange-600">(<span className="time-value">{hoursAgo}</span>h ago)</span>;
+                        }
+                      })()}
+                    </div>
+                  )}
+                  
+                  {!entry.progress && !entry.progressLastReportTime && (
+                    <div className="text-sm text-gray-500 italic">
+                      Waiting for progress updates from printer...
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -470,11 +564,11 @@ export default function PrintQueueDetailPage({
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Print Queue ID</dt>
-                  <dd className="mt-1 text-sm text-gray-900 font-mono">{entry.id}</dd>
+                  <dd className="print-queue-id mt-1 text-sm text-gray-900 font-mono">{entry.id}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Geometry Job ID</dt>
-                  <dd className="mt-1 text-sm text-gray-900 font-mono">
+                  <dd className="geometry-job-id mt-1 text-sm text-gray-900 font-mono">
                     <Link 
                       href={`/admin/geometry-jobs/${entry.geometryProcessingQueue.id}`}
                       className="text-blue-600 hover:text-blue-500"
@@ -485,26 +579,26 @@ export default function PrintQueueDetailPage({
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Geometry Created</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{formatDate(entry.geometryProcessingQueue.CreationTime)}</dd>
+                  <dd className="geometry-creation-time mt-1 text-sm text-gray-900">{formatDate(entry.geometryProcessingQueue.CreationTime)}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Created By</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.creator.name || entry.geometryProcessingQueue.creator.email}</dd>
+                  <dd className="creator-name mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.creator.name || entry.geometryProcessingQueue.creator.email}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Organization</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.owningOrganization.name}</dd>
+                  <dd className="organization-name mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.owningOrganization.name}</dd>
                 </div>
                 {entry.PrintStartedTime && (
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Print Started</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{formatDate(entry.PrintStartedTime)}</dd>
+                    <dd className="print-started-time mt-1 text-sm text-gray-900">{formatDate(entry.PrintStartedTime)}</dd>
                   </div>
                 )}
                 {entry.PrintCompletedTime && (
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Print Completed</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{formatDate(entry.PrintCompletedTime)}</dd>
+                    <dd className="print-completed-time mt-1 text-sm text-gray-900">{formatDate(entry.PrintCompletedTime)}</dd>
                   </div>
                 )}
               </dl>
@@ -522,7 +616,7 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-gray-500">Geometry File (3MF)</dt>
                   <dd className="mt-1 text-sm text-gray-900">
                     {entry.hasGeometryFile ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <span className="geometry-filename file-status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {entry.GeometryFileName || 'geometry.3mf'}
                       </span>
                     ) : (
@@ -534,7 +628,7 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-gray-500">Print File (GCode)</dt>
                   <dd className="mt-1 text-sm text-gray-900">
                     {entry.hasPrintFile ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="print-filename file-status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         {entry.PrintFileName || 'print.gcode'}
                       </span>
                     ) : (
@@ -555,11 +649,11 @@ export default function PrintQueueDetailPage({
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Customer ID</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.CustomerID || 'Not specified'}</dd>
+                  <dd className="customer-id mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.CustomerID || 'Not specified'}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Customer Note</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.CustomerNote || 'No note provided'}</dd>
+                  <dd className="customer-note mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.CustomerNote || 'No note provided'}</dd>
                 </div>
               </dl>
             </div>
@@ -574,11 +668,11 @@ export default function PrintQueueDetailPage({
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Geometry Name</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.geometry.GeometryName}</dd>
+                  <dd className="geometry-name mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.geometry.GeometryName}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Algorithm</dt>
-                  <dd className="mt-1 text-sm text-gray-900 font-mono">{entry.geometryProcessingQueue.geometry.GeometryAlgorithmName}</dd>
+                  <dd className="geometry-algorithm mt-1 text-sm text-gray-900 font-mono">{entry.geometryProcessingQueue.geometry.GeometryAlgorithmName}</dd>
                 </div>
               </dl>
 
@@ -588,16 +682,16 @@ export default function PrintQueueDetailPage({
                   <h3 className="text-sm font-medium text-gray-500 mb-3">Parameter Values</h3>
                   <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {parameterSchema.map((param: any) => (
-                      <div key={param.InputName}>
-                        <dt className="text-xs font-medium text-gray-500">{param.InputDescription}</dt>
-                        <dd className="mt-1 text-sm text-gray-900">
+                      <div key={param.InputName} className="geometry-parameter">
+                        <dt className="parameter-name text-xs font-medium text-gray-500">{param.InputDescription}</dt>
+                        <dd className="parameter-value mt-1 text-sm text-gray-900">
                           <span className="font-mono">
                             {parameterData[param.InputName] !== undefined 
                               ? String(parameterData[param.InputName])
                               : 'Not set'
                             }
                           </span>
-                          <span className="ml-2 text-xs text-gray-500">
+                          <span className="parameter-type ml-2 text-xs text-gray-500">
                             ({param.InputType})
                           </span>
                         </dd>
