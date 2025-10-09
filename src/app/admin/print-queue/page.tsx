@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
+import PrinterStatusBanner from '@/components/printer/PrinterStatusBanner';
 
 interface PrintQueueEntry {
   id: string;
@@ -271,7 +272,8 @@ export default function PrintQueuePage() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Print Queue</h1>
         </div>
 
-
+        {/* Printer Status Banner (only visible in Electron) */}
+        <PrinterStatusBanner />
 
         {error && (
           <div className="mb-2 bg-red-50 border border-red-200 text-red-700 px-2 py-2 rounded text-sm">
