@@ -178,7 +178,8 @@ export default function PrintQueuePage() {
       setPrintingJobId(entry.id);
       setError(null);
 
-      // Get the geometry processing queue ID to download the print file
+      // Get the print queue ID and geometry processing queue ID
+      const printQueueId = entry.id;
       const geometryJobId = entry.geometryProcessingQueue.id;
       
       // Get session cookie for authentication
@@ -190,6 +191,7 @@ export default function PrintQueuePage() {
       // Call the Electron API to print
       const electronAPI = (window as any).electronAPI;
       const result = await electronAPI.printing.printGeometryJob(
+        printQueueId,
         geometryJobId,
         sessionCookie,
         jobName
