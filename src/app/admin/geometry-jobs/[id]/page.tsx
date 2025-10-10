@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
+import ProcessingLogViewer from '@/components/ProcessingLogViewer';
 
 interface GeometryJob {
   id: string;
@@ -16,6 +17,7 @@ interface GeometryJob {
   ProcessCompletedTime?: string;
   isProcessSuccessful: boolean;
   isEnabled: boolean;
+  ProcessingLog?: string | null;
   GeometryFileName?: string | null;
   PrintFileName?: string | null;
   geometry: {
@@ -491,6 +493,13 @@ export default function GeometryJobDetailPage({
               </div>
             </div>
           )}
+
+          {/* Processing Log */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4">
+              <ProcessingLogViewer log={job.ProcessingLog} />
+            </div>
+          </div>
 
           {/* Raw Data (for debugging) */}
           <div className="bg-white shadow rounded-lg">

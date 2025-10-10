@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,13 +6,6 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
-
-// NextAuth.js Models
-// NOTE: When using postgresql, mysql or sqlserver, 
-// uncomment the @db.Text annotations in model Account below
-// Further reading:
-// https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-// https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
 
 model Session {
   id           String   @id @default(cuid())
@@ -26,139 +16,125 @@ model Session {
 }
 
 model Organization {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  users           User[]
-  invitationLinks InvitationLink[]
+  id              String                    @id @default(cuid())
+  name            String                    @unique
+  description     String?
+  isActive        Boolean                   @default(true)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
   apiKeys         ApiKey[]
   geometryJobs    GeometryProcessingQueue[]
+  invitationLinks InvitationLink[]
+  users           User[]
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?   // For credentials authentication
-  
-  // Organization fields
+  id                   String                    @id @default(cuid())
+  name                 String?
+  email                String                    @unique
+  emailVerified        DateTime?
+  image                String?
+  password             String?
   organizationId       String?
-  role                 UserRole  @default(MEMBER)
-  
-  // Invitation tracking (Phase 2)
-  invitedByUserId     String?
+  role                 UserRole                  @default("MEMBER")
+  invitedByUserId      String?
   invitationAcceptedAt DateTime?
-  
-  sessions            Session[]
-  organization        Organization? @relation(fields: [organizationId], references: [id])
-  invitedBy           User?         @relation("UserInvitations", fields: [invitedByUserId], references: [id])
-  invitedUsers        User[]        @relation("UserInvitations")
-  createdInvitations  InvitationLink[] @relation("InvitationCreator")
-  usedInvitation      InvitationLink?  @relation("InvitationUsage")
-  createdGeometries   NamedGeometry[]
-  createdApiKeys      ApiKey[]      @relation("CreatedApiKeys")
-  createdGeometryJobs GeometryProcessingQueue[] @relation("CreatedGeometryJobs")
-  
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  createdApiKeys       ApiKey[]                  @relation("CreatedApiKeys")
+  createdGeometryJobs  GeometryProcessingQueue[] @relation("CreatedGeometryJobs")
+  usedInvitation       InvitationLink?           @relation("InvitationUsage")
+  createdInvitations   InvitationLink[]          @relation("InvitationCreator")
+  createdGeometries    NamedGeometry[]
+  sessions             Session[]
+  invitedBy            User?                     @relation("UserInvitations", fields: [invitedByUserId], references: [id])
+  invitedUsers         User[]                    @relation("UserInvitations")
+  organization         Organization?             @relation(fields: [organizationId], references: [id])
 }
 
 model InvitationLink {
-  id              String    @id @default(cuid())
-  token           String    @unique @default(cuid())
-  email           String?   // For targeted invites
+  id              String       @id @default(cuid())
+  token           String       @unique @default(cuid())
+  email           String?
   expiresAt       DateTime
   usedAt          DateTime?
-  
   organizationId  String
   createdByUserId String
-  usedByUserId    String?   @unique
-  
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  createdBy       User         @relation("InvitationCreator", fields: [createdByUserId], references: [id])
+  usedByUserId    String?      @unique
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
   usedBy          User?        @relation("InvitationUsage", fields: [usedByUserId], references: [id])
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdBy       User         @relation("InvitationCreator", fields: [createdByUserId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id])
 }
 
 model NamedGeometry {
-  id                              String   @id @default(cuid())
-  GeometryName                    String   @unique
-  GeometryAlgorithmName           String
-  GeometryInputParameterSchema    String   // JSON string conforming to geometry-input-parameter-schema.json
-  CreatorID                       String   // References User.id
-  CreationTime                    DateTime @default(now())
-  
-  creator                         User     @relation(fields: [CreatorID], references: [id])
-  geometryJobs                    GeometryProcessingQueue[] @relation("NamedGeometryJobs")
-  
+  id                           String                    @id @default(cuid())
+  GeometryName                 String                    @unique
+  GeometryAlgorithmName        String
+  GeometryInputParameterSchema String
+  CreatorID                    String
+  CreationTime                 DateTime                  @default(now())
+  geometryJobs                 GeometryProcessingQueue[] @relation("NamedGeometryJobs")
+  creator                      User                      @relation(fields: [CreatorID], references: [id])
+
   @@map("NamedGeometry")
 }
 
 model ApiKey {
-  id             String    @id @default(cuid())
-  name           String    // Descriptive name for the API key
-  keyHash        String    @unique // bcrypt hash of the actual API key
-  permissions    String    // JSON array of permission strings
-  organizationId String?   // Optional reference to Organization, null = access to all orgs
-  isActive       Boolean   @default(true)
-  lastUsedAt     DateTime? // Last successful authentication
-  createdAt      DateTime  @default(now())
-  createdBy      String    // References User.id
-  
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+  id             String        @id @default(cuid())
+  name           String
+  keyHash        String        @unique
+  permissions    String
+  organizationId String?
+  isActive       Boolean       @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  createdBy      String
   creator        User          @relation("CreatedApiKeys", fields: [createdBy], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
 }
 
 model GeometryProcessingQueue {
-  id                          String    @id @default(cuid())
-  GeometryID                  String    // References NamedGeometry.id
-  CreatorID                   String    // References User.id
-  OwningOrganizationID        String    // References Organization.id
-  CreationTime                DateTime  @default(now())
-  GeometryInputParameterData  String    // JSON data conforming to GeometryInputParameterSchema
-  ProcessStartedTime          DateTime? // When processing first attempted
-  ProcessCompletedTime        DateTime? // When processing finished
-  isProcessSuccessful         Boolean   @default(false)
-  isEnabled                   Boolean   @default(true)
-  CustomerNote                String?   // Up to 500 characters
-  CustomerID                  String?   // Up to 20 characters
-  // New: Files produced by geometry processing are stored on this record
-  GeometryFileContents        Bytes?    // 3MF/STL/OBJ/3MF binary data
-  GeometryFileName            String?   // Name of the geometry file
-  PrintFileContents           Bytes?    // Print file (e.g., 3MF containing gcode) binary data
-  PrintFileName               String?   // Name of the print file
-  
-  geometry                    NamedGeometry @relation("NamedGeometryJobs", fields: [GeometryID], references: [id])
-  creator                     User          @relation("CreatedGeometryJobs", fields: [CreatorID], references: [id])
-  owningOrganization          Organization  @relation(fields: [OwningOrganizationID], references: [id])
-  printQueue                  PrintQueue[]
+  id                         String        @id @default(cuid())
+  GeometryID                 String
+  CreatorID                  String
+  OwningOrganizationID       String
+  CreationTime               DateTime      @default(now())
+  GeometryInputParameterData String
+  ProcessStartedTime         DateTime?
+  ProcessCompletedTime       DateTime?
+  isProcessSuccessful        Boolean       @default(false)
+  isEnabled                  Boolean       @default(true)
+  CustomerNote               String?
+  CustomerID                 String?
+  GeometryFileContents       Bytes?
+  GeometryFileName           String?
+  PrintFileContents          Bytes?
+  PrintFileName              String?
+  ProcessingLog              String?
+  owningOrganization         Organization  @relation(fields: [OwningOrganizationID], references: [id])
+  creator                    User          @relation("CreatedGeometryJobs", fields: [CreatorID], references: [id])
+  geometry                   NamedGeometry @relation("NamedGeometryJobs", fields: [GeometryID], references: [id])
+  printQueue                 PrintQueue[]
 }
 
 model PrintQueue {
-  id                          String    @id @default(cuid())
-  GeometryProcessingQueueID   String    // References GeometryProcessingQueue.id
-  PrintStartedTime            DateTime? // When print was first attempted
-  PrintCompletedTime          DateTime? // When print was finished
-  isPrintSuccessful           Boolean   @default(false)
-  printNote                   String?   // Optional notes about the print (255 char max)
-  isEnabled                   Boolean   @default(true) // Flag for soft deleting the entry
-  CreationTime                DateTime  @default(now()) // When this entry was created
-  progress                    Float?    // Print progress percentage (0-100)
-  progressLastReportTime      DateTime? // When progress was last updated
-  
-  geometryProcessingQueue     GeometryProcessingQueue @relation(fields: [GeometryProcessingQueueID], references: [id])
+  id                        String                  @id @default(cuid())
+  GeometryProcessingQueueID String
+  PrintStartedTime          DateTime?
+  PrintCompletedTime        DateTime?
+  isPrintSuccessful         Boolean                 @default(false)
+  printNote                 String?
+  isEnabled                 Boolean                 @default(true)
+  CreationTime              DateTime                @default(now())
+  progress                  Float?
+  progressLastReportTime    DateTime?
+  geometryProcessingQueue   GeometryProcessingQueue @relation(fields: [GeometryProcessingQueueID], references: [id])
 }
 
 enum UserRole {
   SYSTEM_ADMIN
-  ORG_ADMIN  
+  ORG_ADMIN
   MEMBER
 }

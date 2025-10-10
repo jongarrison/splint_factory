@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       GeometryProcessingQueueID,
       isSuccess,
       errorMessage,
+      processingLog,        // Processing logs from geometry processor
       GeometryFileContents, // Base64 encoded 3MF/STL/OBJ/3MF file
       GeometryFileName,
       PrintFileContents,    // Base64 encoded print file (e.g., 3MF with gcode)
@@ -108,6 +109,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid PrintFileName' }, { status: 400 });
     }
 
+    // Validate processingLog size (limit to 100KB)
+    const maxLogSize = 100 * 1024; // 100KB
+    if (processingLog && typeof processingLog === 'string' && processingLog.length > maxLogSize) {
+      return NextResponse.json({ error: 'Processing log exceeds 100KB limit' }, { status: 400 });
+    }
+
     const currentTime = new Date();
 
     // Start transaction to update geometry processing queue and create print queue entry if successful
@@ -118,6 +125,7 @@ export async function POST(request: NextRequest) {
         data: ({
           ProcessCompletedTime: currentTime,
           isProcessSuccessful: isSuccess,
+          ProcessingLog: processingLog ?? undefined,
           GeometryFileContents: GeometryFileContents ? Buffer.from(GeometryFileContents, 'base64') : undefined,
           GeometryFileName: GeometryFileName ?? undefined,
           PrintFileContents: PrintFileContents ? Buffer.from(PrintFileContents, 'base64') : undefined,

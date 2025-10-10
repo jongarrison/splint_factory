@@ -215,12 +215,13 @@ export async function PUT(
     console.log(`Updated print queue entry ${id} by user ${session.user.id}`);
     
     // Return without binary data
+    const gpqUpdate: any = (updatedEntry as any).geometryProcessingQueue;
     const response = {
       ...updatedEntry,
-      GeometryFileContents: updatedEntry.GeometryFileContents ? '[Binary Data]' : null,
-      PrintFileContents: updatedEntry.PrintFileContents ? '[Binary Data]' : null,
-      hasGeometryFile: !!updatedEntry.GeometryFileContents,
-      hasPrintFile: !!updatedEntry.PrintFileContents
+      GeometryFileContents: gpqUpdate?.GeometryFileContents ? '[Binary Data]' : null,
+      PrintFileContents: gpqUpdate?.PrintFileContents ? '[Binary Data]' : null,
+      hasGeometryFile: !!gpqUpdate?.GeometryFileContents,
+      hasPrintFile: !!gpqUpdate?.PrintFileContents
     };
 
     return NextResponse.json(response);
