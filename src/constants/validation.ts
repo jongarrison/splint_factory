@@ -13,17 +13,17 @@
  * - JSON schema validation
  * - Type validation helpers
  */
-export const INPUT_NAME_PATTERN = /^[a-z0-9-]+$/;
+export const INPUT_NAME_PATTERN = /^[a-zA-Z0-9]+$/;
 
 /**
  * String version of the pattern for use in HTML pattern attributes and JSON schemas
  */
-export const INPUT_NAME_PATTERN_STRING = '^[a-z0-9-]+$';
+export const INPUT_NAME_PATTERN_STRING = '^[a-zA-Z0-9]+$';
 
 /**
  * Human-readable description of allowed characters
  */
-export const INPUT_NAME_ALLOWED_CHARS = 'lowercase letters (a-z), numbers (0-9), and dashes (-)';
+export const INPUT_NAME_ALLOWED_CHARS = 'letters (a-z, A-Z) and numbers (0-9)';
 
 /**
  * Validates an InputName against the pattern

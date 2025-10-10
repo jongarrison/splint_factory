@@ -9,10 +9,10 @@
     "properties": {
       "InputName": {
         "type": "string",
-        "pattern": "^[a-z0-9-]+$",
+        "pattern": "^[a-zA-Z0-9]+$",
         "minLength": 1,
         "maxLength": 50,
-        "description": "Name of the geometry parameter. Only lowercase letters, numbers, and dashes allowed."
+        "description": "Name of the geometry parameter. Only letters and numbers allowed."
       },
       "InputDescription": {
         "type": "string",

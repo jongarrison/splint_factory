@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { GeometryInputParameterSchema } from '@/types/geometry-input-parameter';
+import { INPUT_NAME_PATTERN, INPUT_NAME_ALLOWED_CHARS } from '@/constants/validation';
 
 // GET /api/named-geometry/[id] - Get specific named geometry
 export async function GET(
@@ -122,8 +123,8 @@ export async function PUT(
           throw new Error('Each parameter must have InputName, InputDescription, and InputType');
         }
         
-        if (!/^[a-z0-9-]+$/.test(param.InputName)) {
-          throw new Error(`InputName "${param.InputName}" must contain only lowercase letters, numbers, and dashes`);
+        if (!INPUT_NAME_PATTERN.test(param.InputName)) {
+          throw new Error(`InputName "${param.InputName}" must contain only ${INPUT_NAME_ALLOWED_CHARS}`);
         }
 
         if (!['Float', 'Integer', 'Text'].includes(param.InputType)) {
