@@ -122,8 +122,8 @@ export async function PUT(
           throw new Error('Each parameter must have InputName, InputDescription, and InputType');
         }
         
-        if (!/^[a-z0-9]+$/.test(param.InputName)) {
-          throw new Error(`InputName "${param.InputName}" must contain only lowercase letters and numbers`);
+        if (!/^[a-z0-9-]+$/.test(param.InputName)) {
+          throw new Error(`InputName "${param.InputName}" must contain only lowercase letters, numbers, and dashes`);
         }
 
         if (!['Float', 'Integer', 'Text'].includes(param.InputType)) {

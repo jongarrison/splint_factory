@@ -102,9 +102,9 @@ export async function POST(request: NextRequest) {
           throw new Error('Each parameter must have InputName, InputDescription, and InputType');
         }
         
-        // Validate InputName pattern (only a-z and 0-9)
-        if (!/^[a-z0-9]+$/.test(param.InputName)) {
-          throw new Error(`InputName "${param.InputName}" must contain only lowercase letters and numbers`);
+        // Validate InputName pattern
+        if (!/^[a-z0-9-]+$/.test(param.InputName)) {
+          throw new Error(`InputName "${param.InputName}" must contain only lowercase letters, numbers, and dashes`);
         }
 
         // Validate InputType

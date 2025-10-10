@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { GeometryInputParameter, InputType } from '@/types/geometry-input-parameter';
 import Header from '@/components/navigation/Header';
+import { INPUT_NAME_PATTERN, INPUT_NAME_PATTERN_STRING, INPUT_NAME_ALLOWED_CHARS } from '@/constants/validation';
 
 interface FormData {
   GeometryName: string;
@@ -151,8 +152,8 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
         return false;
       }
       
-      if (!/^[a-z0-9]+$/.test(param.InputName)) {
-        setError(`Parameter ${i + 1}: Input Name must contain only lowercase letters and numbers`);
+      if (!INPUT_NAME_PATTERN.test(param.InputName)) {
+        setError(`Parameter ${i + 1}: Input Name must contain only ${INPUT_NAME_ALLOWED_CHARS}`);
         return false;
       }
       
@@ -331,14 +332,14 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">
-                          Input Name (a-z, 0-9 only)
+                          Input Name ({INPUT_NAME_ALLOWED_CHARS})
                         </label>
                         <input
                           type="text"
                           value={param.InputName}
                           onChange={(e) => updateParameter(index, 'InputName', e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          pattern="[a-z0-9]+"
+                          pattern={INPUT_NAME_PATTERN_STRING}
                           maxLength={50}
                           required
                         />
