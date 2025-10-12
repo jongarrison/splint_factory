@@ -591,18 +591,98 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-gray-500">Organization</dt>
                   <dd className="organization-name mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.owningOrganization.name}</dd>
                 </div>
-                {entry.PrintStartedTime && (
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Print Started</dt>
-                    <dd className="print-started-time mt-1 text-sm text-gray-900">{formatDate(entry.PrintStartedTime)}</dd>
-                  </div>
-                )}
-                {entry.PrintCompletedTime && (
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Print Completed</dt>
-                    <dd className="print-completed-time mt-1 text-sm text-gray-900">{formatDate(entry.PrintCompletedTime)}</dd>
-                  </div>
-                )}
+              </dl>
+            </div>
+          </div>
+
+          {/* Print Status Details */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Print Status Details</h2>
+            </div>
+            <div className="px-6 py-4">
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Print Started</dt>
+                  <dd className="print-started-time mt-1 text-sm text-gray-900">
+                    {entry.PrintStartedTime ? formatDate(entry.PrintStartedTime) : (
+                      <span className="text-gray-400 italic">Not started</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Print Completed</dt>
+                  <dd className="print-completed-time mt-1 text-sm text-gray-900">
+                    {entry.PrintCompletedTime ? formatDate(entry.PrintCompletedTime) : (
+                      <span className="text-gray-400 italic">In progress</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Current Progress</dt>
+                  <dd className="progress mt-1 text-sm text-gray-900">
+                    {entry.progress != null ? (
+                      <span className="font-semibold">{entry.progress.toFixed(1)}%</span>
+                    ) : (
+                      <span className="text-gray-400 italic">No data</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Last Progress Update</dt>
+                  <dd className="progress-last-report-time mt-1 text-sm text-gray-900">
+                    {entry.progressLastReportTime ? (
+                      <>
+                        {formatDate(entry.progressLastReportTime)}
+                        {(() => {
+                          const lastUpdate = new Date(entry.progressLastReportTime);
+                          const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
+                          
+                          if (minutesAgo < 1) {
+                            return <span className="ml-2 text-green-600 font-medium">(just now)</span>;
+                          } else if (minutesAgo < 60) {
+                            return <span className="ml-2 text-gray-500">({minutesAgo}m ago)</span>;
+                          } else {
+                            const hoursAgo = Math.floor(minutesAgo / 60);
+                            return <span className="ml-2 text-orange-600">({hoursAgo}h ago)</span>;
+                          }
+                        })()}
+                      </>
+                    ) : (
+                      <span className="text-gray-400 italic">No updates</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Print Status</dt>
+                  <dd className="is-print-successful mt-1 text-sm">
+                    {entry.PrintCompletedTime ? (
+                      entry.isPrintSuccessful ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          ✓ Successful
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          ✗ Failed
+                        </span>
+                      )
+                    ) : entry.PrintStartedTime ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        ⟳ In Progress
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        ⏸ Ready
+                      </span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Print Note</dt>
+                  <dd className="print-note mt-1 text-sm text-gray-900">
+                    <span className="text-gray-400 italic">Not implemented</span>
+                  </dd>
+                </div>
               </dl>
             </div>
           </div>

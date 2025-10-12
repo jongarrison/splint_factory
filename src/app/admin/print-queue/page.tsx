@@ -338,6 +338,9 @@ export default function PrintQueuePage() {
                       <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         Status
                       </th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">
+                        Progress
+                      </th>
                       <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase w-12">
                         {/* Delete column */}
                       </th>
@@ -415,15 +418,38 @@ export default function PrintQueuePage() {
                           <div className="print-status">
                             {getStatusBadge(entry)}
                           </div>
-                          {getProgressInfo(entry) && (
-                            <div className="progress-timestamp mt-1">
-                              {getProgressInfo(entry)}
-                            </div>
-                          )}
                           {entry.PrintStartedTime && (
                             <div className="print-started-time text-xs text-gray-500 mt-1 hidden sm:block">
                               {formatDate(entry.PrintStartedTime)}
                             </div>
+                          )}
+                        </td>
+                        <td className="px-2 py-2 hidden lg:table-cell">
+                          {entry.progress != null ? (
+                            <div className="progress-info">
+                              <div className="progress-percentage text-sm font-semibold text-gray-900">
+                                {entry.progress.toFixed(1)}%
+                              </div>
+                              {entry.progressLastReportTime && (
+                                <div className="last-updated-time text-xs text-gray-500 mt-0.5">
+                                  {(() => {
+                                    const lastUpdate = new Date(entry.progressLastReportTime);
+                                    const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
+                                    
+                                    if (minutesAgo < 1) {
+                                      return 'just now';
+                                    } else if (minutesAgo < 60) {
+                                      return `${minutesAgo}m ago`;
+                                    } else {
+                                      const hoursAgo = Math.floor(minutesAgo / 60);
+                                      return `${hoursAgo}h ago`;
+                                    }
+                                  })()}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
                           )}
                         </td>
                         <td className="px-2 py-2 text-center">
