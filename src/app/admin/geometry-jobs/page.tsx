@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
+import { useSmartPolling } from '@/hooks/useSmartPolling';
 
 interface GeometryJob {
   id: string;
@@ -33,25 +34,18 @@ interface GeometryJob {
 export default function GeometryJobsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [geometryJobs, setGeometryJobs] = useState<GeometryJob[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchGeometryJobs = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/geometry-jobs');
-      if (!response.ok) {
-        throw new Error('Failed to fetch geometry jobs');
-      }
-      const data = await response.json();
-      setGeometryJobs(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+  // Use smart polling hook for real-time updates
+  const { 
+    data: geometryJobs, 
+    isLoading: loading, 
+    error,
+    lastUpdate,
+    refresh: refreshGeometryJobs,
+    isFetching
+  } = useSmartPolling<GeometryJob[]>('/api/geometry-jobs', {
+    enabled: !!session?.user
+  });
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -60,8 +54,6 @@ export default function GeometryJobsPage() {
       router.push('/login');
       return;
     }
-
-    fetchGeometryJobs();
   }, [session, status, router]);
 
   const getStatusBadge = (job: GeometryJob) => {
@@ -84,7 +76,7 @@ export default function GeometryJobsPage() {
     return new Date(dateString).toLocaleString();
   };
 
-  if (loading) {
+  if (status === 'loading' || (loading && !geometryJobs)) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -113,27 +105,49 @@ export default function GeometryJobsPage() {
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
-            <button 
-              onClick={() => setError(null)}
-              className="ml-2 text-red-500 hover:text-red-700"
-            >
-              ✕
-            </button>
           </div>
         )}
 
         <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-center items-center">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <Link
               href="/admin/geometry-jobs/new"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded text-sm font-medium"
             >
               Create New Job
             </Link>
+            <div className="flex items-center gap-2">
+              {lastUpdate && (
+                <span className="text-xs text-gray-500">
+                  Updated {lastUpdate.toLocaleTimeString()}
+                </span>
+              )}
+              <button
+                onClick={refreshGeometryJobs}
+                disabled={isFetching}
+                className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh geometry jobs"
+              >
+                <svg 
+                  className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                  />
+                </svg>
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+            </div>
           </div>
           
           <div className="overflow-x-auto">
-            {geometryJobs.length === 0 ? (
+            {!geometryJobs || geometryJobs.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-500 text-lg">No geometry jobs found</div>
                 <p className="text-gray-400 mt-2">Create your first geometry processing job to get started.</p>

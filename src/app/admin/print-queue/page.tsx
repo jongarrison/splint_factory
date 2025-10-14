@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import PrinterStatusBanner from '@/components/printer/PrinterStatusBanner';
+import { useSmartPolling } from '@/hooks/useSmartPolling';
 
 interface PrintQueueEntry {
   id: string;
@@ -41,11 +42,22 @@ interface PrintQueueEntry {
 export default function PrintQueuePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [printQueue, setPrintQueue] = useState<PrintQueueEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isElectronClient, setIsElectronClient] = useState(false);
   const [printingJobId, setPrintingJobId] = useState<string | null>(null);
+  
+  // Use smart polling hook for real-time updates
+  const { 
+    data: printQueue, 
+    isLoading: loading, 
+    error: fetchError,
+    lastUpdate,
+    refresh: refreshPrintQueue,
+    isFetching
+  } = useSmartPolling<PrintQueueEntry[]>('/api/print-queue', {
+    enabled: !!session?.user
+  });
+  
+  const error = fetchError;
   
   // Notification system for print progress updates
   const [notification, setNotification] = useState<{
@@ -80,22 +92,6 @@ export default function PrintQueuePage() {
     };
   }, []);
 
-  const fetchPrintQueue = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/print-queue');
-      if (!response.ok) {
-        throw new Error('Failed to fetch print queue');
-      }
-      const data = await response.json();
-      setPrintQueue(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     // Detect if running in Electron client
     setIsElectronClient(typeof window !== 'undefined' && !!(window as any).electronAPI);
@@ -108,8 +104,6 @@ export default function PrintQueuePage() {
       router.push('/login');
       return;
     }
-
-    fetchPrintQueue();
   }, [session, status, router]);
 
 
@@ -172,9 +166,9 @@ export default function PrintQueuePage() {
       }
 
       // Refresh the list
-      fetchPrintQueue();
+      refreshPrintQueue();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update print status');
+      showNotification(err instanceof Error ? err.message : 'Failed to update print status', 'error');
     }
   };
 
@@ -195,21 +189,20 @@ export default function PrintQueuePage() {
       }
 
       // Refresh the list
-      fetchPrintQueue();
+      refreshPrintQueue();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start print');
+      showNotification(err instanceof Error ? err.message : 'Failed to start print', 'error');
     }
   };
 
   const handlePrint = async (entry: PrintQueueEntry) => {
     if (!isElectronClient) {
-      setError('Printing is only available in the Electron client');
+      showNotification('Printing is only available in the Electron client', 'error');
       return;
     }
 
     try {
       setPrintingJobId(entry.id);
-      setError(null);
 
       // Step 1: Downloading file
       showNotification('📥 Downloading print file from server...', 'info');
@@ -258,7 +251,7 @@ export default function PrintQueuePage() {
       });
 
       // Refresh the list
-      await fetchPrintQueue();
+      await refreshPrintQueue();
       
       // Success notification (stays longer - 5 seconds)
       showNotification(`✅ Print started: ${entry.geometryProcessingQueue.geometry.GeometryName}`, 'success', 5000);
@@ -296,13 +289,13 @@ export default function PrintQueuePage() {
       }
 
       // Refresh the list (the deleted entry will be filtered out)
-      fetchPrintQueue();
+      refreshPrintQueue();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete print job');
+      showNotification(err instanceof Error ? err.message : 'Failed to delete print job', 'error');
     }
   };
 
-  if (loading) {
+  if (status === 'loading' || (loading && !printQueue)) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header variant={isElectronClient ? 'electron' : 'browser'} />
@@ -370,26 +363,26 @@ export default function PrintQueuePage() {
         {error && (
           <div className="mb-2 bg-red-50 border border-red-200 text-red-700 px-2 py-2 rounded text-sm">
             {error}
-            <button 
-              onClick={() => setError(null)}
-              className="ml-2 text-red-500 hover:text-red-700"
-            >
-              ✕
-            </button>
           </div>
         )}
 
         <div className="bg-white shadow rounded">
           <div className="px-2 py-2 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-base font-medium text-gray-900">Active Jobs</h2>
-            <button
-              onClick={fetchPrintQueue}
-              disabled={loading}
-              className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Refresh print queue"
-            >
-              <svg 
-                className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} 
+            <div className="flex items-center gap-2">
+              {lastUpdate && (
+                <span className="text-xs text-gray-500">
+                  Updated {lastUpdate.toLocaleTimeString()}
+                </span>
+              )}
+              <button
+                onClick={refreshPrintQueue}
+                disabled={isFetching}
+                className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh print queue"
+              >
+                <svg 
+                  className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} 
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -403,10 +396,11 @@ export default function PrintQueuePage() {
               </svg>
               <span className="hidden sm:inline">Refresh</span>
             </button>
+            </div>
           </div>
           
           <div className="overflow-x-auto">
-            {printQueue.length === 0 ? (
+            {!printQueue || printQueue.length === 0 ? (
               <div className="text-center py-8">
                 <div className="text-gray-500 text-base">No print jobs in queue</div>
                 <p className="text-gray-400 mt-1 text-sm">Jobs appear after processing.</p>

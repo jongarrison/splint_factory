@@ -55,11 +55,12 @@ export async function GET(request: NextRequest) {
         // Nested geometry processing queue - ONLY fields needed for list view
         geometryProcessingQueue: {
           select: {
+            id: true, // Required for print operations
             CustomerID: true,
             CustomerNote: true,
             GeometryFileName: true,
             PrintFileName: true,
-            // Exclude: id, CreationTime, GeometryInputParameterData, ProcessStartedTime, ProcessCompletedTime
+            // Exclude: CreationTime, GeometryInputParameterData, ProcessStartedTime, ProcessCompletedTime
             // Exclude: GeometryFileContents, PrintFileContents (CRITICAL - these are huge binary files)
             geometry: {
               select: {
