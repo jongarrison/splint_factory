@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
+import ProcessingLogViewer from '@/components/ProcessingLogViewer';
 
 interface PrintQueueEntry {
   id: string;
@@ -17,6 +18,7 @@ interface PrintQueueEntry {
   hasPrintFile: boolean;
   progress?: number | null;
   progressLastReportTime?: string | null;
+  logs?: string | null;
   geometryProcessingQueue: {
     id: string;
     CreationTime: string;
@@ -784,6 +786,15 @@ export default function PrintQueueDetailPage({
               )}
             </div>
           </div>
+
+          {/* Print Logs */}
+          {entry.logs && (
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-6 py-4">
+                <ProcessingLogViewer log={entry.logs} title="Print Logs" />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

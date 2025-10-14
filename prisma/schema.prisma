@@ -36,7 +36,7 @@ model User {
   image                String?
   password             String?
   organizationId       String?
-  role                 UserRole                  @default("MEMBER")
+  role                 UserRole                  @default(MEMBER)
   invitedByUserId      String?
   invitationAcceptedAt DateTime?
   createdAt            DateTime                  @default(now())
@@ -130,6 +130,7 @@ model PrintQueue {
   CreationTime              DateTime                @default(now())
   progress                  Float?
   progressLastReportTime    DateTime?
+  logs                      String?
   geometryProcessingQueue   GeometryProcessingQueue @relation(fields: [GeometryProcessingQueueID], references: [id])
 }
 
