@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -46,6 +46,39 @@ export default function PrintQueuePage() {
   const [error, setError] = useState<string | null>(null);
   const [isElectronClient, setIsElectronClient] = useState(false);
   const [printingJobId, setPrintingJobId] = useState<string | null>(null);
+  
+  // Notification system for print progress updates
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'info' | 'success' | 'error';
+  } | null>(null);
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Show notification with auto-dismiss (minimum 3 seconds, new notifications clear old ones immediately)
+  const showNotification = (message: string, type: 'info' | 'success' | 'error' = 'info', duration: number = 3000) => {
+    // Clear any existing timeout
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+    
+    // Set new notification (this clears old one immediately)
+    setNotification({ message, type });
+    
+    // Auto-dismiss after duration
+    notificationTimeoutRef.current = setTimeout(() => {
+      setNotification(null);
+      notificationTimeoutRef.current = null;
+    }, duration);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const fetchPrintQueue = async () => {
     try {
@@ -178,6 +211,9 @@ export default function PrintQueuePage() {
       setPrintingJobId(entry.id);
       setError(null);
 
+      // Step 1: Downloading file
+      showNotification('📥 Downloading print file from server...', 'info');
+
       // Get the print queue ID and geometry processing queue ID
       const printQueueId = entry.id;
       const geometryJobId = entry.geometryProcessingQueue.id;
@@ -187,6 +223,9 @@ export default function PrintQueuePage() {
       
       // Generate a job name from the geometry and customer info
       const jobName = `${entry.geometryProcessingQueue.geometry.GeometryName.replace(/\s+/g, '_')}_${entry.geometryProcessingQueue.CustomerID || 'customer'}`;
+
+      // Step 2: Uploading to printer
+      showNotification('📤 Uploading file to printer...', 'info');
 
       // Call the Electron API to print
       const electronAPI = (window as any).electronAPI;
@@ -200,6 +239,12 @@ export default function PrintQueuePage() {
       if (!result.success) {
         throw new Error(result.error || 'Print failed');
       }
+
+      // Step 3: Loading filament
+      showNotification('🧵 Loading filament from AMS...', 'info');
+
+      // Step 4: Starting print
+      showNotification('🖨️ Sending print command to printer...', 'info');
 
       // Update the print queue entry to mark as started
       await fetch(`/api/print-queue/${entry.id}`, {
@@ -215,9 +260,15 @@ export default function PrintQueuePage() {
       // Refresh the list
       await fetchPrintQueue();
       
-      alert(`Print job "${result.jobName}" started successfully!`);
+      // Success notification (stays longer - 5 seconds)
+      showNotification(`✅ Print started: ${entry.geometryProcessingQueue.geometry.GeometryName}`, 'success', 5000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start print');
+      // Show error notification instead of setting error state
+      showNotification(
+        `❌ Print failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        'error',
+        5000
+      );
       console.error('Print error:', err);
     } finally {
       setPrintingJobId(null);
@@ -277,6 +328,45 @@ export default function PrintQueuePage() {
         {/* Printer Status Banner (only visible in Electron) */}
         <PrinterStatusBanner />
 
+        {/* Print Progress Notification */}
+        {notification && (
+          <div 
+            className={`mb-2 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between animate-slide-down shadow-lg ${
+              notification.type === 'success' 
+                ? 'bg-green-50 border border-green-200 text-green-800' 
+                : notification.type === 'error'
+                ? 'bg-red-50 border border-red-200 text-red-700'
+                : 'bg-blue-50 border border-blue-200 text-blue-800'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              {notification.type === 'info' && (
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+              {notification.message}
+            </span>
+            <button 
+              onClick={() => {
+                setNotification(null);
+                if (notificationTimeoutRef.current) {
+                  clearTimeout(notificationTimeoutRef.current);
+                }
+              }}
+              className={`ml-3 hover:opacity-70 transition-opacity ${
+                notification.type === 'success' ? 'text-green-600' :
+                notification.type === 'error' ? 'text-red-600' : 'text-blue-600'
+              }`}
+              title="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Error messages (separate from notifications) */}
         {error && (
           <div className="mb-2 bg-red-50 border border-red-200 text-red-700 px-2 py-2 rounded text-sm">
             {error}
@@ -364,7 +454,15 @@ export default function PrintQueuePage() {
                                   } text-white px-2 py-1 rounded text-xs font-semibold min-w-[60px]`}
                                   title={!isElectronClient ? 'This feature only works from the 3D printer\'s splint computer' : ''}
                                 >
-                                  {printingJobId === entry.id ? '...' : '🖨️ Print'}
+                                  {printingJobId === entry.id ? (
+                                    <span className="inline-flex items-center justify-center gap-1">
+                                      <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                      Sending
+                                    </span>
+                                  ) : '🖨️ Print'}
                                 </button>
                                 {!isElectronClient && (
                                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 max-w-[200px]">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import crypto from 'crypto';
 
 // GET /api/print-queue - List print queue entries for user's organization
 export async function GET(request: NextRequest) {
