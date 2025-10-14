@@ -28,7 +28,19 @@ export async function GET() {
       where: {
         OwningOrganizationID: user.organizationId
       },
-      include: {
+      select: {
+        // Only fields actually used in the list view
+        id: true,
+        CreationTime: true,
+        CustomerID: true,
+        CustomerNote: true,
+        ProcessStartedTime: true,
+        ProcessCompletedTime: true,
+        isProcessSuccessful: true,
+        isEnabled: true,
+        // Exclude: GeometryInputParameterData (can be large JSON)
+        // Exclude: GeometryFileContents, PrintFileContents (CRITICAL - huge binary files)
+        // Exclude: GeometryFileName, PrintFileName, ProcessingLog (not shown in list)
         geometry: {
           select: {
             GeometryName: true,
@@ -37,16 +49,11 @@ export async function GET() {
         },
         creator: {
           select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        owningOrganization: {
-          select: {
             name: true
+            // Exclude: id, email (not displayed in list)
           }
         }
+        // Exclude: owningOrganization (not displayed in list)
       },
       orderBy: {
         CreationTime: 'desc'

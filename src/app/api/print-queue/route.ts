@@ -43,12 +43,30 @@ export async function GET(request: NextRequest) {
 
     const printQueue = await prisma.printQueue.findMany({
       where: whereClause,
-      include: {
+      select: {
+        // Print Queue fields
+        id: true,
+        PrintStartedTime: true,
+        PrintCompletedTime: true,
+        isPrintSuccessful: true,
+        progress: true,
+        progressLastReportTime: true,
+        // Nested geometry processing queue - ONLY fields needed for list view
         geometryProcessingQueue: {
-          include: {
-            geometry: { select: { GeometryName: true, GeometryAlgorithmName: true } },
-            creator: { select: { id: true, name: true, email: true } },
-            owningOrganization: { select: { name: true } }
+          select: {
+            CustomerID: true,
+            CustomerNote: true,
+            GeometryFileName: true,
+            PrintFileName: true,
+            // Exclude: id, CreationTime, GeometryInputParameterData, ProcessStartedTime, ProcessCompletedTime
+            // Exclude: GeometryFileContents, PrintFileContents (CRITICAL - these are huge binary files)
+            geometry: {
+              select: {
+                GeometryName: true,
+                GeometryAlgorithmName: true
+              }
+            }
+            // Exclude: creator, owningOrganization (not displayed in list)
           }
         }
       },
@@ -58,18 +76,18 @@ export async function GET(request: NextRequest) {
       ]
     });
 
-    // Format response to exclude binary file contents for list view.
-    // Files now live on geometryProcessingQueue.
+    // Format response - add convenience flags for file existence
+    // Note: We're already excluding binary file contents in the select above (CRITICAL optimization)
     const formattedQueue = printQueue.map(item => {
-      const gpq: any = (item as any).geometryProcessingQueue;
+      const gpq = item.geometryProcessingQueue;
       return {
         ...item,
         GeometryFileName: gpq?.GeometryFileName ?? null,
         PrintFileName: gpq?.PrintFileName ?? null,
-        hasGeometryFile: !!gpq?.GeometryFileContents,
-        hasPrintFile: !!gpq?.PrintFileContents,
-        GeometryFileContents: undefined,
-        PrintFileContents: undefined
+        // Note: We can't check file existence anymore since we excluded the binary fields
+        // This is intentional - files are managed separately, use filename presence as proxy
+        hasGeometryFile: !!gpq?.GeometryFileName,
+        hasPrintFile: !!gpq?.PrintFileName
       };
     });
 
