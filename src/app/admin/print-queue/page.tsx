@@ -67,20 +67,20 @@ export default function PrintQueuePage() {
   const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Show notification with auto-dismiss (minimum 3 seconds, new notifications clear old ones immediately)
-  const showNotification = (message: string, type: 'info' | 'success' | 'error' = 'info', duration: number = 3000) => {
-    // Clear any existing timeout
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info', duration: number | null = 3000) => {
     if (notificationTimeoutRef.current) {
       clearTimeout(notificationTimeoutRef.current);
     }
     
-    // Set new notification (this clears old one immediately)
     setNotification({ message, type });
     
-    // Auto-dismiss after duration
-    notificationTimeoutRef.current = setTimeout(() => {
-      setNotification(null);
-      notificationTimeoutRef.current = null;
-    }, duration);
+    // If duration is null, keep the message displayed indefinitely
+    if (duration !== null) {
+      notificationTimeoutRef.current = setTimeout(() => {
+        setNotification(null);
+        notificationTimeoutRef.current = null;
+      }, duration);
+    }
   };
 
   // Cleanup timeout on unmount
@@ -94,7 +94,34 @@ export default function PrintQueuePage() {
 
   useEffect(() => {
     // Detect if running in Electron client
-    setIsElectronClient(typeof window !== 'undefined' && !!(window as any).electronAPI);
+    const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+    setIsElectronClient(isElectron);
+    
+    // Subscribe to print status updates if in Electron
+    if (isElectron) {
+      const electronAPI = (window as any).electronAPI;
+      
+      const unsubscribe = electronAPI.printer.subscribeToPrintStatus((statusUpdate: {
+        stage: string;
+        message: string;
+        amsStatus?: number;
+        nozzleTemp?: number;
+        targetTemp?: number;
+        critical?: boolean;
+      }) => {
+        // Show the status update as a notification
+        // Error messages stay displayed indefinitely until replaced by another message
+        // Normal status messages auto-dismiss after 20 seconds
+        const duration = statusUpdate.stage === 'error' ? null : 20000;
+        const type = statusUpdate.stage === 'error' ? 'error' : 'info';
+        showNotification(statusUpdate.message, type, duration);
+      });
+      
+      // Cleanup subscription on unmount
+      return () => {
+        unsubscribe();
+      };
+    }
   }, []);
 
   useEffect(() => {
@@ -480,16 +507,6 @@ export default function PrintQueuePage() {
                           <Link href={`/admin/print-queue/${entry.id}`} className="block group">
                             <div className="geometry-name text-sm font-medium text-gray-900 truncate max-w-[200px] group-hover:text-blue-600 transition-colors">
                               {entry.geometryProcessingQueue.geometry.GeometryName}
-                            </div>
-                            <div className="geometry-algorithm text-xs text-gray-500 truncate max-w-[200px] group-hover:text-blue-500 transition-colors">
-                              {entry.geometryProcessingQueue.geometry.GeometryAlgorithmName}
-                            </div>
-                            <div className="flex gap-1 mt-1">
-                              {entry.hasPrintFile && (
-                                <span className="file-status-badge inline-flex items-center px-1 py-0.5 rounded text-xs bg-green-100 text-green-800">
-                                  GCode
-                                </span>
-                              )}
                             </div>
                           </Link>
                         </td>
