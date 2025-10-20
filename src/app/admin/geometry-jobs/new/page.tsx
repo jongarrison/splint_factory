@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
+import GeometryJobProgressModal from '@/components/GeometryJobProgressModal';
 
 interface NamedGeometry {
   id: string;
@@ -35,6 +36,8 @@ export default function CreateGeometryJobPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createdJobId, setCreatedJobId] = useState<string | null>(null);
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -186,7 +189,12 @@ export default function CreateGeometryJobPage() {
         throw new Error(errorData.error || 'Failed to create geometry job');
       }
 
-      router.push('/admin/geometry-jobs');
+      const createdJob = await response.json();
+      
+      // Store the job ID and show the progress modal
+      setCreatedJobId(createdJob.id);
+      setShowProgressModal(true);
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create geometry job');
     } finally {
@@ -380,6 +388,14 @@ export default function CreateGeometryJobPage() {
           </form>
         </div>
       </div>
+
+      {/* Progress Modal */}
+      {showProgressModal && createdJobId && (
+        <GeometryJobProgressModal
+          jobId={createdJobId}
+          onClose={() => setShowProgressModal(false)}
+        />
+      )}
     </div>
   );
 }
