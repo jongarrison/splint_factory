@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import GeometryJobProgressModal from '@/components/GeometryJobProgressModal';
@@ -27,6 +27,9 @@ interface GeometryInputParameter {
 export default function CreateGeometryJobPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const templateId = searchParams.get('template');
+  
   const [geometries, setGeometries] = useState<NamedGeometry[]>([]);
   const [selectedGeometry, setSelectedGeometry] = useState<NamedGeometry | null>(null);
   const [parameterSchema, setParameterSchema] = useState<GeometryInputParameter[]>([]);
@@ -49,6 +52,40 @@ export default function CreateGeometryJobPage() {
 
     fetchGeometries();
   }, [session, status, router]);
+
+  // Load template job if template param is present
+  useEffect(() => {
+    if (templateId && geometries.length > 0 && !selectedGeometry) {
+      loadTemplateJob(templateId);
+    }
+  }, [templateId, geometries]);
+
+  const loadTemplateJob = async (jobId: string) => {
+    try {
+      const response = await fetch(`/api/geometry-jobs/${jobId}`);
+      if (!response.ok) throw new Error('Failed to fetch template job');
+      
+      const templateJob = await response.json();
+      const geometry = geometries.find(g => g.id === templateJob.GeometryID);
+      
+      if (geometry) {
+        setSelectedGeometry(geometry);
+        const schema: GeometryInputParameter[] = JSON.parse(geometry.GeometryInputParameterSchema);
+        setParameterSchema(schema);
+        
+        // Parse and set parameter values from template
+        const templateParams = JSON.parse(templateJob.GeometryInputParameterData);
+        setParameterValues(templateParams);
+        
+        // Optionally copy customer info (leave blank for new job)
+        // setCustomerID(templateJob.CustomerID || '');
+        // setCustomerNote(templateJob.CustomerNote || '');
+      }
+    } catch (err) {
+      console.error('Failed to load template job:', err);
+      // Don't show error to user, just fail silently and let them create from scratch
+    }
+  };
 
   const fetchGeometries = async () => {
     try {

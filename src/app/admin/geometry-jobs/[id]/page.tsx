@@ -252,6 +252,13 @@ export default function GeometryJobDetailPage({
             </div>
             <div className="flex gap-4">
               <Link
+                href={`/admin/geometry-jobs/new?template=${job.id}`}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium"
+                title="Create new job with same settings"
+              >
+                📋 New from Template
+              </Link>
+              <Link
                 href={`/admin/geometry-jobs/${job.id}/edit`}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium"
               >
