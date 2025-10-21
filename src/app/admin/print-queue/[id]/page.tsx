@@ -168,6 +168,16 @@ export default function PrintQueueDetailPage({
     return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">Ready to Print</span>;
   };
 
+  const getAcceptanceBadge = (entry: PrintQueueEntry) => {
+    if (entry.printAcceptance === true) {
+      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-teal-100 text-teal-800">✓ Accepted</span>;
+    }
+    if (entry.printAcceptance === false) {
+      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-rose-100 text-rose-800">✗ Rejected</span>;
+    }
+    return null;
+  };
+
   const handlePrint = async () => {
     if (!entry || !isElectronClient) {
       setError('Printing is only available in the Electron client');
@@ -476,8 +486,9 @@ export default function PrintQueueDetailPage({
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-medium text-gray-900">Print Status</h2>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   {getStatusBadge(entry)}
+                  {getAcceptanceBadge(entry)}
                 </div>
               </div>
             </div>
@@ -720,31 +731,47 @@ export default function PrintQueueDetailPage({
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Print Status</dt>
                   <dd className="is-print-successful mt-1 text-sm">
-                    {entry.PrintCompletedTime ? (
-                      entry.isPrintSuccessful ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          ✓ Successful
+                    <div className="flex flex-wrap gap-2">
+                      {entry.PrintCompletedTime ? (
+                        entry.isPrintSuccessful ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            ✓ Successful
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            ✗ Failed
+                          </span>
+                        )
+                      ) : entry.PrintStartedTime ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          ⟳ In Progress
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          ✗ Failed
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          ⏸ Ready
                         </span>
-                      )
-                    ) : entry.PrintStartedTime ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        ⟳ In Progress
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        ⏸ Ready
-                      </span>
-                    )}
+                      )}
+                      {entry.printAcceptance === true && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                          ✓ Accepted
+                        </span>
+                      )}
+                      {entry.printAcceptance === false && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
+                          ✗ Rejected
+                        </span>
+                      )}
+                    </div>
                   </dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Print Note</dt>
                   <dd className="print-note mt-1 text-sm text-gray-900">
-                    <span className="text-gray-400 italic">Not implemented</span>
+                    {entry.printNote ? (
+                      <span>{entry.printNote}</span>
+                    ) : (
+                      <span className="text-gray-400 italic">No note</span>
+                    )}
                   </dd>
                 </div>
               </dl>

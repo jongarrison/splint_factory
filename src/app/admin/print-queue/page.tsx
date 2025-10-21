@@ -168,6 +168,16 @@ export default function PrintQueuePage() {
     }
     return <span className="status-badge status-ready px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Ready to Print</span>;
   };
+
+  const getAcceptanceBadge = (entry: PrintQueueEntry) => {
+    if (entry.printAcceptance === true) {
+      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-teal-100 text-teal-800">✓ Accepted</span>;
+    }
+    if (entry.printAcceptance === false) {
+      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800">✗ Rejected</span>;
+    }
+    return null;
+  };
   
   const getProgressInfo = (entry: PrintQueueEntry) => {
     if (!entry.PrintStartedTime || entry.PrintCompletedTime) {
@@ -639,8 +649,9 @@ export default function PrintQueuePage() {
                           </Link>
                         </td>
                         <td className="px-2 py-2">
-                          <div className="print-status">
+                          <div className="print-status flex flex-wrap gap-2">
                             {getStatusBadge(entry)}
+                            {getAcceptanceBadge(entry)}
                           </div>
                           {entry.PrintStartedTime && (
                             <div className="print-started-time text-xs text-gray-500 mt-1 hidden sm:block">
