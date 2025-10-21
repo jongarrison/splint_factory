@@ -50,6 +50,8 @@ export async function GET(request: NextRequest) {
         PrintStartedTime: true,
         PrintCompletedTime: true,
         isPrintSuccessful: true,
+        printNote: true,
+        printAcceptance: true,
         progress: true,
         progressLastReportTime: true,
         // Nested geometry processing queue - ONLY fields needed for list view

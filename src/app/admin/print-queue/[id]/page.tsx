@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import ProcessingLogViewer from '@/components/ProcessingLogViewer';
+import PrintAcceptanceModal from '@/components/PrintAcceptanceModal';
 
 interface PrintQueueEntry {
   id: string;
@@ -14,6 +15,8 @@ interface PrintQueueEntry {
   PrintStartedTime?: string;
   PrintCompletedTime?: string;
   isPrintSuccessful: boolean;
+  printNote?: string;
+  printAcceptance?: boolean | null;
   hasGeometryFile: boolean;
   hasPrintFile: boolean;
   progress?: number | null;
@@ -55,6 +58,11 @@ export default function PrintQueueDetailPage({
   const [id, setId] = useState<string>('');
   const [isElectronClient, setIsElectronClient] = useState(false);
   const [printingJobId, setPrintingJobId] = useState<string | null>(null);
+  const [acceptanceModal, setAcceptanceModal] = useState<{
+    printId: string;
+    geometryName: string;
+    isAccepting: boolean;
+  } | null>(null);
 
   useEffect(() => {
     params.then(p => setId(p.id));
@@ -213,6 +221,32 @@ export default function PrintQueueDetailPage({
       console.error('Print error:', err);
     } finally {
       setPrintingJobId(null);
+    }
+  };
+
+  const handleAcceptanceSubmit = async (printId: string, acceptance: boolean, note: string) => {
+    try {
+      const response = await fetch(`/api/print-queue/${printId}/acceptance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          printAcceptance: acceptance,
+          printNote: note || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update print acceptance');
+      }
+
+      // Refresh the entry
+      await fetchEntry();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update print acceptance');
+      throw err; // Re-throw so modal knows to handle error
     }
   };
 
@@ -501,6 +535,34 @@ export default function PrintQueueDetailPage({
                   >
                     {updating ? 'Updating...' : 'Mark Successful'}
                   </button>
+                )}
+                
+                {/* Accept/Reject buttons - show for completed prints (progress > 99%) that haven't been accepted/rejected */}
+                {entry.progress != null && entry.progress > 99 && entry.printAcceptance === null && (
+                  <>
+                    <button
+                      onClick={() => setAcceptanceModal({
+                        printId: entry.id,
+                        geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
+                        isAccepting: true
+                      })}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium"
+                      title="Accept print"
+                    >
+                      ✓ Accept Print
+                    </button>
+                    <button
+                      onClick={() => setAcceptanceModal({
+                        printId: entry.id,
+                        geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
+                        isAccepting: false
+                      })}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium"
+                      title="Reject print"
+                    >
+                      ✗ Reject Print
+                    </button>
+                  </>
                 )}
                 
                 <button
@@ -797,6 +859,17 @@ export default function PrintQueueDetailPage({
           )}
         </div>
       </div>
+      
+      {/* Print Acceptance Modal */}
+      {acceptanceModal && (
+        <PrintAcceptanceModal
+          printId={acceptanceModal.printId}
+          geometryName={acceptanceModal.geometryName}
+          isAccepting={acceptanceModal.isAccepting}
+          onClose={() => setAcceptanceModal(null)}
+          onSubmit={handleAcceptanceSubmit}
+        />
+      )}
     </div>
   );
 }

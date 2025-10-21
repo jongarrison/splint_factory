@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import PrinterStatusBanner from '@/components/printer/PrinterStatusBanner';
+import PrintAcceptanceModal from '@/components/PrintAcceptanceModal';
 import { useSmartPolling } from '@/hooks/useSmartPolling';
 
 interface PrintQueueEntry {
@@ -15,6 +16,8 @@ interface PrintQueueEntry {
   PrintStartedTime?: string;
   PrintCompletedTime?: string;
   isPrintSuccessful: boolean;
+  printNote?: string;
+  printAcceptance?: boolean | null;
   hasGeometryFile: boolean;
   hasPrintFile: boolean;
   progress?: number | null;
@@ -44,6 +47,12 @@ export default function PrintQueuePage() {
   const router = useRouter();
   const [isElectronClient, setIsElectronClient] = useState(false);
   const [printingJobId, setPrintingJobId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'active' | 'history'>('active');
+  const [acceptanceModal, setAcceptanceModal] = useState<{
+    printId: string;
+    geometryName: string;
+    isAccepting: boolean;
+  } | null>(null);
   
   // Use smart polling hook for real-time updates
   const { 
@@ -134,6 +143,17 @@ export default function PrintQueuePage() {
   }, [session, status, router]);
 
 
+
+  const isActivePrint = (entry: PrintQueueEntry) => {
+    // A print is active if it hasn't been accepted, rejected, or failed
+    if (entry.printAcceptance !== null) return false; // Accepted or rejected
+    if (entry.PrintCompletedTime && !entry.isPrintSuccessful) return false; // Failed
+    return true; // Otherwise active
+  };
+
+  const filteredPrintQueue = printQueue?.filter(entry => 
+    viewMode === 'active' ? isActivePrint(entry) : !isActivePrint(entry)
+  );
 
   const getStatusBadge = (entry: PrintQueueEntry) => {
     if (entry.PrintCompletedTime && entry.isPrintSuccessful) {
@@ -322,6 +342,41 @@ export default function PrintQueuePage() {
     }
   };
 
+  const handleAcceptanceSubmit = async (printId: string, acceptance: boolean, note: string) => {
+    try {
+      const response = await fetch(`/api/print-queue/${printId}/acceptance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          printAcceptance: acceptance,
+          printNote: note || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update print acceptance');
+      }
+
+      // Refresh the list
+      await refreshPrintQueue();
+      showNotification(
+        acceptance ? '✅ Print accepted' : '❌ Print rejected',
+        'success',
+        3000
+      );
+    } catch (err) {
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to update print acceptance',
+        'error',
+        5000
+      );
+      throw err; // Re-throw so modal knows to handle error
+    }
+  };
+
   if (status === 'loading' || (loading && !printQueue)) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -394,43 +449,75 @@ export default function PrintQueuePage() {
         )}
 
         <div className="bg-white shadow rounded">
-          <div className="px-2 py-2 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-base font-medium text-gray-900">Active Jobs</h2>
-            <div className="flex items-center gap-2">
-              {lastUpdate && (
-                <span className="text-xs text-gray-500">
-                  Updated {lastUpdate.toLocaleTimeString()}
-                </span>
-              )}
+          <div className="px-2 py-2 border-b border-gray-200">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-base font-medium text-gray-900">Print Jobs</h2>
+              <div className="flex items-center gap-2">
+                {lastUpdate && (
+                  <span className="text-xs text-gray-500">
+                    Updated {lastUpdate.toLocaleTimeString()}
+                  </span>
+                )}
+                <button
+                  onClick={refreshPrintQueue}
+                  disabled={isFetching}
+                  className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Refresh print queue"
+                >
+                  <svg 
+                    className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                    />
+                  </svg>
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
+              </div>
+            </div>
+            
+            {/* Active / History Toggle */}
+            <div className="flex gap-1 p-1 bg-gray-100 rounded-lg w-fit">
               <button
-                onClick={refreshPrintQueue}
-                disabled={isFetching}
-                className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Refresh print queue"
+                onClick={() => setViewMode('active')}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'active'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
               >
-                <svg 
-                  className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
+                Active
+              </button>
+              <button
+                onClick={() => setViewMode('history')}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'history'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                />
-              </svg>
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
+                History
+              </button>
             </div>
           </div>
           
           <div className="overflow-x-auto">
-            {!printQueue || printQueue.length === 0 ? (
+            {!filteredPrintQueue || filteredPrintQueue.length === 0 ? (
               <div className="text-center py-8">
-                <div className="text-gray-500 text-base">No print jobs in queue</div>
-                <p className="text-gray-400 mt-1 text-sm">Jobs appear after processing.</p>
+                <div className="text-gray-500 text-base">
+                  {viewMode === 'active' ? 'No active print jobs' : 'No print history'}
+                </div>
+                <p className="text-gray-400 mt-1 text-sm">
+                  {viewMode === 'active' 
+                    ? 'Jobs appear after processing.' 
+                    : 'Completed, accepted, and rejected prints appear here.'}
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -458,7 +545,7 @@ export default function PrintQueuePage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {printQueue.map((entry) => (
+                    {filteredPrintQueue.map((entry) => (
                       <tr key={entry.id} className="hover:bg-gray-50">
                         <td className="px-2 py-2 whitespace-nowrap">
                           <div className="flex flex-row sm:flex-col gap-1">
@@ -500,6 +587,34 @@ export default function PrintQueuePage() {
                               >
                                 ✓ Done
                               </button>
+                            )}
+                            
+                            {/* Accept/Reject buttons - show for completed prints (progress > 99%) that haven't been accepted/rejected */}
+                            {entry.progress != null && entry.progress > 99 && entry.printAcceptance === null && (
+                              <>
+                                <button
+                                  onClick={() => setAcceptanceModal({
+                                    printId: entry.id,
+                                    geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
+                                    isAccepting: true
+                                  })}
+                                  className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold min-w-[60px]"
+                                  title="Accept print"
+                                >
+                                  ✓ Accept
+                                </button>
+                                <button
+                                  onClick={() => setAcceptanceModal({
+                                    printId: entry.id,
+                                    geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
+                                    isAccepting: false
+                                  })}
+                                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold min-w-[60px]"
+                                  title="Reject print"
+                                >
+                                  ✗ Reject
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>
@@ -581,6 +696,17 @@ export default function PrintQueuePage() {
           </div>
         </div>
       </div>
+      
+      {/* Print Acceptance Modal */}
+      {acceptanceModal && (
+        <PrintAcceptanceModal
+          printId={acceptanceModal.printId}
+          geometryName={acceptanceModal.geometryName}
+          isAccepting={acceptanceModal.isAccepting}
+          onClose={() => setAcceptanceModal(null)}
+          onSubmit={handleAcceptanceSubmit}
+        />
+      )}
     </div>
   );
 }

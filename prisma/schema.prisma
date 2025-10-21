@@ -126,6 +126,7 @@ model PrintQueue {
   PrintCompletedTime        DateTime?
   isPrintSuccessful         Boolean                 @default(false)
   printNote                 String?
+  printAcceptance           Boolean?
   isEnabled                 Boolean                 @default(true)
   CreationTime              DateTime                @default(now())
   progress                  Float?
