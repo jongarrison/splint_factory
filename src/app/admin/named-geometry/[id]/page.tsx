@@ -10,7 +10,14 @@ import { INPUT_NAME_PATTERN, INPUT_NAME_PATTERN_STRING, INPUT_NAME_ALLOWED_CHARS
 interface FormData {
   GeometryName: string;
   GeometryAlgorithmName: string;
+  shortDescription: string;
+  isActive: boolean;
   parameters: GeometryInputParameter[];
+}
+
+interface ImageFiles {
+  preview: File | null;
+  measurement: File | null;
 }
 
 export default function EditNamedGeometryPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,7 +27,20 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
   const [formData, setFormData] = useState<FormData>({
     GeometryName: '',
     GeometryAlgorithmName: '',
+    shortDescription: '',
+    isActive: true,
     parameters: []
+  });
+  const [imageFiles, setImageFiles] = useState<ImageFiles>({
+    preview: null,
+    measurement: null
+  });
+  const [existingImages, setExistingImages] = useState<{
+    preview: boolean;
+    measurement: boolean;
+  }>({
+    preview: false,
+    measurement: false
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +81,14 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
       setFormData({
         GeometryName: data.GeometryName,
         GeometryAlgorithmName: data.GeometryAlgorithmName,
+        shortDescription: data.shortDescription || '',
+        isActive: data.isActive ?? true,
         parameters: parsedSchema
+      });
+      
+      setExistingImages({
+        preview: !!data.previewImageUpdatedAt,
+        measurement: !!data.measurementImageUpdatedAt
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -125,6 +152,31 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
         return updated;
       })
     }));
+  };
+
+  const handleImageChange = (type: 'preview' | 'measurement', file: File | null) => {
+    if (!file) {
+      setImageFiles(prev => ({ ...prev, [type]: null }));
+      return;
+    }
+    
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setError(`${type === 'preview' ? 'Preview' : 'Measurement'} image must be PNG, JPG, or WebP`);
+      return;
+    }
+    
+    // Validate file size
+    const maxSize = type === 'preview' ? 500 * 1024 : 2 * 1024 * 1024; // 500KB or 2MB
+    if (file.size > maxSize) {
+      const maxMB = type === 'preview' ? '500KB' : '2MB';
+      setError(`${type === 'preview' ? 'Preview' : 'Measurement'} image must be less than ${maxMB}`);
+      return;
+    }
+    
+    setImageFiles(prev => ({ ...prev, [type]: file }));
+    setError(null);
   };
 
   const validateForm = (): boolean => {
@@ -194,21 +246,26 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
     try {
       setLoading(true);
       
-      const payload = {
-        GeometryName: formData.GeometryName.trim(),
-        GeometryAlgorithmName: formData.GeometryAlgorithmName.trim(),
-        GeometryInputParameterSchema: JSON.stringify(formData.parameters)
-      };
+      const formPayload = new FormData();
+      formPayload.append('GeometryName', formData.GeometryName.trim());
+      formPayload.append('GeometryAlgorithmName', formData.GeometryAlgorithmName.trim());
+      formPayload.append('shortDescription', formData.shortDescription.trim());
+      formPayload.append('isActive', String(formData.isActive));
+      formPayload.append('GeometryInputParameterSchema', JSON.stringify(formData.parameters));
+      
+      if (imageFiles.preview) {
+        formPayload.append('previewImage', imageFiles.preview);
+      }
+      if (imageFiles.measurement) {
+        formPayload.append('measurementImage', imageFiles.measurement);
+      }
       
       const url = isNew ? '/api/named-geometry' : `/api/named-geometry/${resolvedParams.id}`;
       const method = isNew ? 'POST' : 'PUT';
       
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
+        body: formPayload
       });
       
       if (!response.ok) {
@@ -221,6 +278,14 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
       if (isNew) {
         // Redirect to list after creating
         setTimeout(() => router.push('/admin/named-geometry'), 1500);
+      } else {
+        // Refresh existing images state
+        const data = await response.json();
+        setExistingImages({
+          preview: !!data.previewImageUpdatedAt,
+          measurement: !!data.measurementImageUpdatedAt
+        });
+        setImageFiles({ preview: null, measurement: null });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -268,7 +333,7 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
           <div className="bg-white shadow-md rounded-lg p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Geometry Name
@@ -296,6 +361,89 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
                   pattern="[^\s]+"
                   required
                 />
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Short Description (for landing page)
+              </label>
+              <textarea
+                value={formData.shortDescription}
+                onChange={(e) => setFormData(prev => ({ ...prev, shortDescription: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                maxLength={250}
+                rows={2}
+                placeholder="Brief description shown on geometry selection page"
+              />
+            </div>
+            
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isActive"
+                checked={formData.isActive}
+                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+                Active (visible on geometry selection page)
+              </label>
+            </div>
+          </div>
+          
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Images</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Preview Image (max 500KB)
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Shown as thumbnail on geometry selection page
+                </p>
+                {existingImages.preview && !imageFiles.preview && (
+                  <div className="mb-2 text-sm text-green-600">
+                    ✓ Current image exists
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={(e) => handleImageChange('preview', e.target.files?.[0] || null)}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                {imageFiles.preview && (
+                  <p className="mt-1 text-sm text-gray-600">
+                    Selected: {imageFiles.preview.name} ({Math.round(imageFiles.preview.size / 1024)}KB)
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Measurement Image (max 2MB)
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Shown as helper guide when creating geometry jobs
+                </p>
+                {existingImages.measurement && !imageFiles.measurement && (
+                  <div className="mb-2 text-sm text-green-600">
+                    ✓ Current image exists
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={(e) => handleImageChange('measurement', e.target.files?.[0] || null)}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                {imageFiles.measurement && (
+                  <p className="mt-1 text-sm text-gray-600">
+                    Selected: {imageFiles.measurement.name} ({Math.round(imageFiles.measurement.size / 1024)}KB)
+                  </p>
+                )}
               </div>
             </div>
           </div>

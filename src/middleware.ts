@@ -64,11 +64,18 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    // If user is authenticated and trying to access auth routes, redirect to home
+    // If user is authenticated and trying to access auth routes, redirect to geo-job-menu
     if (session && isAuthRoute) {
       console.log(`🏠 REDIRECT: Authenticated user trying to access auth route ${pathname}`)
-      const homeUrl = new URL('/', request.url)
-      return NextResponse.redirect(homeUrl)
+      const geoJobMenuUrl = new URL('/geo-job-menu', request.url)
+      return NextResponse.redirect(geoJobMenuUrl)
+    }
+    
+    // If user is authenticated and trying to access home page, redirect to geo-job-menu
+    if (session && pathname === '/') {
+      console.log(`🏠 REDIRECT: Authenticated user at homepage, redirecting to geo-job-menu`)
+      const geoJobMenuUrl = new URL('/geo-job-menu', request.url)
+      return NextResponse.redirect(geoJobMenuUrl)
     }
 
     // Add debug header and organization context (Phase 1)

@@ -73,8 +73,17 @@ model NamedGeometry {
   GeometryName                 String                    @unique
   GeometryAlgorithmName        String
   GeometryInputParameterSchema String
+  shortDescription             String?
+  isActive                     Boolean                   @default(true)
+  previewImage                 Bytes?
+  previewImageContentType      String?
+  previewImageUpdatedAt        DateTime?
+  measurementImage             Bytes?
+  measurementImageContentType  String?
+  measurementImageUpdatedAt    DateTime?
   CreatorID                    String
   CreationTime                 DateTime                  @default(now())
+  updatedAt                    DateTime                  @default(now()) @updatedAt
   geometryJobs                 GeometryProcessingQueue[] @relation("NamedGeometryJobs")
   creator                      User                      @relation(fields: [CreatorID], references: [id])
 

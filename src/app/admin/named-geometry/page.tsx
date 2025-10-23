@@ -11,6 +11,10 @@ interface NamedGeometry {
   GeometryName: string;
   GeometryAlgorithmName: string;
   GeometryInputParameterSchema: string;
+  shortDescription: string | null;
+  isActive: boolean;
+  previewImageUpdatedAt: string | null;
+  measurementImageUpdatedAt: string | null;
   CreationTime: string;
   creator: {
     id: string;
@@ -176,7 +180,13 @@ export default function NamedGeometryListPage() {
                   Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Algorithm
+                  Description
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Images
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Schema
@@ -199,11 +209,47 @@ export default function NamedGeometryListPage() {
                     <div className="text-sm font-medium text-gray-900">
                       {geometry.GeometryName}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
+                    <div className="text-xs text-gray-500">
                       {geometry.GeometryAlgorithmName}
                     </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900 max-w-xs truncate">
+                      {geometry.shortDescription || <span className="text-gray-400 italic">No description</span>}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex gap-2 text-xs">
+                      {geometry.previewImageUpdatedAt ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800">
+                          ✓ Preview
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                          No Preview
+                        </span>
+                      )}
+                      {geometry.measurementImageUpdatedAt ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                          ✓ Measure
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                          No Measure
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {geometry.isActive ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-500">
+                        Inactive
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button

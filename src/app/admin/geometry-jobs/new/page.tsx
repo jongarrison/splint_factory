@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Header from '@/components/navigation/Header';
 import GeometryJobProgressModal from '@/components/GeometryJobProgressModal';
 
@@ -12,6 +13,7 @@ interface NamedGeometry {
   GeometryName: string;
   GeometryAlgorithmName: string;
   GeometryInputParameterSchema: string;
+  measurementImageUpdatedAt?: string | null;
 }
 
 interface GeometryInputParameter {
@@ -29,6 +31,7 @@ export default function CreateGeometryJobPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateId = searchParams.get('template');
+  const geometryId = searchParams.get('geometryId');
   
   const [geometries, setGeometries] = useState<NamedGeometry[]>([]);
   const [selectedGeometry, setSelectedGeometry] = useState<NamedGeometry | null>(null);
@@ -59,6 +62,13 @@ export default function CreateGeometryJobPage() {
       loadTemplateJob(templateId);
     }
   }, [templateId, geometries]);
+
+  // Pre-select geometry if geometryId param is present
+  useEffect(() => {
+    if (geometryId && geometries.length > 0 && !selectedGeometry) {
+      handleGeometryChange(geometryId);
+    }
+  }, [geometryId, geometries]);
 
   const loadTemplateJob = async (jobId: string) => {
     try {
@@ -279,6 +289,31 @@ export default function CreateGeometryJobPage() {
             >
               ✕
             </button>
+          </div>
+        )}
+
+        {/* Measurement Helper Image */}
+        {selectedGeometry && (
+          <div className="mb-6 bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Measurement Guide</h2>
+            <div className="flex justify-center">
+              <div className="relative w-full max-w-3xl">
+                <Image
+                  src={`/api/geometry-images/${selectedGeometry.id}/measurement`}
+                  alt={`${selectedGeometry.GeometryName} measurement guide`}
+                  width={800}
+                  height={600}
+                  className="rounded-lg"
+                  style={{ width: '100%', height: 'auto' }}
+                  unoptimized
+                  onError={(e) => {
+                    // Hide image if it fails to load (no measurement image available)
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    (e.target as HTMLImageElement).parentElement!.parentElement!.style.display = 'none';
+                  }}
+                />
+              </div>
+            </div>
           </div>
         )}
 

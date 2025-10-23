@@ -45,7 +45,8 @@ export async function GET(
   }
 }
 
-// PUT /api/named-geometry/[id] - Update named geometry (SYSTEM_ADMIN only)
+// PUT /api/named-geometry/[id] - Update named geometry with optional image uploads (SYSTEM_ADMIN only)
+// Accepts multipart/form-data with previewImage and measurementImage files
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -81,8 +82,14 @@ export async function PUT(
       return NextResponse.json({ error: 'Named geometry not found' }, { status: 404 });
     }
 
-    const body = await request.json();
-    const { GeometryName, GeometryAlgorithmName, GeometryInputParameterSchema } = body;
+    const formData = await request.formData();
+    const GeometryName = formData.get('GeometryName') as string;
+    const GeometryAlgorithmName = formData.get('GeometryAlgorithmName') as string;
+    const GeometryInputParameterSchema = formData.get('GeometryInputParameterSchema') as string;
+    const shortDescription = formData.get('shortDescription') as string || null;
+    const isActive = formData.get('isActive') === 'true';
+    const previewImageFile = formData.get('previewImage') as File | null;
+    const measurementImageFile = formData.get('measurementImage') as File | null;
 
     // Validate required fields
     if (!GeometryName || !GeometryAlgorithmName || !GeometryInputParameterSchema) {
@@ -153,12 +160,44 @@ export async function PUT(
       );
     }
 
+    // Process images if provided
+    let previewImageData: { image: Buffer; contentType: string } | null = null;
+    let measurementImageData: { image: Buffer; contentType: string } | null = null;
+    
+    if (previewImageFile) {
+      const arrayBuffer = await previewImageFile.arrayBuffer();
+      previewImageData = {
+        image: Buffer.from(arrayBuffer),
+        contentType: previewImageFile.type
+      };
+    }
+    
+    if (measurementImageFile) {
+      const arrayBuffer = await measurementImageFile.arrayBuffer();
+      measurementImageData = {
+        image: Buffer.from(arrayBuffer),
+        contentType: measurementImageFile.type
+      };
+    }
+
     const updatedGeometry = await prisma.namedGeometry.update({
       where: { id },
       data: {
         GeometryName,
         GeometryAlgorithmName,
-        GeometryInputParameterSchema
+        GeometryInputParameterSchema,
+        shortDescription,
+        isActive,
+        ...(previewImageData && {
+          previewImage: previewImageData.image,
+          previewImageContentType: previewImageData.contentType,
+          previewImageUpdatedAt: new Date()
+        }),
+        ...(measurementImageData && {
+          measurementImage: measurementImageData.image,
+          measurementImageContentType: measurementImageData.contentType,
+          measurementImageUpdatedAt: new Date()
+        })
       },
       include: {
         creator: {

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import SignOutButton from '@/components/auth/SignOutButton';
 
 interface HeaderProps {
@@ -13,6 +14,7 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
   const { data: session } = useSession();
   const [showAdminDropdown, setShowAdminDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   const isDarkMode = variant === 'electron';
   const baseClasses = isDarkMode 
@@ -48,12 +50,12 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
               </h1>
             </Link>
             
-            {/* Create button - only visible in browser mode */}
-            {variant === 'browser' && session && (
+            {/* Create button - only visible in browser mode and not on geo-job-menu page */}
+            {variant === 'browser' && session && pathname !== '/geo-job-menu' && (
               <Link
-                href="/admin/geometry-jobs/new"
+                href="/geo-job-menu"
                 className="ml-4 inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md bg-green-600 hover:bg-green-700 text-white transition-colors shadow-sm"
-                title="Create new geometry job"
+                title="Create new splint"
               >
                 <svg 
                   xmlns="http://www.w3.org/2000/svg" 

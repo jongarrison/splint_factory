@@ -4,7 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { GeometryInputParameterSchema } from '@/types/geometry-input-parameter';
 import { INPUT_NAME_PATTERN, INPUT_NAME_ALLOWED_CHARS } from '@/constants/validation';
 
-// GET /api/named-geometry - List all named geometries (accessible to all authenticated users)
+// GET /api/named-geometry - Full geometry data for admin list page
+// Returns all fields including creator details, sorted by creation time
+// For optimized user-facing listing, use /api/geometries instead
 export async function GET() {
   try {
     const session = await auth();
@@ -38,7 +40,8 @@ export async function GET() {
   }
 }
 
-// POST /api/named-geometry - Create new named geometry (SYSTEM_ADMIN only)
+// POST /api/named-geometry - Create new named geometry with optional image uploads (SYSTEM_ADMIN only)
+// Accepts multipart/form-data with previewImage and measurementImage files
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -60,8 +63,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { GeometryName, GeometryAlgorithmName, GeometryInputParameterSchema } = body;
+    const formData = await request.formData();
+    const GeometryName = formData.get('GeometryName') as string;
+    const GeometryAlgorithmName = formData.get('GeometryAlgorithmName') as string;
+    const GeometryInputParameterSchema = formData.get('GeometryInputParameterSchema') as string;
+    const shortDescription = formData.get('shortDescription') as string || null;
+    const isActive = formData.get('isActive') === 'true';
+    const previewImageFile = formData.get('previewImage') as File | null;
+    const measurementImageFile = formData.get('measurementImage') as File | null;
 
     // Validate required fields
     if (!GeometryName || !GeometryAlgorithmName || !GeometryInputParameterSchema) {
@@ -136,11 +145,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Process images if provided
+    let previewImageData: { image: Buffer; contentType: string } | null = null;
+    let measurementImageData: { image: Buffer; contentType: string } | null = null;
+    
+    if (previewImageFile) {
+      const arrayBuffer = await previewImageFile.arrayBuffer();
+      previewImageData = {
+        image: Buffer.from(arrayBuffer),
+        contentType: previewImageFile.type
+      };
+    }
+    
+    if (measurementImageFile) {
+      const arrayBuffer = await measurementImageFile.arrayBuffer();
+      measurementImageData = {
+        image: Buffer.from(arrayBuffer),
+        contentType: measurementImageFile.type
+      };
+    }
+
     const namedGeometry = await prisma.namedGeometry.create({
       data: {
         GeometryName,
         GeometryAlgorithmName,
         GeometryInputParameterSchema,
+        shortDescription,
+        isActive,
+        ...(previewImageData && {
+          previewImage: previewImageData.image,
+          previewImageContentType: previewImageData.contentType,
+          previewImageUpdatedAt: new Date()
+        }),
+        ...(measurementImageData && {
+          measurementImage: measurementImageData.image,
+          measurementImageContentType: measurementImageData.contentType,
+          measurementImageUpdatedAt: new Date()
+        }),
         CreatorID: session.user.id
       },
       include: {
