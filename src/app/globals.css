@@ -107,12 +107,28 @@ select:disabled {
     color: #f3f4f6 !important; /* Use gray-100 instead of gray-900 for dark mode */
   }
   
+  .text-gray-600 {
+    color: #d1d5db !important; /* Use gray-300 instead of gray-600 for dark mode */
+  }
+  
+  .text-gray-500 {
+    color: #9ca3af !important; /* Keep gray-400 for labels in dark mode */
+  }
+  
+  .text-gray-400 {
+    color: #9ca3af !important; /* Use gray-400 (lighter) for dark mode */
+  }
+  
   .text-green-600 {
     color: #4ade80 !important; /* Use green-400 instead of green-600 for dark mode */
   }
   
   .text-red-600 {
     color: #f87171 !important; /* Use red-400 instead of red-600 for dark mode */
+  }
+  
+  .text-red-700 {
+    color: #fca5a5 !important; /* Use red-300 instead of red-700 for dark mode */
   }
   
   .text-yellow-600 {
