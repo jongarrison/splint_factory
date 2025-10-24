@@ -97,6 +97,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({
       id: updatedJob.id,
+      objectID: updatedJob.objectID,
       GeometryID: updatedJob.GeometryID,
       GeometryName: updatedJob.geometry.GeometryName,
       GeometryAlgorithmName: updatedJob.geometry.GeometryAlgorithmName,

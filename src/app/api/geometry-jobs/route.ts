@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { generateObjectID } from '@/lib/objectId';
 
 // GET /api/geometry-jobs - List geometry processing queue entries for user's organization
 export async function GET() {
@@ -34,6 +35,7 @@ export async function GET() {
         CreationTime: true,
         CustomerID: true,
         CustomerNote: true,
+        objectID: true,
         ProcessStartedTime: true,
         ProcessCompletedTime: true,
         isProcessSuccessful: true,
@@ -192,6 +194,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Generate unique objectID
+    const objectID = await generateObjectID();
+
     const geometryJob = await prisma.geometryProcessingQueue.create({
       data: {
         GeometryID,
@@ -200,7 +205,9 @@ export async function POST(request: NextRequest) {
         GeometryInputParameterData,
         CustomerNote: CustomerNote || null,
         CustomerID: CustomerID || null,
-        isEnabled: isEnabled !== undefined ? isEnabled : true
+        isEnabled: isEnabled !== undefined ? isEnabled : true,
+        objectID,
+        objectIDGeneratedAt: new Date()
       },
       include: {
         geometry: {

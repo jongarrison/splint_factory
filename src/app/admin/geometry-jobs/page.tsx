@@ -9,6 +9,7 @@ import { useSmartPolling } from '@/hooks/useSmartPolling';
 
 interface GeometryJob {
   id: string;
+  objectID?: string;
   CreationTime: string;
   GeometryInputParameterData: string;
   CustomerNote?: string;
@@ -161,10 +162,10 @@ export default function GeometryJobsPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Geometry
+                        IDs
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Customer Info
+                        Type
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
@@ -180,6 +181,21 @@ export default function GeometryJobsPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {geometryJobs.map((job) => (
                       <tr key={job.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="text-xs text-gray-500">Object:</div>
+                          <div className="text-sm font-mono font-semibold text-blue-600">
+                            {job.objectID || 'N/A'}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">Customer:</div>
+                          <div className="text-sm text-gray-900">
+                            {job.CustomerID || 'N/A'}
+                          </div>
+                          {job.CustomerNote && (
+                            <div className="text-xs text-gray-500 truncate max-w-xs mt-1">
+                              {job.CustomerNote}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
                             {job.geometry.GeometryName}
@@ -187,16 +203,6 @@ export default function GeometryJobsPage() {
                           <div className="text-sm text-gray-500">
                             {job.geometry.GeometryAlgorithmName}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {job.CustomerID ? `ID: ${job.CustomerID}` : 'No ID'}
-                          </div>
-                          {job.CustomerNote && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {job.CustomerNote}
-                            </div>
-                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(job)}

@@ -24,6 +24,7 @@ interface PrintQueueEntry {
   progressLastReportTime?: string | null;
   geometryProcessingQueue: {
     id: string;
+    objectID?: string;
     CreationTime: string;
     CustomerNote?: string;
     CustomerID?: string;
@@ -538,10 +539,10 @@ export default function PrintQueuePage() {
                         Actions
                       </th>
                       <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                        Job
+                        IDs
                       </th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">
-                        Customer
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Type
                       </th>
                       <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         Status
@@ -629,23 +630,25 @@ export default function PrintQueuePage() {
                           </div>
                         </td>
                         <td className="px-2 py-2">
+                          <div className="text-xs text-gray-500">Object:</div>
+                          <div className="text-sm font-mono font-semibold text-blue-600">
+                            {entry.geometryProcessingQueue.objectID || 'N/A'}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">Customer:</div>
+                          <div className="text-sm text-gray-900">
+                            {entry.geometryProcessingQueue.CustomerID || 'N/A'}
+                          </div>
+                          {entry.geometryProcessingQueue.CustomerNote && (
+                            <div className="text-xs text-gray-500 truncate max-w-[150px] mt-1">
+                              {entry.geometryProcessingQueue.CustomerNote}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 py-2">
                           <Link href={`/admin/print-queue/${entry.id}`} className="block group">
                             <div className="geometry-name text-sm font-medium text-gray-900 truncate max-w-[200px] group-hover:text-blue-600 transition-colors">
                               {entry.geometryProcessingQueue.geometry.GeometryName}
                             </div>
-                          </Link>
-                        </td>
-                        <td className="px-2 py-2 hidden sm:table-cell">
-                          <Link href={`/admin/print-queue/${entry.id}`} className="block group">
-                            <div className="customer-id text-xs text-gray-900 truncate max-w-[150px] group-hover:text-blue-600 transition-colors">
-                              {entry.geometryProcessingQueue.CustomerID ? 
-                                `ID: ${entry.geometryProcessingQueue.CustomerID}` : 'No ID'}
-                            </div>
-                            {entry.geometryProcessingQueue.CustomerNote && (
-                              <div className="customer-note text-xs text-gray-500 truncate max-w-[150px] group-hover:text-blue-500 transition-colors">
-                                {entry.geometryProcessingQueue.CustomerNote}
-                              </div>
-                            )}
                           </Link>
                         </td>
                         <td className="px-2 py-2">

@@ -9,6 +9,7 @@ import ProcessingLogViewer from '@/components/ProcessingLogViewer';
 
 interface GeometryJob {
   id: string;
+  objectID?: string;
   CreationTime: string;
   GeometryInputParameterData: string;
   CustomerNote?: string;
@@ -367,12 +368,28 @@ export default function GeometryJobDetailPage({
             <div className="px-6 py-4">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                  <dt className="text-sm font-medium text-gray-500">IDs</dt>
+                  <dd className="mt-1">
+                    <div className="text-xs text-gray-500">Object:</div>
+                    <div className="text-sm font-mono font-semibold text-blue-600">{job.objectID || 'N/A'}</div>
+                    <div className="text-xs text-gray-500 mt-2">Customer:</div>
+                    <div className="text-sm text-gray-900">{job.CustomerID || 'N/A'}</div>
+                  </dd>
+                </div>
+                <div>
                   <dt className="text-sm font-medium text-gray-500">Status</dt>
                   <dd className="mt-1">{getStatusBadge(job)}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Job ID</dt>
                   <dd className="mt-1 text-sm text-gray-900 font-mono">{job.id}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Type</dt>
+                  <dd className="mt-1">
+                    <div className="text-sm font-medium text-gray-900">{job.geometry.GeometryName}</div>
+                    <div className="text-xs text-gray-500">{job.geometry.GeometryAlgorithmName}</div>
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Created</dt>
@@ -402,25 +419,12 @@ export default function GeometryJobDetailPage({
                     <dd className="mt-1 text-sm text-gray-900">{formatDate(job.ProcessCompletedTime)}</dd>
                   </div>
                 )}
-              </dl>
-            </div>
-          </div>
-
-          {/* Customer Information */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Customer Information</h2>
-            </div>
-            <div className="px-6 py-4">
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Customer ID</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{job.CustomerID || 'Not specified'}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Customer Note</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{job.CustomerNote || 'No note provided'}</dd>
-                </div>
+                {job.CustomerNote && (
+                  <div className="md:col-span-2">
+                    <dt className="text-sm font-medium text-gray-500">Customer Note</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{job.CustomerNote}</dd>
+                  </div>
+                )}
               </dl>
             </div>
           </div>
@@ -432,14 +436,6 @@ export default function GeometryJobDetailPage({
             </div>
             <div className="px-6 py-4">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Geometry Name</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{job.geometry.GeometryName}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Algorithm</dt>
-                  <dd className="mt-1 text-sm text-gray-900 font-mono">{job.geometry.GeometryAlgorithmName}</dd>
-                </div>
                 {job.GeometryFileName && (
                   <div className="md:col-span-1">
                     <dt className="text-sm font-medium text-gray-500">Geometry File</dt>

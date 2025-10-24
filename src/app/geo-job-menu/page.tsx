@@ -87,7 +87,15 @@ export default function GeoJobMenuPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Create New Splint</h1>
-          <p className="mt-2 text-gray-600">Select a splint design to get started</p>
+          <p className="mt-2 text-gray-600">
+            Select a splint design to get started{' '}
+            <Link 
+              href="/admin/geometry-jobs" 
+              className="text-blue-600 hover:text-blue-700 underline"
+            >
+              or start from a previous job
+            </Link>
+          </p>
         </div>
 
         {geometries.length === 0 ? (

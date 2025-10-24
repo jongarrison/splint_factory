@@ -24,6 +24,7 @@ interface PrintQueueEntry {
   logs?: string | null;
   geometryProcessingQueue: {
     id: string;
+    objectID?: string;
     CreationTime: string;
     CustomerNote?: string;
     CustomerID?: string;
@@ -640,6 +641,22 @@ export default function PrintQueueDetailPage({
             <div className="px-6 py-4">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                  <dt className="text-sm font-medium text-gray-500">IDs</dt>
+                  <dd className="mt-1">
+                    <div className="text-xs text-gray-500">Object:</div>
+                    <div className="text-sm font-mono font-semibold text-blue-600">{entry.geometryProcessingQueue.objectID || 'N/A'}</div>
+                    <div className="text-xs text-gray-500 mt-2">Customer:</div>
+                    <div className="text-sm text-gray-900">{entry.geometryProcessingQueue.CustomerID || 'N/A'}</div>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Type</dt>
+                  <dd className="mt-1">
+                    <div className="text-sm font-medium text-gray-900">{entry.geometryProcessingQueue.geometry.GeometryName}</div>
+                    <div className="text-xs text-gray-500">{entry.geometryProcessingQueue.geometry.GeometryAlgorithmName}</div>
+                  </dd>
+                </div>
+                <div>
                   <dt className="text-sm font-medium text-gray-500">Print Queue ID</dt>
                   <dd className="print-queue-id mt-1 text-sm text-gray-900 font-mono">{entry.id}</dd>
                 </div>
@@ -666,6 +683,12 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-gray-500">Organization</dt>
                   <dd className="organization-name mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.owningOrganization.name}</dd>
                 </div>
+                {entry.geometryProcessingQueue.CustomerNote && (
+                  <div className="md:col-span-2">
+                    <dt className="text-sm font-medium text-gray-500">Customer Note</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.CustomerNote}</dd>
+                  </div>
+                )}
               </dl>
             </div>
           </div>
