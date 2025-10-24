@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
         geometryProcessingQueue: {
           select: {
             id: true, // Required for print operations
+            objectID: true,
             CustomerID: true,
             CustomerNote: true,
             GeometryFileName: true,
