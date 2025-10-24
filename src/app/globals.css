@@ -88,6 +88,15 @@ select:disabled {
   color: #6b7280; /* placeholder-gray-500 */
 }
 
+/* Global improvements for text contrast - darken light gray text */
+.text-gray-500 {
+  color: #374151 !important; /* Override with gray-700 for better contrast */
+}
+
+.text-gray-600 {
+  color: #1f2937 !important; /* Override with gray-800 for better contrast */
+}
+
 /* High-contrast display field for code/data blocks used in details pages */
 .display-field {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
