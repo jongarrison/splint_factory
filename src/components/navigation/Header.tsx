@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import SignOutButton from '@/components/auth/SignOutButton';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface HeaderProps {
   variant?: 'browser' | 'electron';
@@ -192,6 +193,9 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
 
           {/* Right side - User menu */}
           <div className="flex items-center space-x-4">
+            {/* Theme toggle - only in browser mode */}
+            {variant === 'browser' && <ThemeToggle />}
+            
             {session ? (
               <>
                 <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>

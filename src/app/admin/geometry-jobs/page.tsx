@@ -180,7 +180,11 @@ export default function GeometryJobsPage() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {geometryJobs.map((job) => (
-                      <tr key={job.id} className="hover:bg-gray-50">
+                      <tr 
+                        key={job.id} 
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => router.push(`/admin/geometry-jobs/${job.id}`)}
+                      >
                         <td className="px-6 py-4">
                           <div className="text-xs text-gray-500">Object:</div>
                           <div className="text-sm font-mono font-semibold text-blue-600">
@@ -211,7 +215,10 @@ export default function GeometryJobsPage() {
                           <div>{formatDate(job.CreationTime)}</div>
                           <div className="text-xs">by {job.creator.name}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Link
                             href={`/admin/geometry-jobs/${job.id}`}
                             className="text-blue-600 hover:text-blue-900 mr-4"

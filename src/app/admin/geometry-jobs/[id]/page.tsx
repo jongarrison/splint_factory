@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import ProcessingLogViewer from '@/components/ProcessingLogViewer';
+import StlViewer from '@/components/StlViewer';
 
 interface GeometryJob {
   id: string;
@@ -467,6 +468,22 @@ export default function GeometryJobDetailPage({
               </dl>
             </div>
           </div>
+
+          {/* 3D Model Viewer */}
+          {job.GeometryFileName && (
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">3D Model Preview</h2>
+              </div>
+              <div className="px-6 py-4">
+                <StlViewer 
+                  url={`/api/geometry-jobs/${job.id}/geometry-file`}
+                  height={500}
+                  modelColor="#3b82f6"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Parameter Values */}
           {parameterSchema.length > 0 && (
