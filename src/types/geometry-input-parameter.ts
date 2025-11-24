@@ -7,8 +7,8 @@ export type InputType = 'Float' | 'Integer' | 'Text';
 
 export interface BaseGeometryInputParameter {
   /**
-   * Name of the geometry parameter. Only lowercase letters, numbers, and dashes allowed.
-   * Pattern: ^[a-z0-9-]+$
+   * Name of the geometry parameter. Only letters (a-z, A-Z), numbers (0-9), and underscores (_) allowed.
+   * Pattern: ^[a-zA-Z0-9_]+$
    * Max length: 50 characters
    */
   InputName: string;
@@ -74,7 +74,7 @@ export const GeometryInputParameterValidation = {
    * Validates that InputName follows the required pattern
    */
   isValidInputName: (name: string): boolean => {
-    return /^[a-z0-9-]+$/.test(name) && name.length >= 1 && name.length <= 50;
+    return /^[a-zA-Z0-9_]+$/.test(name) && name.length >= 1 && name.length <= 50;
   },
   
   /**

@@ -5,7 +5,7 @@
 
 /**
  * Pattern for validating InputName fields in geometry parameters
- * Allows: lowercase letters (a-z), digits (0-9), and dashes (-)
+ * Allows: lowercase letters (a-z), uppercase letters (A-Z), digits (0-9), and underscores (_)
  * 
  * Used in:
  * - Frontend form validation
@@ -13,17 +13,17 @@
  * - JSON schema validation
  * - Type validation helpers
  */
-export const INPUT_NAME_PATTERN = /^[a-zA-Z0-9]+$/;
+export const INPUT_NAME_PATTERN = /^[a-zA-Z0-9_]+$/;
 
 /**
  * String version of the pattern for use in HTML pattern attributes and JSON schemas
  */
-export const INPUT_NAME_PATTERN_STRING = '^[a-zA-Z0-9]+$';
+export const INPUT_NAME_PATTERN_STRING = '^[a-zA-Z0-9_]+$';
 
 /**
  * Human-readable description of allowed characters
  */
-export const INPUT_NAME_ALLOWED_CHARS = 'letters (a-z, A-Z) and numbers (0-9)';
+export const INPUT_NAME_ALLOWED_CHARS = 'letters (a-z, A-Z), numbers (0-9), and underscores (_)';
 
 /**
  * Validates an InputName against the pattern
