@@ -60,13 +60,14 @@ export default function StlViewer({
     scene.background = new THREE.Color(backgroundColor);
     sceneRef.current = scene;
 
-    // Camera setup
+    // Camera setup with Z-up orientation
     const camera = new THREE.PerspectiveCamera(
       45,
       containerWidth / containerHeight,
       0.1,
       1000
     );
+    camera.up.set(0, 0, 1); // Set Z axis as up
     camera.position.set(0, 0, 100);
     cameraRef.current = camera;
 
@@ -77,10 +78,11 @@ export default function StlViewer({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Orbit controls
+    // Orbit controls with origin as target
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
+    controls.target.set(0, 0, 0); // Set orbit center to origin
     controlsRef.current = controls;
 
     // Lighting
@@ -118,10 +120,12 @@ export default function StlViewer({
         boundingBox.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z);
         
-        // Position camera to view entire model
+        // Position camera to view entire model with Z-up orientation
         const fov = camera.fov * (Math.PI / 180);
         const cameraDistance = maxDim / (2 * Math.tan(fov / 2));
-        camera.position.set(cameraDistance * 0.7, cameraDistance * 0.7, cameraDistance);
+        // Position camera at an angle viewing from above with Z as up
+        camera.position.set(cameraDistance * 0.7, cameraDistance * 0.7, cameraDistance * 0.7);
+        camera.up.set(0, 0, 1); // Ensure camera's up vector is Z
         camera.lookAt(0, 0, 0);
         
         // Update controls target
