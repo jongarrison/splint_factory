@@ -357,24 +357,33 @@ export default function EditGeometryJobPage({
                       </label>
                       {param.InputType === 'Float' ? (
                         <input
-                          type="number"
-                          step="any"
+                          type="text"
+                          inputMode="decimal"
                           id={param.InputName}
-                          value={parameterValues[param.InputName] || ''}
-                          onChange={(e) => handleParameterChange(param.InputName, parseFloat(e.target.value) || 0)}
-                          min={param.NumberMin}
-                          max={param.NumberMax}
+                          value={parameterValues[param.InputName] ?? ''}
+                          onChange={(e) => handleParameterChange(param.InputName, e.target.value)}
+                          onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val !== '' && !isNaN(parseFloat(val))) {
+                              handleParameterChange(param.InputName, parseFloat(val));
+                            }
+                          }}
                           className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                           required
                         />
                       ) : param.InputType === 'Integer' ? (
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           id={param.InputName}
-                          value={parameterValues[param.InputName] || ''}
-                          onChange={(e) => handleParameterChange(param.InputName, parseInt(e.target.value) || 0)}
-                          min={param.NumberMin}
-                          max={param.NumberMax}
+                          value={parameterValues[param.InputName] ?? ''}
+                          onChange={(e) => handleParameterChange(param.InputName, e.target.value)}
+                          onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val !== '' && !isNaN(parseInt(val))) {
+                              handleParameterChange(param.InputName, parseInt(val));
+                            }
+                          }}
                           className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                           required
                         />
