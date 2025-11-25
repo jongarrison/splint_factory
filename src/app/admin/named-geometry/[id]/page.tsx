@@ -105,9 +105,9 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
         {
           InputName: '',
           InputDescription: '',
-          InputType: 'Text' as InputType,
-          TextMinLen: 1,
-          TextMaxLen: 100
+          InputType: 'Float' as InputType,
+          NumberMin: 0,
+          NumberMax: 100
         } as GeometryInputParameter
       ]
     }));
@@ -118,6 +118,24 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
       ...prev,
       parameters: prev.parameters.filter((_, i) => i !== index)
     }));
+  };
+
+  const moveParameter = (index: number, direction: 'up' | 'down') => {
+    setFormData(prev => {
+      const newParams = [...prev.parameters];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      
+      if (targetIndex < 0 || targetIndex >= newParams.length) {
+        return prev;
+      }
+      
+      [newParams[index], newParams[targetIndex]] = [newParams[targetIndex], newParams[index]];
+      
+      return {
+        ...prev,
+        parameters: newParams
+      };
+    });
   };
 
   const updateParameter = (index: number, field: string, value: any) => {
@@ -467,7 +485,29 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
                 {formData.parameters.map((param, index) => (
                   <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
                     <div className="flex justify-between items-start mb-3">
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Parameter {index + 1}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Parameter {index + 1}</h3>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => moveParameter(index, 'up')}
+                            disabled={index === 0}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 disabled:text-gray-300 dark:disabled:text-gray-600 disabled:cursor-not-allowed text-xs px-1"
+                            title="Move up"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveParameter(index, 'down')}
+                            disabled={index === formData.parameters.length - 1}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 disabled:text-gray-300 dark:disabled:text-gray-600 disabled:cursor-not-allowed text-xs px-1"
+                            title="Move down"
+                          >
+                            ▼
+                          </button>
+                        </div>
+                      </div>
                       <button
                         type="button"
                         onClick={() => removeParameter(index)}
