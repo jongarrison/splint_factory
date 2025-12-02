@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AuthProvider from "@/components/auth/AuthProvider";
 import VirtualKeyboard from "@/components/VirtualKeyboard";
+import SettingsButton from "@/components/ReloadButton";
+import KeyboardToggleButton from "@/components/KeyboardToggleButton";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,6 +33,8 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
+          <KeyboardToggleButton />
+          <SettingsButton />
           <VirtualKeyboard />
         </AuthProvider>
       </body>

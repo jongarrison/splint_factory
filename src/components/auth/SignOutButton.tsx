@@ -7,9 +7,16 @@ interface SignOutButtonProps {
 }
 
 export default function SignOutButton({ variant = 'browser' }: SignOutButtonProps) {
+  const handleSignOut = () => {
+    signOut({ 
+      callbackUrl: '/login',
+      redirect: true 
+    });
+  };
+
   return (
     <button
-      onClick={() => signOut()}
+      onClick={handleSignOut}
       className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors"
     >
       Sign Out

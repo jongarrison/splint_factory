@@ -77,10 +77,10 @@ export default function PrinterStatusBanner() {
 
   if (!isSubscribed || !status) {
     return (
-      <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 mb-4">
+      <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 mb-4">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-          <span className="text-sm text-gray-600">Connecting to printer...</span>
+          <span className="text-sm text-gray-300">Connecting to printer...</span>
         </div>
       </div>
     );
@@ -136,35 +136,35 @@ export default function PrinterStatusBanner() {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-3 mb-4 shadow-sm">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         {/* Left side: Status indicator and main info */}
         <div className="flex items-start gap-3 flex-1">
           <div className="flex items-center gap-2 min-w-[80px]">
             <div className={`w-2 h-2 rounded-full ${getStateColor()}`}></div>
-            <span className="text-sm font-medium text-gray-900">{getStateLabel()}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{getStateLabel()}</span>
           </div>
 
           {status.printJob.active && (
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 truncate">
+              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                 {status.printJob.filename || 'Unknown file'}
               </div>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-gray-600 dark:text-gray-400">
                   {status.printJob.progress.toFixed(1)}%
                 </span>
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-gray-600 dark:text-gray-400">
                   Layer {status.printJob.layer}/{status.printJob.totalLayers}
                 </span>
                 {status.printJob.timeRemaining > 0 && (
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
                     {formatTimeRemaining(status.printJob.timeRemaining)} remaining
                   </span>
                 )}
               </div>
               {/* Progress bar */}
-              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
                 <div 
                   className="bg-blue-600 h-1.5 rounded-full transition-all duration-500"
                   style={{ width: `${status.printJob.progress}%` }}
@@ -174,29 +174,29 @@ export default function PrinterStatusBanner() {
           )}
 
           {!status.printJob.active && (
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               Ready for printing
             </div>
           )}
         </div>
 
         {/* Right side: Temperatures and data age */}
-        <div className="flex items-start gap-4 text-xs text-gray-600">
+        <div className="flex items-start gap-4 text-xs text-gray-600 dark:text-gray-400">
           <div className="flex gap-3">
             <div title="Nozzle temperature">
               🔥 {status.temperatures.nozzle.current.toFixed(0)}°
               {status.temperatures.nozzle.target > 0 && (
-                <span className="text-gray-400">/{status.temperatures.nozzle.target.toFixed(0)}°</span>
+                <span className="text-gray-400 dark:text-gray-500">/{status.temperatures.nozzle.target.toFixed(0)}°</span>
               )}
             </div>
             <div title="Bed temperature">
               🛏️ {status.temperatures.bed.current.toFixed(0)}°
               {status.temperatures.bed.target > 0 && (
-                <span className="text-gray-400">/{status.temperatures.bed.target.toFixed(0)}°</span>
+                <span className="text-gray-400 dark:text-gray-500">/{status.temperatures.bed.target.toFixed(0)}°</span>
               )}
             </div>
           </div>
-          <div className="text-gray-400 whitespace-nowrap" title={`Last updated: ${new Date(lastUpdateTime || 0).toLocaleString()}`}>
+          <div className="text-gray-400 dark:text-gray-500 whitespace-nowrap" title={`Last updated: ${new Date(lastUpdateTime || 0).toLocaleString()}`}>
             {getUpdateTime()}
           </div>
         </div>

@@ -494,13 +494,13 @@ export default function PrintQueuePage() {
             </div>
             
             {/* Active / History Toggle */}
-            <div className="flex gap-1 p-1 bg-gray-100 rounded-lg w-fit">
+            <div className="flex gap-1 p-1 bg-gray-800 rounded-lg w-fit">
               <button
                 onClick={() => setViewMode('active')}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
                   viewMode === 'active'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-300 hover:text-white'
                 }`}
               >
                 Active
@@ -509,8 +509,8 @@ export default function PrintQueuePage() {
                 onClick={() => setViewMode('history')}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
                   viewMode === 'history'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-300 hover:text-white'
                 }`}
               >
                 History
