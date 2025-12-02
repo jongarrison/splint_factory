@@ -1,17 +1,18 @@
 "use client"
 
 import { signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 interface SignOutButtonProps {
   variant?: 'browser' | 'electron';
 }
 
 export default function SignOutButton({ variant = 'browser' }: SignOutButtonProps) {
-  const handleSignOut = () => {
-    signOut({ 
-      callbackUrl: '/login',
-      redirect: true 
-    });
+  const router = useRouter()
+  
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    router.push('/login');
   };
 
   return (

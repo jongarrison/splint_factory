@@ -11,6 +11,7 @@ export default function SettingsButton() {
   const [isElectron, setIsElectron] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(true); // Default to true for Pi kiosk mode
+  const [devToolsOpen, setDevToolsOpen] = useState(false);
 
   useEffect(() => {
     // Only run in Electron environment
@@ -37,6 +38,15 @@ export default function SettingsButton() {
   const handleCloseWindow = async () => {
     if ((window as any).electronAPI?.closeWindow) {
       await (window as any).electronAPI.closeWindow();
+    }
+  };
+
+  const handleToggleDevTools = async () => {
+    if ((window as any).electronAPI?.toggleDevTools) {
+      const result = await (window as any).electronAPI.toggleDevTools();
+      if (result.success) {
+        setDevToolsOpen(result.state);
+      }
     }
   };
 
@@ -132,6 +142,24 @@ export default function SettingsButton() {
                   <div className="text-sm text-gray-400">
                     {isFullscreen ? 'Exit kiosk mode' : 'Enter kiosk mode'}
                   </div>
+                </div>
+              </button>
+
+              {/* Toggle Dev Tools */}
+              <button
+                onClick={() => {
+                  handleToggleDevTools();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-left"
+              >
+                <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                <div>
+                  <div className="font-medium text-gray-100">
+                    {devToolsOpen ? 'Close Dev Tools' : 'Open Dev Tools'}
+                  </div>
+                  <div className="text-sm text-gray-400">Inspect and debug</div>
                 </div>
               </button>
 

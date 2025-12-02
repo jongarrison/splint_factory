@@ -7,18 +7,18 @@ import Link from "next/link"
 import Header from "@/components/navigation/Header"
 
 export default function LoginPage() {
-  // Set dark mode as default
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !localStorage.getItem('theme')) {
-      document.documentElement.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
-    }
-  }, [])
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isElectron, setIsElectron] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    // Detect if running in Electron
+    const checkElectron = typeof window !== 'undefined' && !!(window as any).electronAPI
+    setIsElectron(checkElectron)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,16 +26,21 @@ export default function LoginPage() {
     setError("")
 
     try {
+      console.log('Login attempt:', { email, passwordLength: password.length })
+      
       const result = await signIn("credentials", {
         email,
         password,
         redirect: false,
       })
 
+      console.log('Login result:', result)
+
       if (result?.error) {
         setError("Invalid credentials")
       } else {
-        router.push("/")
+        // Electron goes to print queue, browser goes to geo-job-menu
+        router.push(isElectron ? "/admin/print-queue" : "/geo-job-menu")
       }
     } catch (err) {
       console.error("Login error:", err)
@@ -46,19 +51,19 @@ export default function LoginPage() {
   }
 
   return (
-    <>
+    <div className="h-screen overflow-hidden flex flex-col">
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-300">
+          <p className="mt-2 text-center text-sm text-gray-300">
             Or{" "}
             <Link
               href="/register"
-              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+              className="font-medium text-indigo-400 hover:text-indigo-300"
             >
               create a new account
             </Link>
@@ -76,7 +81,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white placeholder-gray-400 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -92,7 +97,7 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white placeholder-gray-400 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -116,6 +121,6 @@ export default function LoginPage() {
         </form>
         </div>
       </div>
-    </>
+    </div>
   )
 }
