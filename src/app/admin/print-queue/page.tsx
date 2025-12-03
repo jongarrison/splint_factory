@@ -570,18 +570,25 @@ export default function PrintQueuePage() {
                                     !isElectronClient || printingJobId === entry.id
                                       ? 'bg-gray-400 cursor-not-allowed'
                                       : 'bg-purple-600 hover:bg-purple-700'
-                                  } text-white px-2 py-1 rounded text-xs font-semibold min-w-[60px]`}
+                                  } text-white px-2 py-1 rounded text-xs font-semibold min-w-[60px] inline-flex items-center justify-center gap-1`}
                                   title={!isElectronClient ? 'This feature only works from the 3D printer\'s splint computer' : ''}
                                 >
                                   {printingJobId === entry.id ? (
-                                    <span className="inline-flex items-center justify-center gap-1">
+                                    <>
                                       <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                       </svg>
                                       Sending
-                                    </span>
-                                  ) : '🖨️ Print'}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
+                                      </svg>
+                                      Print
+                                    </>
+                                  )}
                                 </button>
                                 {!isElectronClient && (
                                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 max-w-[200px]">
