@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/geometry-images/[geometryId]/[imageType]
@@ -9,6 +10,12 @@ export async function GET(
   { params }: { params: Promise<{ geometryId: string; imageType: string }> }
 ) {
   try {
+    // Require authentication
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { geometryId, imageType } = await params;
     
     // Validate image type

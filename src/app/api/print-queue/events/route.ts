@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { auth } from '@/lib/auth';
 
 // Store active SSE connections
 const connections = new Set<ReadableStreamDefaultController>();
@@ -20,9 +21,9 @@ export function broadcastPrintQueueUpdate(data: any) {
 }
 
 export async function GET(request: NextRequest) {
-  // Verify authentication
-  const session = request.headers.get('cookie');
-  if (!session) {
+  // Verify authentication with proper session validation
+  const session = await auth();
+  if (!session?.user?.id) {
     return new Response('Unauthorized', { status: 401 });
   }
 
