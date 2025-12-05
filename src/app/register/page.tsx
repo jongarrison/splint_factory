@@ -61,6 +61,37 @@ function RegisterForm() {
     }
   }
 
+  // Show message if no invitation token
+  if (!invitationToken) {
+    return (
+      <div className="h-screen overflow-hidden flex flex-col bg-gray-900">
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full max-w-md">
+            <div className="bg-gray-800 rounded-lg shadow-xl p-8 text-center">
+              <div className="mb-6">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-4">
+                Invitation Required
+              </h2>
+              <p className="text-gray-400 mb-6">
+                Registration is by invitation only. Please contact an administrator to request access.
+              </p>
+              <Link
+                href="/login"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Back to Login
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-gray-900">
       <div className="flex-1 flex items-center justify-center p-4">
@@ -68,13 +99,11 @@ function RegisterForm() {
           <div className="bg-gray-800 rounded-lg shadow-xl p-8">
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-white text-center">
-                {invitationToken ? "Join Organization" : "Create Account"}
+                Join Organization
               </h2>
-              {invitationToken && (
-                <p className="mt-2 text-center text-sm text-blue-400">
-                  You&apos;ve been invited to join an organization
-                </p>
-              )}
+              <p className="mt-2 text-center text-sm text-blue-400">
+                You&apos;ve been invited to join an organization
+              </p>
               <p className="mt-2 text-center text-sm text-gray-400">
                 Already have an account?{" "}
                 <Link

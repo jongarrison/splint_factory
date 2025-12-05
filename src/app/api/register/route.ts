@@ -15,6 +15,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Require invitation token
+    if (!invitationToken) {
+      return NextResponse.json(
+        { error: "An invitation is required to create an account" },
+        { status: 403 }
+      )
+    }
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
@@ -27,66 +35,55 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If invitation token provided, validate it
-    let invitationData = null
-    if (invitationToken) {
-      invitationData = await prisma.invitationLink.findUnique({
-        where: { 
-          token: invitationToken,
-          usedAt: null, // Not used yet
-          expiresAt: { gt: new Date() } // Not expired
-        },
-        include: { organization: true }
-      })
+    // Validate invitation token
+    const invitationData = await prisma.invitationLink.findUnique({
+      where: { 
+        token: invitationToken,
+        usedAt: null, // Not used yet
+        expiresAt: { gt: new Date() } // Not expired
+      },
+      include: { organization: true }
+    })
 
-      if (!invitationData) {
-        return NextResponse.json(
-          { error: "Invalid or expired invitation" },
-          { status: 400 }
-        )
-      }
+    if (!invitationData) {
+      return NextResponse.json(
+        { error: "Invalid or expired invitation" },
+        { status: 400 }
+      )
+    }
 
-      // If invitation has a specific email, validate it matches
-      if (invitationData.email && invitationData.email !== email) {
-        return NextResponse.json(
-          { error: "Invitation is for a different email address" },
-          { status: 400 }
-        )
-      }
+    // If invitation has a specific email, validate it matches
+    if (invitationData.email && invitationData.email !== email) {
+      return NextResponse.json(
+        { error: "Invitation is for a different email address" },
+        { status: 400 }
+      )
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user with organization association if invitation exists
-    const baseUserData = {
-      name,
-      email,
-      password: hashedPassword,
-    }
-
-    const userData = invitationData ? {
-      ...baseUserData,
-      organizationId: invitationData.organizationId,
-      role: UserRole.MEMBER,
-      invitedByUserId: invitationData.createdByUserId,
-      invitationAcceptedAt: new Date()
-    } : baseUserData
-
+    // Create user with organization association from invitation
     const user = await prisma.user.create({
-      data: userData,
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        organizationId: invitationData.organizationId,
+        role: UserRole.MEMBER,
+        invitedByUserId: invitationData.createdByUserId,
+        invitationAcceptedAt: new Date()
+      },
     })
 
-    // If invitation was used, mark it as used
-    if (invitationData) {
-      await prisma.invitationLink.update({
-        where: { id: invitationData.id },
-        data: {
-          usedAt: new Date(),
-          usedByUserId: user.id
-        }
-      })
-    }
+    // Mark invitation as used
+    await prisma.invitationLink.update({
+      where: { id: invitationData.id },
+      data: {
+        usedAt: new Date(),
+        usedByUserId: user.id
+      }
+    })
 
     // Remove password from response
     const { password: _password, ...userWithoutPassword } = user
