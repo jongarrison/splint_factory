@@ -616,7 +616,7 @@ export default function PrintQueuePage() {
                                     geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
                                     isAccepting: true
                                   })}
-                                  className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold min-w-[60px]"
+                                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-semibold min-w-[80px]"
                                   title="Accept print"
                                 >
                                   ✓ Accept
@@ -627,7 +627,7 @@ export default function PrintQueuePage() {
                                     geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
                                     isAccepting: false
                                   })}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold min-w-[60px]"
+                                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-sm font-semibold min-w-[80px]"
                                   title="Reject print"
                                 >
                                   ✗ Reject
