@@ -570,7 +570,7 @@ export default function PrintQueuePage() {
                                     !isElectronClient || printingJobId === entry.id
                                       ? 'bg-gray-400 cursor-not-allowed'
                                       : 'bg-purple-600 hover:bg-purple-700'
-                                  } text-white px-2 py-1 rounded text-xs font-semibold min-w-[60px] inline-flex items-center justify-center gap-1`}
+                                  } text-white px-4 py-1.5 rounded text-sm font-semibold min-w-[80px] inline-flex items-center justify-center gap-1`}
                                   title={!isElectronClient ? 'This feature only works from the 3D printer\'s splint computer' : ''}
                                 >
                                   {printingJobId === entry.id ? (
