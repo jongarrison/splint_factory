@@ -7,6 +7,7 @@ import StlViewer from '@/components/StlViewer';
 
 interface GeometryJob {
   id: string;
+  objectID?: string;
   ProcessStartedTime?: string;
   ProcessCompletedTime?: string;
   isProcessSuccessful: boolean;
@@ -147,6 +148,14 @@ export default function GeometryJobProgressModal({ jobId, onClose }: GeometryJob
           <p className="text-gray-600 dark:text-gray-300">
             {status.message}
           </p>
+          {job?.objectID && (
+            <div className="mt-4 inline-block bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg">
+              <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Object ID</div>
+              <div className="text-2xl font-mono font-bold text-blue-600 dark:text-blue-400">
+                {job.objectID}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* STL Viewer for successful completion */}

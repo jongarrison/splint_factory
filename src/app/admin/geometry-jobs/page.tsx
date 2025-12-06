@@ -35,6 +35,8 @@ interface GeometryJob {
 export default function GeometryJobsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [searchObjectId, setSearchObjectId] = useState('');
+  const [searchError, setSearchError] = useState('');
   
   // Use smart polling hook for real-time updates
   const { 
@@ -56,6 +58,23 @@ export default function GeometryJobsPage() {
       return;
     }
   }, [session, status, router]);
+
+  const handleSearchByObjectId = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchError('');
+    
+    if (!searchObjectId.trim()) {
+      setSearchError('Please enter an Object ID');
+      return;
+    }
+    
+    const job = geometryJobs?.find(j => j.objectID === searchObjectId.trim());
+    if (job) {
+      router.push(`/admin/geometry-jobs/${job.id}`);
+    } else {
+      setSearchError(`No job found with Object ID: ${searchObjectId}`);
+    }
+  };
 
   const getStatusBadge = (job: GeometryJob) => {
     if (!job.isEnabled) {
@@ -98,6 +117,37 @@ export default function GeometryJobsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Splint Geometry Processing Jobs</h1>
+          
+          {/* ObjectID Search */}
+          <form onSubmit={handleSearchByObjectId} className="mt-4 flex gap-2 max-w-md">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={searchObjectId}
+                onChange={(e) => {
+                  setSearchObjectId(e.target.value);
+                  setSearchError('');
+                }}
+                placeholder="Search by Object ID..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Search
+            </button>
+          </form>
+          
+          {searchError && (
+            <div className="mt-2 text-sm text-red-600">
+              {searchError}
+            </div>
+          )}
         </div>
 
         {error && (
