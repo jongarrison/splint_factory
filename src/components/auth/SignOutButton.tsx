@@ -6,9 +6,10 @@ import { useEffect, useState } from "react"
 
 interface SignOutButtonProps {
   variant?: 'browser' | 'electron';
+  inline?: boolean;
 }
 
-export default function SignOutButton({ variant = 'browser' }: SignOutButtonProps) {
+export default function SignOutButton({ variant = 'browser', inline = false }: SignOutButtonProps) {
   const router = useRouter()
   const [isElectron, setIsElectron] = useState(false);
 
@@ -29,6 +30,17 @@ export default function SignOutButton({ variant = 'browser' }: SignOutButtonProp
       window.location.href = '/login';
     }
   };
+
+  if (inline) {
+    return (
+      <button
+        onClick={handleSignOut}
+        className="w-full text-left"
+      >
+        Sign Out
+      </button>
+    );
+  }
 
   return (
     <button
