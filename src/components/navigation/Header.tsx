@@ -122,53 +122,73 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
                           className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} px-3 py-2 text-sm font-medium flex items-center`}
                         >
                           <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                           </svg>
-                          <span className="hidden sm:inline">Admin</span>
+                          <span className="hidden sm:inline">Tools</span>
                           <svg className="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
                         </button>
                         
-                        {showAdminDropdown && (
+{showAdminDropdown && (
                           <div className={`absolute right-0 mt-2 w-56 rounded-md shadow-lg ${isDarkMode ? 'bg-gray-700 ring-gray-600' : 'bg-white ring-black'} ring-1 ring-opacity-5 z-50`}>
                             <div className="py-1">
-                              <Link
-                                href="/admin"
-                                onClick={() => setShowAdminDropdown(false)}
-                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                              >
-                                Organizations
-                              </Link>
-                              <Link
-                                href="/admin/users"
-                                onClick={() => setShowAdminDropdown(false)}
-                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                              >
-                                User Management
-                              </Link>
-                              <Link
-                                href="/admin/invitations"
-                                onClick={() => setShowAdminDropdown(false)}
-                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                              >
-                                Invitations
-                              </Link>
-                              <Link
-                                href="/admin/named-geometry"
-                                onClick={() => setShowAdminDropdown(false)}
-                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                              >
-                                Named Geometry Designs
-                              </Link>
-                              <Link
-                                href="/admin/api-keys"
-                                onClick={() => setShowAdminDropdown(false)}
-                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                              >
-                                API Keys
-                              </Link>
+                              {/* Organizations - SYSTEM_ADMIN only */}
+                              {session?.user?.role === 'SYSTEM_ADMIN' && (
+                                <Link
+                                  href="/admin"
+                                  onClick={() => setShowAdminDropdown(false)}
+                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                >
+                                  Organizations
+                                </Link>
+                              )}
+                              
+                              {/* User Management - SYSTEM_ADMIN, ORG_ADMIN */}
+                              {(session?.user?.role === 'SYSTEM_ADMIN' || session?.user?.role === 'ORG_ADMIN') && (
+                                <Link
+                                  href="/admin/users"
+                                  onClick={() => setShowAdminDropdown(false)}
+                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                >
+                                  User Management
+                                </Link>
+                              )}
+                              
+                              {/* Invitations - SYSTEM_ADMIN, ORG_ADMIN */}
+                              {(session?.user?.role === 'SYSTEM_ADMIN' || session?.user?.role === 'ORG_ADMIN') && (
+                                <Link
+                                  href="/admin/invitations"
+                                  onClick={() => setShowAdminDropdown(false)}
+                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                >
+                                  Invitations
+                                </Link>
+                              )}
+                              
+                              {/* Named Geometry Designs - SYSTEM_ADMIN only */}
+                              {session?.user?.role === 'SYSTEM_ADMIN' && (
+                                <Link
+                                  href="/admin/named-geometry"
+                                  onClick={() => setShowAdminDropdown(false)}
+                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                >
+                                  Named Geometry Designs
+                                </Link>
+                              )}
+                              
+                              {/* API Keys - SYSTEM_ADMIN only */}
+                              {session?.user?.role === 'SYSTEM_ADMIN' && (
+                                <Link
+                                  href="/admin/api-keys"
+                                  onClick={() => setShowAdminDropdown(false)}
+                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                >
+                                  API Keys
+                                </Link>
+                              )}
+                              
+                              {/* Splint Geometry Jobs - All roles */}
                               <Link
                                 href="/admin/geometry-jobs"
                                 onClick={() => setShowAdminDropdown(false)}
@@ -176,6 +196,8 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
                               >
                                 Splint Geometry Jobs
                               </Link>
+                              
+                              {/* Print Queue - All roles */}
                               <Link
                                 href="/admin/print-queue"
                                 onClick={() => setShowAdminDropdown(false)}
@@ -183,6 +205,8 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
                               >
                                 Print Queue
                               </Link>
+                              
+                              {/* Sign Out - All roles */}
                               <div className={`border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-200'} my-1`}></div>
                               <div
                                 onClick={() => setShowAdminDropdown(false)}
