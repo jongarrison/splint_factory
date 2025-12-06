@@ -122,8 +122,12 @@ model GeometryProcessingQueue {
   objectIDGeneratedAt        DateTime?
   GeometryFileContents       Bytes?
   GeometryFileName           String?
+  GeometryBlobUrl            String?
+  GeometryBlobPathname       String?
   PrintFileContents          Bytes?
   PrintFileName              String?
+  PrintBlobUrl               String?
+  PrintBlobPathname          String?
   ProcessingLog              String?
   owningOrganization         Organization  @relation(fields: [OwningOrganizationID], references: [id])
   creator                    User          @relation("CreatedGeometryJobs", fields: [CreatorID], references: [id])
