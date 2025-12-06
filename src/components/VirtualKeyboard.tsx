@@ -22,22 +22,27 @@ export default function VirtualKeyboard() {
     const keyboard = new KeyboardClass('.virtual-keyboard', {
         onChange: (input: string) => {
           if (currentInputRef.current) {
-            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-              window.HTMLInputElement.prototype,
-              'value'
-            )?.set;
+            const element = currentInputRef.current;
+            const isTextarea = element.tagName === 'TEXTAREA';
             
-            if (nativeInputValueSetter) {
-              nativeInputValueSetter.call(currentInputRef.current, input);
+            // Get the correct prototype based on element type
+            const prototype = isTextarea 
+              ? window.HTMLTextAreaElement.prototype 
+              : window.HTMLInputElement.prototype;
+            
+            const nativeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+            
+            if (nativeValueSetter) {
+              nativeValueSetter.call(element, input);
             } else {
-              currentInputRef.current.value = input;
+              element.value = input;
             }
             
             const inputEvent = new Event('input', { bubbles: true });
             const changeEvent = new Event('change', { bubbles: true });
-            currentInputRef.current.dispatchEvent(inputEvent);
-            currentInputRef.current.dispatchEvent(changeEvent);
-            currentInputRef.current.focus();
+            element.dispatchEvent(inputEvent);
+            element.dispatchEvent(changeEvent);
+            element.focus();
           }
         },
         onKeyPress: (button: string) => {
