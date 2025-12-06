@@ -68,6 +68,7 @@ export default function PrintAcceptanceModal({
             id="printNote"
             value={note}
             onChange={(e) => setNote(e.target.value)}
+            onInput={(e) => setNote((e.target as HTMLTextAreaElement).value)}
             placeholder={isAccepting 
               ? "e.g., Perfect quality, no issues" 
               : "e.g., Layer separation on left side"
@@ -75,6 +76,7 @@ export default function PrintAcceptanceModal({
             rows={3}
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={submitting}
+            autoFocus
           />
         </div>
 
@@ -83,7 +85,7 @@ export default function PrintAcceptanceModal({
           <button
             onClick={onClose}
             disabled={submitting}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
