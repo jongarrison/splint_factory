@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 interface PrintAcceptanceModalProps {
   printId: string;
@@ -17,12 +17,13 @@ export default function PrintAcceptanceModal({
   onClose,
   onSubmit
 }: PrintAcceptanceModalProps) {
-  const [note, setNote] = useState('');
+  const noteRef = useRef<HTMLTextAreaElement>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      const note = noteRef.current?.value || '';
       await onSubmit(printId, isAccepting, note);
       onClose();
     } catch (error) {
@@ -66,9 +67,8 @@ export default function PrintAcceptanceModal({
           </label>
           <textarea
             id="printNote"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            onInput={(e) => setNote((e.target as HTMLTextAreaElement).value)}
+            ref={noteRef}
+            defaultValue=""
             placeholder={isAccepting 
               ? "e.g., Perfect quality, no issues" 
               : "e.g., Layer separation on left side"
