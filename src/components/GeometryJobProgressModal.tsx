@@ -187,7 +187,7 @@ export default function GeometryJobProgressModal({ jobId, onClose }: GeometryJob
             onClick={handleDismiss}
             className={`w-full ${
               isComplete && isSuccess
-                ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                ? 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
             } font-semibold py-3 px-4 rounded-lg transition-colors`}
           >

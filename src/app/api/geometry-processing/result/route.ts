@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { validateApiKey, checkApiPermission } from '@/lib/api-auth';
+import { getBlobStorageInstance } from '@/lib/blob-storage';
 
 // POST /api/geometry-processing/result - Report geometry processing result from external software
 export async function POST(request: NextRequest) {
@@ -24,17 +25,42 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const body = await request.json();
-    const {
-      GeometryProcessingQueueID,
-      isSuccess,
-      errorMessage,
-      processingLog,        // Processing logs from geometry processor
-      GeometryFileContents, // Base64 encoded 3MF/STL/OBJ/3MF file
-      GeometryFileName,
-      PrintFileContents,    // Base64 encoded print file (e.g., 3MF with gcode)
-      PrintFileName
-    } = body;
+    // Handle both multipart (new blob storage) and JSON (legacy) formats
+    const contentType = request.headers.get('content-type') || '';
+    let GeometryProcessingQueueID: string;
+    let isSuccess: boolean;
+    let errorMessage: string | undefined;
+    let processingLog: string | undefined;
+    let GeometryFileContents: string | undefined;
+    let GeometryFileName: string | undefined;
+    let PrintFileContents: string | undefined;
+    let PrintFileName: string | undefined;
+    let geometryFile: File | undefined;
+    let printFile: File | undefined;
+
+    if (contentType.includes('multipart/form-data')) {
+      // New format: multipart with actual files
+      const formData = await request.formData();
+      GeometryProcessingQueueID = formData.get('GeometryProcessingQueueID') as string;
+      isSuccess = formData.get('isSuccess') === 'true';
+      errorMessage = formData.get('errorMessage') as string | undefined;
+      processingLog = formData.get('processingLog') as string | undefined;
+      geometryFile = formData.get('geometryFile') as File | undefined;
+      printFile = formData.get('printFile') as File | undefined;
+      GeometryFileName = geometryFile?.name;
+      PrintFileName = printFile?.name;
+    } else {
+      // Legacy format: JSON with base64
+      const body = await request.json();
+      GeometryProcessingQueueID = body.GeometryProcessingQueueID;
+      isSuccess = body.isSuccess;
+      errorMessage = body.errorMessage;
+      processingLog = body.processingLog;
+      GeometryFileContents = body.GeometryFileContents;
+      GeometryFileName = body.GeometryFileName;
+      PrintFileContents = body.PrintFileContents;
+      PrintFileName = body.PrintFileName;
+    }
 
     // Validate required fields
     if (!GeometryProcessingQueueID || isSuccess === undefined) {
@@ -66,17 +92,36 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-  // Validate file size limits (10MB as specified in requirements)
-    const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
-  const maxFileNameLen = 255;
-  const invalidName = /[\\/]/; // prevent path traversal
+    // Validate file size limits (500MB for blob storage, 10MB for legacy base64)
+    const maxFileSize = 500 * 1024 * 1024; // 500MB for blob storage
+    const maxLegacyFileSize = 10 * 1024 * 1024; // 10MB for base64 (legacy)
+    const maxFileNameLen = 255;
+    const invalidName = /[\\/]/; // prevent path traversal
     
+    // Validate multipart files
+    if (geometryFile) {
+      if (geometryFile.size > maxFileSize) {
+        return NextResponse.json({ 
+          error: 'Geometry file exceeds 500MB limit' 
+        }, { status: 400 });
+      }
+    }
+    
+    if (printFile) {
+      if (printFile.size > maxFileSize) {
+        return NextResponse.json({ 
+          error: 'Print file exceeds 500MB limit' 
+        }, { status: 400 });
+      }
+    }
+    
+    // Validate legacy base64 files
     if (GeometryFileContents) {
       try {
         const geometryBuffer = Buffer.from(GeometryFileContents, 'base64');
-        if (geometryBuffer.length > maxFileSize) {
+        if (geometryBuffer.length > maxLegacyFileSize) {
           return NextResponse.json({ 
-            error: 'Geometry file exceeds 10MB limit' 
+            error: 'Geometry file exceeds 10MB limit (use multipart upload for larger files)' 
           }, { status: 400 });
         }
       } catch (e) {
@@ -89,9 +134,9 @@ export async function POST(request: NextRequest) {
     if (PrintFileContents) {
       try {
         const printBuffer = Buffer.from(PrintFileContents, 'base64');
-        if (printBuffer.length > maxFileSize) {
+        if (printBuffer.length > maxLegacyFileSize) {
           return NextResponse.json({ 
-            error: 'Print file exceeds 10MB limit' 
+            error: 'Print file exceeds 10MB limit (use multipart upload for larger files)' 
           }, { status: 400 });
         }
       } catch (e) {
@@ -117,20 +162,58 @@ export async function POST(request: NextRequest) {
 
     const currentTime = new Date();
 
+    // Upload files to blob storage if provided
+    const blobStorage = getBlobStorageInstance();
+    let geometryBlobResult;
+    let printBlobResult;
+
+    if (geometryFile) {
+      const geometryBuffer = Buffer.from(await geometryFile.arrayBuffer());
+      geometryBlobResult = await blobStorage.upload(geometryBuffer, geometryFile.name);
+      console.log(`Uploaded geometry file to blob storage: ${geometryBlobResult.pathname} (${geometryBlobResult.size} bytes)`);
+    }
+
+    if (printFile) {
+      const printBuffer = Buffer.from(await printFile.arrayBuffer());
+      printBlobResult = await blobStorage.upload(printBuffer, printFile.name);
+      console.log(`Uploaded print file to blob storage: ${printBlobResult.pathname} (${printBlobResult.size} bytes)`);
+    }
+
     // Start transaction to update geometry processing queue and create print queue entry if successful
     const result = await prisma.$transaction(async (tx) => {
-      // Update the geometry processing queue entry (including any produced files)
+      // Prepare update data
+      const updateData: any = {
+        ProcessCompletedTime: currentTime,
+        isProcessSuccessful: isSuccess,
+        ProcessingLog: processingLog ?? undefined,
+      };
+
+      // Handle blob storage (new format)
+      if (geometryBlobResult) {
+        updateData.GeometryBlobUrl = geometryBlobResult.url;
+        updateData.GeometryBlobPathname = geometryBlobResult.pathname;
+        updateData.GeometryFileName = GeometryFileName;
+      }
+      if (printBlobResult) {
+        updateData.PrintBlobUrl = printBlobResult.url;
+        updateData.PrintBlobPathname = printBlobResult.pathname;
+        updateData.PrintFileName = PrintFileName;
+      }
+
+      // Handle legacy base64 format (fallback)
+      if (GeometryFileContents && !geometryBlobResult) {
+        updateData.GeometryFileContents = Buffer.from(GeometryFileContents, 'base64');
+        updateData.GeometryFileName = GeometryFileName;
+      }
+      if (PrintFileContents && !printBlobResult) {
+        updateData.PrintFileContents = Buffer.from(PrintFileContents, 'base64');
+        updateData.PrintFileName = PrintFileName;
+      }
+
+      // Update the geometry processing queue entry
       const updatedGeometryJob = await tx.geometryProcessingQueue.update({
         where: { id: GeometryProcessingQueueID },
-        data: ({
-          ProcessCompletedTime: currentTime,
-          isProcessSuccessful: isSuccess,
-          ProcessingLog: processingLog ?? undefined,
-          GeometryFileContents: GeometryFileContents ? Buffer.from(GeometryFileContents, 'base64') : undefined,
-          GeometryFileName: GeometryFileName ?? undefined,
-          PrintFileContents: PrintFileContents ? Buffer.from(PrintFileContents, 'base64') : undefined,
-          PrintFileName: PrintFileName ?? undefined
-        }) as any,
+        data: updateData,
         include: {
           geometry: {
             select: {
@@ -178,10 +261,11 @@ export async function POST(request: NextRequest) {
     if (result.printQueueEntry) {
       response.printQueueEntry = {
         id: result.printQueueEntry.id,
-        hasGeometryFile: !!GeometryFileContents,
-        hasPrintFile: !!PrintFileContents,
+        hasGeometryFile: !!(geometryFile || GeometryFileContents),
+        hasPrintFile: !!(printFile || PrintFileContents),
         GeometryFileName: GeometryFileName || null,
-        PrintFileName: PrintFileName || null
+        PrintFileName: PrintFileName || null,
+        usedBlobStorage: !!(geometryBlobResult || printBlobResult)
       };
     }
 

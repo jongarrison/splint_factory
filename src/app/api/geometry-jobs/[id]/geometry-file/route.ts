@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getBlobStorageInstance } from '@/lib/blob-storage';
 
 function getMimeType(filename: string | null | undefined): string {
   if (!filename) return 'application/octet-stream';
@@ -26,7 +27,7 @@ function safeFilename(name: string) {
 
 // GET /api/geometry-jobs/[id]/geometry-file - Download geometry file for a job
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -63,6 +64,38 @@ export async function GET(
     }
 
     const gpq = job as any;
+    
+    // Check if file is stored in blob storage (new format)
+    if (gpq.GeometryBlobPathname) {
+      const blobStorage = getBlobStorageInstance();
+      const signedUrl = await blobStorage.getSignedUrl(gpq.GeometryBlobPathname);
+      
+      // For local development, serve the file directly (don't redirect - auth issues)
+      if (signedUrl.startsWith('/api/local-blob/')) {
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const storageDir = path.join(process.cwd(), '.blob-storage');
+        const filePath = path.join(storageDir, gpq.GeometryBlobPathname);
+        
+        const fileBuffer = await fs.readFile(filePath);
+        const contentType = getMimeType(gpq.GeometryFileName as string);
+        const body = new Uint8Array(fileBuffer);
+
+        return new NextResponse(body, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType,
+            'Content-Length': String(body.byteLength),
+            'Cache-Control': 'private, max-age=3600',
+          },
+        });
+      }
+      
+      // For production Vercel Blob, redirect to signed URL
+      return NextResponse.redirect(signedUrl);
+    }
+    
+    // Fallback to legacy BYTEA storage
     if (!gpq.GeometryFileContents || !gpq.GeometryFileName) {
       return NextResponse.json({ error: 'No geometry file available for this job' }, { status: 404 });
     }

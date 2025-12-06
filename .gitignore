@@ -48,3 +48,6 @@ next-env.d.ts
 /prisma/dev.db
 *.db
 *.sqlite
+
+# blob storage (local development)
+/.blob-storage/
