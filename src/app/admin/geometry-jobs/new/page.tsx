@@ -471,7 +471,7 @@ function CreateGeometryJobPage() {
             <div className="flex justify-end gap-4 pt-4 border-t">
               <Link
                 href="/admin/geometry-jobs"
-                className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded text-sm font-medium"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
               >
                 Cancel
               </Link>
