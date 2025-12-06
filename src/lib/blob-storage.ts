@@ -62,10 +62,11 @@ class VercelBlobStorage implements BlobStorage {
   }
 
   async getSignedUrl(pathname: string, expiresIn: number = 3600): Promise<string> {
-    // For Vercel Blob, the URL is already accessible, but we can add expiration
-    // In production, we'd use Vercel's signed URL API if needed
-    // For now, return the URL directly (access control is at API level)
-    return pathname;
+    // Vercel Blob URLs are public but we control access at the API level
+    // The pathname is relative, so we need to construct the full URL
+    // Format: https://{accountId}.public.blob.vercel-storage.com/{pathname}
+    const blobUrl = `${process.env.BLOB_STORAGE_URL || 'https://dafvmdqp55nmfbxz.public.blob.vercel-storage.com'}/${pathname}`;
+    return blobUrl;
   }
 
   async delete(pathname: string): Promise<void> {

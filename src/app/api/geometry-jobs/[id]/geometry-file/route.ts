@@ -66,12 +66,9 @@ export async function GET(
     const gpq = job as any;
     
     // Check if file is stored in blob storage (new format)
-    if (gpq.GeometryBlobPathname) {
-      const blobStorage = getBlobStorageInstance();
-      const signedUrl = await blobStorage.getSignedUrl(gpq.GeometryBlobPathname);
-      
-      // For local development, serve the file directly (don't redirect - auth issues)
-      if (signedUrl.startsWith('/api/local-blob/')) {
+    if (gpq.GeometryBlobUrl) {
+      // For local development, check if it's a local blob URL
+      if (gpq.GeometryBlobUrl.startsWith('/api/local-blob/')) {
         const fs = await import('fs/promises');
         const path = await import('path');
         const storageDir = path.join(process.cwd(), '.blob-storage');
@@ -91,8 +88,8 @@ export async function GET(
         });
       }
       
-      // For production Vercel Blob, redirect to signed URL
-      return NextResponse.redirect(signedUrl);
+      // For production Vercel Blob, redirect to the stored URL
+      return NextResponse.redirect(gpq.GeometryBlobUrl);
     }
     
     // Fallback to legacy BYTEA storage
