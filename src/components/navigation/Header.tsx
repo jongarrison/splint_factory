@@ -223,22 +223,16 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
               </>
             ) : (
               <>
-                <Link 
-                  href="/login" 
-                  className={`text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-                >
-                  Sign In
-                </Link>
-                <Link 
-                  href="/register" 
-                  className={`px-4 py-2 text-sm font-medium rounded-md ${
-                    isDarkMode 
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                >
-                  Get Started
-                </Link>
+                {/* Only show Sign In link if not already on login page */}
+                {pathname !== '/login' && (
+                  <Link 
+                    href="/login" 
+                    className={`text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                  >
+                    Sign In
+                  </Link>
+                )}
+                {/* Get Started button removed - registration is invite-only */}
               </>
             )}
           </div>

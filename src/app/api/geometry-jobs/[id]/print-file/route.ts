@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getBlobStorageInstance } from '@/lib/blob-storage';
 
 function getMimeType(filename: string | null | undefined): string {
   if (!filename) return 'application/octet-stream';
@@ -63,6 +64,35 @@ export async function GET(
     }
 
     const gpq = job as any;
+    
+    // Check if file is stored in blob storage (new format)
+    if (gpq.PrintBlobUrl) {
+      // For local development, check if it's a local blob URL
+      if (gpq.PrintBlobUrl.startsWith('/api/local-blob/')) {
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const storageDir = path.join(process.cwd(), '.blob-storage');
+        const filePath = path.join(storageDir, gpq.PrintBlobPathname);
+        
+        const fileBuffer = await fs.readFile(filePath);
+        const contentType = getMimeType(gpq.PrintFileName as string);
+        const body = new Uint8Array(fileBuffer);
+
+        return new NextResponse(body, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType,
+            'Content-Length': String(body.byteLength),
+            'Cache-Control': 'private, max-age=3600',
+          },
+        });
+      }
+      
+      // For production Vercel Blob, redirect to the stored URL
+      return NextResponse.redirect(gpq.PrintBlobUrl);
+    }
+    
+    // Fallback to legacy BYTEA storage
     if (!gpq.PrintFileContents || !gpq.PrintFileName) {
       return NextResponse.json({ error: 'No print file available for this job' }, { status: 404 });
     }

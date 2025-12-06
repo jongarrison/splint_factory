@@ -2,6 +2,7 @@
 
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 interface SignOutButtonProps {
   variant?: 'browser' | 'electron';
@@ -9,10 +10,24 @@ interface SignOutButtonProps {
 
 export default function SignOutButton({ variant = 'browser' }: SignOutButtonProps) {
   const router = useRouter()
+  const [isElectron, setIsElectron] = useState(false);
+
+  useEffect(() => {
+    // Detect if running in Electron environment
+    const checkElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+    setIsElectron(checkElectron);
+  }, []);
   
   const handleSignOut = async () => {
     await signOut({ redirect: false });
-    router.push('/login');
+    
+    if (isElectron) {
+      // In Electron, use client-side navigation to avoid opening external browser
+      router.push('/login');
+    } else {
+      // In browser, force a full page reload to clear all state
+      window.location.href = '/login';
+    }
   };
 
   return (
