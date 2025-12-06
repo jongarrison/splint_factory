@@ -125,11 +125,11 @@ export default function GeometryJobsPage() {
                 type="text"
                 value={searchObjectId}
                 onChange={(e) => {
-                  setSearchObjectId(e.target.value);
+                  setSearchObjectId(e.target.value.toUpperCase());
                   setSearchError('');
                 }}
                 placeholder="Search by Object ID..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
               />
             </div>
             <button
