@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Handle both multipart (new blob storage) and JSON (legacy) formats
+    // Handle three formats: JSON with blob URLs, multipart with files, or legacy JSON with base64
     const contentType = request.headers.get('content-type') || '';
     let GeometryProcessingQueueID: string;
     let isSuccess: boolean;
@@ -37,9 +37,13 @@ export async function POST(request: NextRequest) {
     let PrintFileName: string | undefined;
     let geometryFile: File | undefined;
     let printFile: File | undefined;
+    let geometryBlobUrl: string | undefined;
+    let geometryBlobPathname: string | undefined;
+    let printBlobUrl: string | undefined;
+    let printBlobPathname: string | undefined;
 
     if (contentType.includes('multipart/form-data')) {
-      // New format: multipart with actual files
+      // Format 1: multipart with actual files (for small files or backward compatibility)
       const formData = await request.formData();
       GeometryProcessingQueueID = formData.get('GeometryProcessingQueueID') as string;
       isSuccess = formData.get('isSuccess') === 'true';
@@ -50,16 +54,24 @@ export async function POST(request: NextRequest) {
       GeometryFileName = geometryFile?.name;
       PrintFileName = printFile?.name;
     } else {
-      // Legacy format: JSON with base64
+      // Format 2 & 3: JSON (either with blob URLs or legacy base64)
       const body = await request.json();
       GeometryProcessingQueueID = body.GeometryProcessingQueueID;
       isSuccess = body.isSuccess;
       errorMessage = body.errorMessage;
       processingLog = body.processingLog;
-      GeometryFileContents = body.GeometryFileContents;
+      
+      // Check for blob URL format (preferred)
+      geometryBlobUrl = body.geometryBlobUrl;
+      geometryBlobPathname = body.geometryBlobPathname;
+      printBlobUrl = body.printBlobUrl;
+      printBlobPathname = body.printBlobPathname;
       GeometryFileName = body.GeometryFileName;
-      PrintFileContents = body.PrintFileContents;
       PrintFileName = body.PrintFileName;
+      
+      // Legacy base64 format (fallback)
+      GeometryFileContents = body.GeometryFileContents;
+      PrintFileContents = body.PrintFileContents;
     }
 
     // Validate required fields
@@ -162,10 +174,10 @@ export async function POST(request: NextRequest) {
 
     const currentTime = new Date();
 
-    // Upload files to blob storage if provided
+    // Upload files to blob storage if provided as multipart files
     const blobStorage = getBlobStorageInstance();
-    let geometryBlobResult;
-    let printBlobResult;
+    let geometryBlobResult: { url: string; pathname: string; size: number; contentType: string } | undefined;
+    let printBlobResult: { url: string; pathname: string; size: number; contentType: string } | undefined;
 
     if (geometryFile) {
       const geometryBuffer = Buffer.from(await geometryFile.arrayBuffer());
@@ -177,6 +189,27 @@ export async function POST(request: NextRequest) {
       const printBuffer = Buffer.from(await printFile.arrayBuffer());
       printBlobResult = await blobStorage.upload(printBuffer, printFile.name);
       console.log(`Uploaded print file to blob storage: ${printBlobResult.pathname} (${printBlobResult.size} bytes)`);
+    }
+
+    // Or use blob URLs if provided (preferred for large files)
+    if (geometryBlobUrl && geometryBlobPathname) {
+      geometryBlobResult = {
+        url: geometryBlobUrl,
+        pathname: geometryBlobPathname,
+        size: 0, // Size not needed for pre-uploaded blobs
+        contentType: '',
+      };
+      console.log(`Using pre-uploaded geometry file: ${geometryBlobPathname}`);
+    }
+
+    if (printBlobUrl && printBlobPathname) {
+      printBlobResult = {
+        url: printBlobUrl,
+        pathname: printBlobPathname,
+        size: 0,
+        contentType: '',
+      };
+      console.log(`Using pre-uploaded print file: ${printBlobPathname}`);
     }
 
     // Start transaction to update geometry processing queue and create print queue entry if successful
