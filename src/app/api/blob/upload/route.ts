@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiKey, checkApiPermission } from '@/lib/api-auth';
-import { getBlobStorageInstance } from '@/lib/blob-storage';
+import { handleUpload } from '@vercel/blob/client';
 
-// POST /api/blob/upload - Upload files to blob storage
+/**
+ * POST /api/blob/upload - Vercel Blob client upload handler
+ * 
+ * This endpoint uses Vercel's handleUpload() to:
+ * 1. Generate temporary client tokens for uploads (on token request)
+ * 2. Receive upload completion callbacks (on upload complete)
+ * 
+ * The processor calls upload() from @vercel/blob/client which:
+ * - Requests a token from this endpoint
+ * - Uploads directly to Vercel Blob
+ * - Notifies this endpoint on completion
+ */
 export async function POST(request: NextRequest) {
   try {
     // Require API key authentication
@@ -17,57 +28,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    const contentType = request.headers.get('content-type') || '';
-    
-    if (!contentType.includes('multipart/form-data')) {
-      return NextResponse.json({ 
-        error: 'Content-Type must be multipart/form-data' 
-      }, { status: 400 });
-    }
+    const body = await request.json();
 
-    const formData = await request.formData();
-    const files = formData.getAll('files') as File[];
-    
-    if (!files || files.length === 0) {
-      return NextResponse.json({ 
-        error: 'No files provided' 
-      }, { status: 400 });
-    }
-
-    // Validate file size limits (500MB per file)
-    const maxFileSize = 500 * 1024 * 1024; // 500MB
-    for (const file of files) {
-      if (file.size > maxFileSize) {
-        return NextResponse.json({ 
-          error: `File ${file.name} exceeds 500MB limit` 
-        }, { status: 400 });
-      }
-    }
-
-    // Upload all files to blob storage
-    const blobStorage = getBlobStorageInstance();
-    const uploads = await Promise.all(
-      files.map(async (file) => {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const result = await blobStorage.upload(buffer, file.name);
-        console.log(`Uploaded file to blob storage: ${result.pathname} (${result.size} bytes)`);
+    const result = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (pathname, clientPayload, multipart) => {
+        // Validate token request before generating
+        console.log(`Generating client token for: ${pathname} (multipart: ${multipart})`);
+        
         return {
-          filename: file.name,
-          url: result.url,
-          pathname: result.pathname,
-          size: result.size,
-          contentType: result.contentType,
+          // Allow all content types (STL, 3MF, GCODE, etc.)
+          allowedContentTypes: [
+            'model/stl',
+            'model/3mf', 
+            'application/x-3mf',
+            'text/plain',           // GCODE
+            'application/octet-stream'
+          ],
+          // 500MB limit per file (Vercel Blob max)
+          maximumSizeInBytes: 500 * 1024 * 1024,
+          // Token valid for 1 hour
+          validUntil: Date.now() + 60 * 60 * 1000,
+          // Add random suffix to prevent collisions
+          addRandomSuffix: true,
+          // Public access (we control via API)
+          tokenPayload: JSON.stringify({ 
+            uploadedBy: apiAuth.apiKey?.name,
+            timestamp: Date.now() 
+          }),
         };
-      })
-    );
+      },
+      onUploadCompleted: async ({ blob, tokenPayload }) => {
+        // Log successful upload
+        console.log(`Upload completed: ${blob.pathname} (${blob.url})`);
+        if (tokenPayload) {
+          const payload = JSON.parse(tokenPayload);
+          console.log(`Uploaded by: ${payload.uploadedBy} at ${new Date(payload.timestamp).toISOString()}`);
+        }
+      },
+    });
 
-    return NextResponse.json({ 
-      success: true,
-      uploads 
-    }, { status: 200 });
+    return NextResponse.json(result);
 
   } catch (error) {
-    console.error('Error uploading files to blob storage:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error in blob upload handler:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
