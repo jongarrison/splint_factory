@@ -54,6 +54,12 @@ export async function GET() {
             name: true
             // Exclude: id, email (not displayed in list)
           }
+        },
+        printQueue: {
+          select: {
+            id: true,
+            printAcceptance: true
+          }
         }
         // Exclude: owningOrganization (not displayed in list)
       },

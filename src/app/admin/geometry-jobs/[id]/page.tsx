@@ -44,6 +44,7 @@ interface PrintJob {
   PrintCompletedTime?: string | null;
   isPrintSuccessful: boolean;
   printNote?: string | null;
+  printAcceptance?: boolean | null;
   isEnabled: boolean;
   CreationTime: string;
 }
@@ -181,16 +182,41 @@ export default function GeometryJobDetailPage({
   };
 
   const getPrintStatusBadge = (printJob: PrintJob) => {
-    if (printJob.PrintCompletedTime && printJob.isPrintSuccessful) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Print Completed</span>;
-    }
-    if (printJob.PrintCompletedTime && !printJob.isPrintSuccessful) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Print Failed</span>;
-    }
-    if (printJob.PrintStartedTime) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Printing</span>;
-    }
-    return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Ready to Print</span>;
+    const printStatusBadge = (() => {
+      if (printJob.PrintCompletedTime && printJob.isPrintSuccessful) {
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Print Completed</span>;
+      }
+      if (printJob.PrintCompletedTime && !printJob.isPrintSuccessful) {
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Print Failed</span>;
+      }
+      if (printJob.PrintStartedTime) {
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Printing</span>;
+      }
+      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Ready to Print</span>;
+    })();
+
+    const acceptanceBadge = printJob.printAcceptance === true ? (
+      <span 
+        className="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 cursor-help"
+        title={printJob.printNote || 'Accepted'}
+      >
+        ✓ Accepted
+      </span>
+    ) : printJob.printAcceptance === false ? (
+      <span 
+        className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 cursor-help"
+        title={printJob.printNote || 'Rejected'}
+      >
+        ✗ Rejected
+      </span>
+    ) : null;
+
+    return (
+      <div className="flex flex-col gap-1">
+        {printStatusBadge}
+        {acceptanceBadge}
+      </div>
+    );
   };
 
   if (loading) {

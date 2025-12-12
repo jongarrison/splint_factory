@@ -11,7 +11,6 @@ interface GeometryJob {
   id: string;
   objectID?: string;
   CreationTime: string;
-  GeometryInputParameterData: string;
   CustomerNote?: string;
   CustomerID?: string;
   ProcessStartedTime?: string;
@@ -23,13 +22,12 @@ interface GeometryJob {
     GeometryAlgorithmName: string;
   };
   creator: {
+    name: string;
+  };
+  printQueue: Array<{
     id: string;
-    name: string;
-    email: string;
-  };
-  owningOrganization: {
-    name: string;
-  };
+    printAcceptance: boolean | null;
+  }>;
 }
 
 export default function GeometryJobsPage() {
@@ -77,19 +75,41 @@ export default function GeometryJobsPage() {
   };
 
   const getStatusBadge = (job: GeometryJob) => {
-    if (!job.isEnabled) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Disabled</span>;
-    }
-    if (job.ProcessCompletedTime && job.isProcessSuccessful) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>;
-    }
-    if (job.ProcessCompletedTime && !job.isProcessSuccessful) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failed</span>;
-    }
-    if (job.ProcessStartedTime) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Processing</span>;
-    }
-    return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Pending</span>;
+    const processingBadge = (() => {
+      if (!job.isEnabled) {
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Disabled</span>;
+      }
+      if (job.ProcessCompletedTime && job.isProcessSuccessful) {
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>;
+      }
+      if (job.ProcessCompletedTime && !job.isProcessSuccessful) {
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failed</span>;
+      }
+      if (job.ProcessStartedTime) {
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Processing</span>;
+      }
+      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Pending</span>;
+    })();
+
+    // Count print acceptances
+    const acceptedPrints = job.printQueue.filter(p => p.printAcceptance === true).length;
+    const rejectedPrints = job.printQueue.filter(p => p.printAcceptance === false).length;
+
+    return (
+      <div className="flex flex-col gap-1">
+        {processingBadge}
+        {acceptedPrints > 0 && (
+          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
+            ✓ {acceptedPrints} Accepted
+          </span>
+        )}
+        {rejectedPrints > 0 && (
+          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800">
+            ✗ {rejectedPrints} Rejected
+          </span>
+        )}
+      </div>
+    );
   };
 
   const formatDate = (dateString: string) => {
