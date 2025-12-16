@@ -62,6 +62,7 @@ export default function GeometryJobDetailPage({
   const [loadingPrintJobs, setLoadingPrintJobs] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creatingPrint, setCreatingPrint] = useState(false);
+  const [creatingDebug, setCreatingDebug] = useState(false);
   const [id, setId] = useState<string>('');
 
   useEffect(() => {
@@ -142,6 +143,38 @@ export default function GeometryJobDetailPage({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create print job');
       setCreatingPrint(false);
+    }
+  };
+
+  const handleDebugRequest = async () => {
+    if (!confirm('Create a debug request to launch Grasshopper on the processor with this job\'s script and parameters?')) {
+      return;
+    }
+
+    try {
+      setCreatingDebug(true);
+      
+      const response = await fetch('/api/geometry-processing/debug', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobId: id,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create debug request');
+      }
+
+      const result = await response.json();
+      alert(result.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create debug request');
+    } finally {
+      setCreatingDebug(false);
     }
   };
 
@@ -279,6 +312,20 @@ export default function GeometryJobDetailPage({
               </p>
             </div>
             <div className="flex gap-4">
+              {session?.user?.role === 'admin' && (
+                <button
+                  onClick={handleDebugRequest}
+                  disabled={creatingDebug}
+                  className={`${
+                    creatingDebug
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-orange-600 hover:bg-orange-700'
+                  } text-white px-4 py-2 rounded text-sm font-medium`}
+                  title="Launch Grasshopper on processor with this job's script for debugging"
+                >
+                  {creatingDebug ? 'Creating...' : '🐞 Debug on Processor'}
+                </button>
+              )}
               <Link
                 href={`/admin/geometry-jobs/new?template=${job.id}`}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium"

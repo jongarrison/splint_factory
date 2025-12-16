@@ -107,6 +107,7 @@ export async function GET(request: NextRequest) {
       CustomerID: updatedJob.CustomerID,
       CreationTime: updatedJob.CreationTime,
       ProcessStartedTime: updatedJob.ProcessStartedTime,
+      isDebugRequest: updatedJob.isDebugRequest || false,
       // File metadata lives on geometry job; no binary returned here
       GeometryFileName: (updatedJob as any).GeometryFileName ?? null,
       PrintFileName: (updatedJob as any).PrintFileName ?? null,
