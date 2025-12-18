@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 
 // TypeScript interfaces
 interface PrinterConfig {
-  name: string;
   model: string;
   host: string;
   accessCode: string;
@@ -50,7 +49,6 @@ interface PrinterStatus {
 export default function PrinterConfigurePage() {
   const [activeTab, setActiveTab] = useState<'config' | 'status' | 'print' | 'cache'>('config');
   const [config, setConfig] = useState<PrinterConfig>({
-    name: '',
     model: 'P1S',
     host: '',
     accessCode: '',
@@ -192,7 +190,7 @@ export default function PrinterConfigurePage() {
       const result = await (window as any).electronAPI.deletePrinterConfig();
       
       if (result.success) {
-        setConfig({ name: '', model: 'P1S', host: '', accessCode: '', serial: '' });
+        setConfig({ model: 'P1S', host: '', accessCode: '', serial: '' });
         setConfigStatus({ message: 'Configuration deleted successfully', type: 'success' });
       } else {
         setConfigStatus({ message: result.error, type: 'error' });
@@ -435,18 +433,6 @@ export default function PrinterConfigurePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Device Name (Optional):</label>
-                  <input
-                    type="text"
-                    value={config.name}
-                    onChange={(e) => setConfig({ ...config, name: e.target.value })}
-                    placeholder="Bambi-3DP-01P-537"
-                    className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-                  />
-                  <small className="text-gray-400">Only needed if you have multiple printers</small>
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium mb-2">
                     Access Code: <span className="text-red-500">*</span>
                   </label>
@@ -527,8 +513,8 @@ export default function PrinterConfigurePage() {
               <h2 className="text-xl font-bold mb-4">How to Find Your Printer Information</h2>
               <p className="text-sm text-gray-400 space-y-2">
                 <strong>Serial Number (Required):</strong> Located on a sticker on your printer, in BambuStudio Device settings, or Settings → Device on your printer&apos;s screen<br />
-                <strong>Device Name (Optional):</strong> Only needed if you have multiple printers. Check Settings → General → Device Name on your printer&apos;s screen<br />
-                <strong>Access Code (Required):</strong> Go to Settings → Network on your printer&apos;s screen to view the 8-digit code
+                <strong>Access Code (Required):</strong> Go to Settings → Network on your printer&apos;s screen to view the 8-digit code<br />
+                <strong>Printer Model:</strong> Optional - will be auto-detected from the printer during connection
               </p>
             </div>
           </div>
