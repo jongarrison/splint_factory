@@ -312,7 +312,7 @@ export default function GeometryJobDetailPage({
               </p>
             </div>
             <div className="flex gap-4">
-              {session?.user?.role === 'admin' && (
+              {session?.user?.role === 'SYSTEM_ADMIN' && (
                 <button
                   onClick={handleDebugRequest}
                   disabled={creatingDebug}

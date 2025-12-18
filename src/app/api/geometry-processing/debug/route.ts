@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     
     // Only admins can create debug requests
-    if (!session?.user?.id || session.user.role !== 'admin') {
+    if (!session?.user?.id || session.user.role !== 'SYSTEM_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
     }
 
