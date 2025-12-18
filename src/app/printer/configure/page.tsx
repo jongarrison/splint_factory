@@ -352,7 +352,12 @@ export default function PrinterConfigurePage() {
     return (
       <div className="min-h-screen bg-gray-100 p-8">
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">⚠️ Electron Required</h1>
+          <div className="flex items-center gap-3 mb-4">
+            <svg className="w-10 h-10 text-yellow-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <h1 className="text-3xl font-bold text-gray-800">Electron Required</h1>
+          </div>
           <p className="text-gray-600">
             This page provides direct printer configuration and management functionality that requires
             the Electron client application. Please access this page through the splint_client Electron app.
@@ -366,9 +371,14 @@ export default function PrinterConfigurePage() {
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="max-w-6xl mx-auto p-6">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">🖨️ Printer Manager</h1>
-          <p className="text-gray-400 mt-2">Configure and manage your Bambu Lab printer</p>
+        <div className="mb-6 flex items-center gap-3">
+          <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+          </svg>
+          <div>
+            <h1 className="text-3xl font-bold">Printer Manager</h1>
+            <p className="text-gray-400 mt-1">Configure and manage your Bambu Lab printer</p>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -483,21 +493,30 @@ export default function PrinterConfigurePage() {
               <div className="flex space-x-3 mt-6">
                 <button
                   onClick={savePrinterConfig}
-                  className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold"
+                  className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold flex items-center gap-2"
                 >
-                  💾 Save Configuration
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z"/>
+                  </svg>
+                  Save Configuration
                 </button>
                 <button
                   onClick={loadPrinterConfig}
-                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold"
+                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold flex items-center gap-2"
                 >
-                  📂 Load Configuration
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
+                  </svg>
+                  Load Configuration
                 </button>
                 <button
                   onClick={deletePrinterConfig}
-                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-semibold"
+                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-semibold flex items-center gap-2"
                 >
-                  🗑️ Delete Configuration
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                  </svg>
+                  Delete Configuration
                 </button>
               </div>
 
@@ -524,23 +543,32 @@ export default function PrinterConfigurePage() {
                 <button
                   onClick={startStatusStreaming}
                   disabled={isStreaming}
-                  className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-4 py-2 rounded font-semibold"
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-4 py-2 rounded font-semibold flex items-center gap-2"
                 >
-                  ▶️ Start Live Streaming
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                  </svg>
+                  Start Live Streaming
                 </button>
                 <button
                   onClick={stopStatusStreaming}
                   disabled={!isStreaming}
-                  className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 px-4 py-2 rounded font-semibold"
+                  className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 px-4 py-2 rounded font-semibold flex items-center gap-2"
                 >
-                  ⏹️ Stop Streaming
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                  </svg>
+                  Stop Streaming
                 </button>
               </div>
 
               {isStreaming && currentStatus && (
                 <div className="space-y-4">
-                  <div className="bg-green-900 border border-green-700 rounded p-3">
-                    ✓ Live Stream Active • {dataAge}
+                  <div className="bg-green-900 border border-green-700 rounded p-3 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                    Live Stream Active • {dataAge}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -584,9 +612,12 @@ export default function PrinterConfigurePage() {
               <h2 className="text-xl font-bold mb-4">Select Print File</h2>
               <button
                 onClick={selectFile}
-                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold"
+                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold flex items-center gap-2"
               >
-                📁 Choose 3MF File
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
+                </svg>
+                Choose 3MF File
               </button>
               <StatusMessage status={fileInfo} />
             </div>
@@ -596,9 +627,12 @@ export default function PrinterConfigurePage() {
               <button
                 onClick={printFile}
                 disabled={!selectedFilePath}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-4 py-2 rounded font-semibold"
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-4 py-2 rounded font-semibold flex items-center gap-2"
               >
-                🚀 Upload & Print
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+                </svg>
+                Upload & Print
               </button>
               <StatusMessage status={printStatus} />
             </div>
@@ -616,15 +650,22 @@ export default function PrinterConfigurePage() {
               <div className="flex space-x-3">
                 <button
                   onClick={listCache}
-                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold"
+                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold flex items-center gap-2"
                 >
-                  📋 List Cache Files
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/>
+                  </svg>
+                  List Cache Files
                 </button>
                 <button
                   onClick={clearCache}
-                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-semibold"
+                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-semibold flex items-center gap-2"
                 >
-                  🗑️ Clear All Cache
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                  </svg>
+                  Clear All Cache
                 </button>
               </div>
               <StatusMessage status={cacheInfo} />
