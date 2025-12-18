@@ -63,39 +63,49 @@ export async function GET(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Set ProcessStartedTime to now to mark as started
-    const updatedJob = await prisma.geometryProcessingQueue.update({
-      where: { id: nextJob.id },
-      data: {
-        ProcessStartedTime: new Date()
-      },
-      include: {
-        geometry: {
-          select: {
-            GeometryName: true,
-            GeometryAlgorithmName: true,
-            GeometryInputParameterSchema: true
-          }
+    // For debug jobs, we delete them after returning the data since they're single-use
+    // For regular jobs, we mark them as started
+    let updatedJob;
+    
+    if (nextJob.isDebugRequest) {
+      // Debug job: just return the data without updating, we'll delete it after
+      updatedJob = nextJob;
+      console.log(`Fetching debug geometry job ${nextJob.id} (${nextJob.geometry.GeometryName}) - will be deleted after pickup`);
+    } else {
+      // Regular job: mark as started
+      updatedJob = await prisma.geometryProcessingQueue.update({
+        where: { id: nextJob.id },
+        data: {
+          ProcessStartedTime: new Date()
         },
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        owningOrganization: {
-          select: {
-            id: true,
-            name: true
+        include: {
+          geometry: {
+            select: {
+              GeometryName: true,
+              GeometryAlgorithmName: true,
+              GeometryInputParameterSchema: true
+            }
+          },
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          owningOrganization: {
+            select: {
+              id: true,
+              name: true
+            }
           }
         }
-      }
-    });
-
-    console.log(`Started processing geometry job ${updatedJob.id} (${updatedJob.geometry.GeometryName})`);
+      });
+      console.log(`Started processing geometry job ${updatedJob.id} (${updatedJob.geometry.GeometryName})`);
+    }
     
-    return NextResponse.json({
+    // Prepare response
+    const response = NextResponse.json({
       id: updatedJob.id,
       objectID: updatedJob.objectID,
       GeometryID: updatedJob.GeometryID,
@@ -114,6 +124,24 @@ export async function GET(request: NextRequest) {
       creator: updatedJob.creator,
       owningOrganization: updatedJob.owningOrganization
     });
+
+    // For debug jobs, delete after returning data (fire and forget)
+    if (nextJob.isDebugRequest) {
+      // Delete any associated print queue entries first, then the job
+      prisma.printQueue.deleteMany({
+        where: { GeometryProcessingQueueID: nextJob.id }
+      }).then(() => {
+        return prisma.geometryProcessingQueue.delete({
+          where: { id: nextJob.id }
+        });
+      }).then(() => {
+        console.log(`Deleted debug job ${nextJob.id} after pickup`);
+      }).catch((err) => {
+        console.error(`Failed to delete debug job ${nextJob.id}:`, err);
+      });
+    }
+
+    return response;
 
   } catch (error) {
     console.error('Error getting next geometry processing job:', error);

@@ -1,1 +1,1 @@
-npx prisma studio --browser none --port 5555
+npm run prisma:studio -- --browser none --port 5555
