@@ -63,7 +63,8 @@ export async function GET(request: NextRequest) {
             CustomerNote: true,
             GeometryFileName: true,
             PrintFileName: true,
-            // Exclude: CreationTime, GeometryInputParameterData, ProcessStartedTime, ProcessCompletedTime
+            CreationTime: true, // Required for sorting
+            // Exclude: GeometryInputParameterData, ProcessStartedTime, ProcessCompletedTime
             // Exclude: GeometryFileContents, PrintFileContents (CRITICAL - these are huge binary files)
             geometry: {
               select: {

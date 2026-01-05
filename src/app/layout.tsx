@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Splint Factory",
-  description: "A Next.js app with authentication",
+  description: "Custom orthotics manufacturing platform",
 };
 
 export default function RootLayout({

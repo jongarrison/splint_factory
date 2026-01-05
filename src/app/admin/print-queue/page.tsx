@@ -152,9 +152,23 @@ export default function PrintQueuePage() {
     return true; // Otherwise active
   };
 
-  const filteredPrintQueue = printQueue?.filter(entry => 
-    viewMode === 'active' ? isActivePrint(entry) : !isActivePrint(entry)
-  );
+  const filteredPrintQueue = printQueue
+    ?.filter(entry => 
+      viewMode === 'active' ? isActivePrint(entry) : !isActivePrint(entry)
+    )
+    .sort((a, b) => {
+      // Get creation times
+      const timeA = new Date(a.geometryProcessingQueue.CreationTime).getTime();
+      const timeB = new Date(b.geometryProcessingQueue.CreationTime).getTime();
+      
+      if (viewMode === 'active') {
+        // Active: oldest first (ascending)
+        return timeA - timeB;
+      } else {
+        // History: newest first (descending)
+        return timeB - timeA;
+      }
+    });
 
   const getStatusBadge = (entry: PrintQueueEntry) => {
     if (entry.PrintCompletedTime && entry.isPrintSuccessful) {
