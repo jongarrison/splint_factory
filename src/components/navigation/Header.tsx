@@ -13,6 +13,8 @@ interface HeaderProps {
 export default function Header({ variant = 'browser' }: HeaderProps) {
   const { data: session } = useSession();
   const [showAdminDropdown, setShowAdminDropdown] = useState(false);
+  const [processorHealthy, setProcessorHealthy] = useState<boolean | null>(null);
+  const [secondsSinceLastPing, setSecondsSinceLastPing] = useState<number>(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
@@ -20,6 +22,21 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
   const baseClasses = isDarkMode 
     ? 'bg-gray-800 border-gray-700 text-white' 
     : 'bg-white border-gray-200 text-gray-900';
+
+  // Check geometry processor health on mount (SYSTEM_ADMIN only)
+  useEffect(() => {
+    if (session?.user?.role === 'SYSTEM_ADMIN') {
+      fetch('/api/geometry-processing/processor-health')
+        .then(res => res.json())
+        .then(data => {
+          setProcessorHealthy(data.isHealthy);
+          setSecondsSinceLastPing(data.secondsSinceLastPing);
+        })
+        .catch(() => {
+          setProcessorHealthy(null); // Unknown status on error
+        });
+    }
+  }, [session?.user?.role]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -39,7 +56,25 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
   }, [showAdminDropdown]);
 
   return (
-    <nav className={`shadow-lg border-b ${baseClasses}`}>
+    <>
+      {/* Geometry Processor Health Warning (SYSTEM_ADMIN only) */}
+      {session?.user?.role === 'SYSTEM_ADMIN' && processorHealthy === false && (
+        <div className="bg-yellow-50 border-b border-yellow-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <div className="flex items-center gap-2 text-sm text-yellow-800">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">Geometry Processor Offline</span>
+              <span className="text-yellow-700">
+                Last check-in: {secondsSinceLastPing}s ago
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <nav className={`shadow-lg border-b ${baseClasses}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Left side - Logo and brand */}
@@ -274,5 +309,6 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
         </div>
       </div>
     </nav>
+    </>
   );
 }

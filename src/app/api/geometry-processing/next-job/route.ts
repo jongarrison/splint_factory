@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { validateApiKey, checkApiPermission } from '@/lib/api-auth';
+import { updateProcessorPing } from '@/lib/geo-processor-health';
 
 // GET /api/geometry-processing/next-job - Get next geometry processing record for external processing software
 export async function GET(request: NextRequest) {
   try {
+    // Track that the processor called in (for health monitoring)
+    updateProcessorPing();
     // Try API key authentication first
     const apiAuth = await validateApiKey(request);
     
