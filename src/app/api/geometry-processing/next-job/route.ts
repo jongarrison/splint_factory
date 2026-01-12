@@ -28,10 +28,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Find the oldest unprocessed geometry processing queue entry
+    // Include jobs that are either:
+    // 1. Never started (ProcessStartedTime: null)
+    // 2. Started but stuck (ProcessStartedTime set, but no ProcessCompletedTime and older than 10 minutes)
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    
     const nextJob = await prisma.geometryProcessingQueue.findFirst({
       where: {
-        ProcessStartedTime: null,
-        isEnabled: true
+        isEnabled: true,
+        ProcessCompletedTime: null, // Not completed
+        OR: [
+          { ProcessStartedTime: null }, // Never started
+          { ProcessStartedTime: { lt: tenMinutesAgo } } // Started but stuck (>10 min ago)
+        ]
       },
       include: {
         geometry: {
@@ -66,66 +75,36 @@ export async function GET(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // For debug jobs, we delete them after returning the data since they're single-use
-    // For regular jobs, we mark them as started
-    let updatedJob;
-    
-    if (nextJob.isDebugRequest) {
-      // Debug job: just return the data without updating, we'll delete it after
-      updatedJob = nextJob;
-      console.log(`Fetching debug geometry job ${nextJob.id} (${nextJob.geometry.GeometryName}) - will be deleted after pickup`);
+    // Log whether this is a retry of a stuck job
+    if (nextJob.ProcessStartedTime) {
+      console.log(`Retrying stuck geometry job ${nextJob.id} (${nextJob.geometry.GeometryName}) - originally started at ${nextJob.ProcessStartedTime}`);
     } else {
-      // Regular job: mark as started
-      updatedJob = await prisma.geometryProcessingQueue.update({
-        where: { id: nextJob.id },
-        data: {
-          ProcessStartedTime: new Date()
-        },
-        include: {
-          geometry: {
-            select: {
-              GeometryName: true,
-              GeometryAlgorithmName: true,
-              GeometryInputParameterSchema: true
-            }
-          },
-          creator: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          },
-          owningOrganization: {
-            select: {
-              id: true,
-              name: true
-            }
-          }
-        }
-      });
-      console.log(`Started processing geometry job ${updatedJob.id} (${updatedJob.geometry.GeometryName})`);
+      console.log(`Fetching geometry job ${nextJob.id} (${nextJob.geometry.GeometryName})`);
     }
+
+    // DON'T mark as started here - the processor will call the mark-started endpoint
+    // This prevents race conditions where the job gets marked as started but the 
+    // processor never receives it due to network issues
     
-    // Prepare response
+    // Prepare response - return the job without marking as started
     const response = NextResponse.json({
-      id: updatedJob.id,
-      objectID: updatedJob.objectID,
-      GeometryID: updatedJob.GeometryID,
-      GeometryName: updatedJob.geometry.GeometryName,
-      GeometryAlgorithmName: updatedJob.geometry.GeometryAlgorithmName,
-      GeometryInputParameterSchema: updatedJob.geometry.GeometryInputParameterSchema,
-      GeometryInputParameterData: updatedJob.GeometryInputParameterData,
-      CustomerNote: updatedJob.CustomerNote,
-      CustomerID: updatedJob.CustomerID,
-      CreationTime: updatedJob.CreationTime,
-      ProcessStartedTime: updatedJob.ProcessStartedTime,
-      isDebugRequest: updatedJob.isDebugRequest || false,
+      id: nextJob.id,
+      objectID: nextJob.objectID,
+      GeometryID: nextJob.GeometryID,
+      GeometryName: nextJob.geometry.GeometryName,
+      GeometryAlgorithmName: nextJob.geometry.GeometryAlgorithmName,
+      GeometryInputParameterSchema: nextJob.geometry.GeometryInputParameterSchema,
+      GeometryInputParameterData: nextJob.GeometryInputParameterData,
+      CustomerNote: nextJob.CustomerNote,
+      CustomerID: nextJob.CustomerID,
+      CreationTime: nextJob.CreationTime,
+      ProcessStartedTime: nextJob.ProcessStartedTime,
+      isDebugRequest: nextJob.isDebugRequest || false,
       // File metadata lives on geometry job; no binary returned here
-      GeometryFileName: (updatedJob as any).GeometryFileName ?? null,
-      PrintFileName: (updatedJob as any).PrintFileName ?? null,
-      creator: updatedJob.creator,
-      owningOrganization: updatedJob.owningOrganization
+      GeometryFileName: (nextJob as any).GeometryFileName ?? null,
+      PrintFileName: (nextJob as any).PrintFileName ?? null,
+      creator: nextJob.creator,
+      owningOrganization: nextJob.owningOrganization
     });
 
     // For debug jobs, delete after returning data (fire and forget)
