@@ -3,17 +3,27 @@
  * Tracks last time the geo processor called /api/geometry-processing/next-job
  */
 
-let lastProcessorPing: number = Date.now();
+let lastProcessorPing: number | null = null;
 
 export function updateProcessorPing() {
   lastProcessorPing = Date.now();
 }
 
 export function getProcessorStatus(): {
-  lastPingMs: number;
+  lastPingMs: number | null;
+  lastPingTime: string | null;
   isHealthy: boolean;
-  secondsSinceLastPing: number;
+  secondsSinceLastPing: number | null;
 } {
+  if (lastProcessorPing === null) {
+    return {
+      lastPingMs: null,
+      lastPingTime: null,
+      isHealthy: false,
+      secondsSinceLastPing: null
+    };
+  }
+  
   const now = Date.now();
   const timeSinceLastPing = now - lastProcessorPing;
   const secondsSinceLastPing = Math.floor(timeSinceLastPing / 1000);
@@ -24,6 +34,7 @@ export function getProcessorStatus(): {
   
   return {
     lastPingMs: lastProcessorPing,
+    lastPingTime: new Date(lastProcessorPing).toISOString(),
     isHealthy,
     secondsSinceLastPing
   };
