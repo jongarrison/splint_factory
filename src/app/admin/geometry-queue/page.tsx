@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/navigation/Header';
 
 interface ProcessorStatus {
   isHealthy: boolean;
@@ -119,8 +120,10 @@ export default function GeometryQueuePage() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <h1 className="text-3xl font-bold mb-6">Geometry Processing Queue Status</h1>
+    <div>
+      <Header />
+      <div className="container mx-auto p-6 max-w-7xl">
+        <h1 className="text-3xl font-bold mb-6">Geometry Processing Queue Status</h1>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -136,11 +139,11 @@ export default function GeometryQueuePage() {
             <div className={`p-4 rounded-lg ${queueData.processor.isHealthy ? 'bg-green-100 border border-green-400' : 'bg-red-100 border border-red-400'}`}>
               <div className="flex items-center gap-2 mb-2">
                 <div className={`w-3 h-3 rounded-full ${queueData.processor.isHealthy ? 'bg-green-600' : 'bg-red-600'}`} />
-                <span className="font-semibold">
+                <span className={`font-semibold ${queueData.processor.isHealthy ? 'text-green-800' : 'text-red-800'}`}>
                   {queueData.processor.isHealthy ? 'Healthy' : 'Offline'}
                 </span>
               </div>
-              <div className="text-sm">
+              <div className={`text-sm ${queueData.processor.isHealthy ? 'text-green-700' : 'text-red-700'}`}>
                 Last ping: {queueData.processor.lastPingTime ? (
                   <>
                     {formatTimestamp(queueData.processor.lastPingTime)}
@@ -250,16 +253,16 @@ export default function GeometryQueuePage() {
             {/* Throughput Chart */}
             <div className="bg-white border rounded-lg p-4 mb-4">
               <h3 className="text-sm font-semibold text-gray-600 mb-3">Hourly Throughput (Last 24h)</h3>
-              <div className="flex items-end gap-1 h-32">
+              <div className="flex items-end gap-1 h-32 border-l border-b border-gray-300 pl-1 pb-1">
                 {queueData.metrics.throughputPerHour.map((bucket, idx) => {
                   const maxCount = Math.max(...queueData.metrics.throughputPerHour.map(b => b.count), 1);
-                  const heightPercent = (bucket.count / maxCount) * 100;
+                  const heightPercent = bucket.count === 0 ? 2 : Math.max((bucket.count / maxCount) * 100, 5);
                   return (
-                    <div key={idx} className="flex-1 flex flex-col items-center">
+                    <div key={idx} className="flex-1 flex flex-col items-center justify-end" style={{ height: '100%' }}>
                       <div 
-                        className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors"
-                        style={{ height: `${heightPercent}%` }}
-                        title={`${bucket.hour}h ago: ${bucket.count} jobs`}
+                        className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors cursor-pointer"
+                        style={{ height: `${heightPercent}%`, minHeight: bucket.count > 0 ? '4px' : '2px' }}
+                        title={`${24 - bucket.hour}h ago: ${bucket.count} jobs`}
                       />
                     </div>
                   );
@@ -437,6 +440,7 @@ export default function GeometryQueuePage() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

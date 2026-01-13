@@ -236,6 +236,17 @@ export default function Header({ variant = 'browser' }: HeaderProps) {
                                 Print Queue
                               </Link>
                               
+                              {/* Geometry Queue Status - SYSTEM_ADMIN only */}
+                              {session?.user?.role === 'SYSTEM_ADMIN' && (
+                                <Link
+                                  href="/admin/geometry-queue"
+                                  onClick={() => setShowAdminDropdown(false)}
+                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                >
+                                  Geometry Queue Status
+                                </Link>
+                              )}
+                              
                               {/* Sign Out - All roles */}
                               <div className={`border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-200'} my-1`}></div>
                               <div
