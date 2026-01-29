@@ -48,6 +48,11 @@ interface Job {
   };
 }
 
+interface MaintenanceSettings {
+  maintenanceModeEnabled: boolean;
+  maintenanceMessage: string | null;
+}
+
 interface QueueData {
   timestamp: string;
   processor: ProcessorStatus;
@@ -59,6 +64,7 @@ interface QueueData {
     processing: Job[];
     recentlyCompleted: Job[];
   };
+  maintenance: MaintenanceSettings;
 }
 
 export default function SystemStatusPage() {
@@ -67,6 +73,9 @@ export default function SystemStatusPage() {
   const [queueData, setQueueData] = useState<QueueData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [savingMaintenance, setSavingMaintenance] = useState(false);
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState('');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -77,8 +86,6 @@ export default function SystemStatusPage() {
     }
 
     fetchQueueStatus();
-    const interval = setInterval(fetchQueueStatus, 10000); // Refresh every 10 seconds
-    return () => clearInterval(interval);
   }, [session, status, router]);
 
   const fetchQueueStatus = async () => {
@@ -87,11 +94,33 @@ export default function SystemStatusPage() {
       if (!response.ok) throw new Error('Failed to fetch queue status');
       const data = await response.json();
       setQueueData(data);
+      setMaintenanceEnabled(data.maintenance.maintenanceModeEnabled);
+      setMaintenanceMessage(data.maintenance.maintenanceMessage || '');
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMaintenanceToggle = async () => {
+    setSavingMaintenance(true);
+    try {
+      const response = await fetch('/api/admin/system-status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          maintenanceModeEnabled: maintenanceEnabled,
+          maintenanceMessage: maintenanceMessage || null
+        })
+      });
+      if (!response.ok) throw new Error('Failed to update maintenance mode');
+      await fetchQueueStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update maintenance mode');
+    } finally {
+      setSavingMaintenance(false);
     }
   };
 
@@ -133,6 +162,50 @@ export default function SystemStatusPage() {
 
       {queueData && (
         <>
+          {/* Maintenance Mode Control */}
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-3">Maintenance Mode</h2>
+            <div className="bg-white border rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <input
+                  type="checkbox"
+                  id="maintenanceMode"
+                  checked={maintenanceEnabled}
+                  onChange={(e) => setMaintenanceEnabled(e.target.checked)}
+                  className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                />
+                <label htmlFor="maintenanceMode" className="text-sm font-medium">
+                  Enable Maintenance Mode
+                </label>
+              </div>
+              <div className="mb-3">
+                <label htmlFor="maintenanceMessage" className="block text-sm font-medium mb-1">
+                  Maintenance Message
+                </label>
+                <textarea
+                  id="maintenanceMessage"
+                  value={maintenanceMessage}
+                  onChange={(e) => setMaintenanceMessage(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter a message to display to users during maintenance..."
+                />
+              </div>
+              <button
+                onClick={handleMaintenanceToggle}
+                disabled={savingMaintenance}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {savingMaintenance ? 'Saving...' : 'Save Maintenance Settings'}
+              </button>
+              {maintenanceEnabled && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                  ⚠️ Maintenance mode is currently <strong>enabled</strong>. Users will see the maintenance banner.
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Processor Health */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-3">Processor Health</h2>

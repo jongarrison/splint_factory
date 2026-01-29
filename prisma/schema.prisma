@@ -157,3 +157,10 @@ enum UserRole {
   ORG_ADMIN
   MEMBER
 }
+
+model SystemSettings {
+  id                        String   @id @default("system_settings")
+  maintenanceModeEnabled    Boolean  @default(false)
+  maintenanceMessage        String?
+  maintenanceModeUpdatedAt  DateTime @default(now()) @updatedAt
+}

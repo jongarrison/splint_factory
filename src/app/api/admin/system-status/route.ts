@@ -258,6 +258,15 @@ export async function GET(request: NextRequest) {
 
     const processorStatus = getProcessorStatus();
 
+    // Get maintenance mode settings
+    const maintenanceSettings = await prisma.systemSettings.findUnique({
+      where: { id: 'system_settings' },
+      select: {
+        maintenanceModeEnabled: true,
+        maintenanceMessage: true
+      }
+    });
+
     return NextResponse.json({
       timestamp: now.toISOString(),
       processor: {
@@ -299,11 +308,56 @@ export async function GET(request: NextRequest) {
         stuckJobs,
         processing,
         recentlyCompleted
+      },
+      maintenance: {
+        maintenanceModeEnabled: maintenanceSettings?.maintenanceModeEnabled || false,
+        maintenanceMessage: maintenanceSettings?.maintenanceMessage || null
       }
     });
 
   } catch (error) {
     console.error('Error getting queue status:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// PUT /api/admin/system-status - Update system settings (admin only)
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await auth();
+    
+    if (!session?.user?.role || session.user.role !== 'SYSTEM_ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized - admin access required' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { maintenanceModeEnabled, maintenanceMessage } = body;
+
+    // Upsert maintenance settings
+    const updated = await prisma.systemSettings.upsert({
+      where: { id: 'system_settings' },
+      update: {
+        maintenanceModeEnabled,
+        maintenanceMessage,
+        maintenanceModeUpdatedAt: new Date()
+      },
+      create: {
+        id: 'system_settings',
+        maintenanceModeEnabled,
+        maintenanceMessage
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      maintenance: {
+        maintenanceModeEnabled: updated.maintenanceModeEnabled,
+        maintenanceMessage: updated.maintenanceMessage
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating system settings:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
