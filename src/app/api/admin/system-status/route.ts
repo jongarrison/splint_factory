@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getProcessorStatus } from '@/lib/geo-processor-health';
 
-// GET /api/admin/geometry-queue-status - View geometry processing queue status (admin only)
+// GET /api/admin/system-status - View system status including geometry processing queue (admin only)
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();

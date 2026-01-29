@@ -61,7 +61,7 @@ interface QueueData {
   };
 }
 
-export default function GeometryQueuePage() {
+export default function SystemStatusPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [queueData, setQueueData] = useState<QueueData | null>(null);
@@ -83,7 +83,7 @@ export default function GeometryQueuePage() {
 
   const fetchQueueStatus = async () => {
     try {
-      const response = await fetch('/api/admin/geometry-queue-status');
+      const response = await fetch('/api/admin/system-status');
       if (!response.ok) throw new Error('Failed to fetch queue status');
       const data = await response.json();
       setQueueData(data);
@@ -123,7 +123,7 @@ export default function GeometryQueuePage() {
     <div>
       <Header />
       <div className="container mx-auto p-6 max-w-7xl">
-        <h1 className="text-3xl font-bold mb-6">Geometry Processing Queue Status</h1>
+        <h1 className="text-3xl font-bold mb-6">System Status</h1>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
