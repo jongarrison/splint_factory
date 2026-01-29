@@ -19,7 +19,7 @@ async function main() {
     
     // Query the migrations table to see if baseline migration exists
     const existingMigration = await prisma.$queryRaw`
-      SELECT migration_name 
+      SELECT migration_name, finished_at, rolled_back_at
       FROM _prisma_migrations 
       WHERE migration_name = ${BASELINE_MIGRATION}
     `;
@@ -36,7 +36,31 @@ async function main() {
       
       console.log('✅ Baseline migration marked as applied');
     } else {
-      console.log(`✓ Baseline migration ${BASELINE_MIGRATION} already applied`);
+      const migration = existingMigration[0];
+      
+      // Check if migration is in failed state (started but not finished)
+      if (!migration.finished_at && !migration.rolled_back_at) {
+        console.log(`⚠️  Baseline migration ${BASELINE_MIGRATION} is in FAILED state`);
+        console.log('🔄 Rolling back failed migration...');
+        
+        // First mark it as rolled back
+        execSync(`npx prisma migrate resolve --rolled-back ${BASELINE_MIGRATION}`, {
+          stdio: 'inherit',
+          env: process.env
+        });
+        
+        console.log('📝 Marking baseline migration as applied...');
+        
+        // Then mark it as applied
+        execSync(`npx prisma migrate resolve --applied ${BASELINE_MIGRATION}`, {
+          stdio: 'inherit',
+          env: process.env
+        });
+        
+        console.log('✅ Baseline migration recovered and marked as applied');
+      } else {
+        console.log(`✓ Baseline migration ${BASELINE_MIGRATION} already applied`);
+      }
     }
     
     console.log('✅ Pre-migration check complete');
