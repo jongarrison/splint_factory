@@ -47,6 +47,7 @@ model User {
   usedInvitation       InvitationLink?           @relation("InvitationUsage")
   createdInvitations   InvitationLink[]          @relation("InvitationCreator")
   createdGeometries    NamedGeometry[]
+  createdLinks         Link[]
   sessions             Session[]
   invitedBy            User?                     @relation("UserInvitations", fields: [invitedByUserId], references: [id])
   invitedUsers         User[]                    @relation("UserInvitations")
@@ -158,9 +159,43 @@ enum UserRole {
   MEMBER
 }
 
+enum LinkType {
+  EXTERNAL_URL
+  HOSTED_FILE
+}
+
 model SystemSettings {
   id                        String   @id @default("system_settings")
   maintenanceModeEnabled    Boolean  @default(false)
   maintenanceMessage        String?
   maintenanceModeUpdatedAt  DateTime @default(now()) @updatedAt
+}
+
+model Link {
+  id          String         @id @default(cuid())
+  shortcode   String         @unique
+  linkType    LinkType
+  linkTarget  String
+  title       String?
+  isActive    Boolean        @default(true)
+  clickCount  Int            @default(0)
+  createdBy   String
+  createdAt   DateTime       @default(now())
+  creator     User           @relation(fields: [createdBy], references: [id])
+  activity    LinkActivity[]
+
+  @@index([shortcode])
+}
+
+model LinkActivity {
+  id           String   @id @default(cuid())
+  linkId       String
+  ipAddress    String?
+  userAgent    String?
+  referer      String?
+  visitTime    DateTime @default(now())
+  link         Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
+  @@index([visitTime])
 }
