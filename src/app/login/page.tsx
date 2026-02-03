@@ -52,7 +52,7 @@ export default function LoginPage() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col">
-      <Header />
+      <Header hideMaintenanceBanner={true} />
       <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
         <div>
