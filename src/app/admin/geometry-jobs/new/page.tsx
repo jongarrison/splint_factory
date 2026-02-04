@@ -270,7 +270,7 @@ function CreateGeometryJobPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">Create New Splint</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Create New Print</h1>
             <Link
               href="/admin/geometry-jobs"
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
@@ -338,7 +338,7 @@ function CreateGeometryJobPage() {
           <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6">
             <div>
               <label htmlFor="geometry" className="block text-sm font-medium text-gray-700">
-                Geometry Type *
+                Design Type *
               </label>
               <select
                 id="geometry"
@@ -347,7 +347,7 @@ function CreateGeometryJobPage() {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
-                <option value="">Select a geometry type</option>
+                <option value="">Select a design type</option>
                 {geometries.map((geometry) => (
                   <option key={geometry.id} value={geometry.id}>
                     {geometry.GeometryName} ({geometry.GeometryAlgorithmName})

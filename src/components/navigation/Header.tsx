@@ -127,7 +127,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
               <Link
                 href="/geo-job-menu"
                 className="ml-4 inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md bg-green-600 hover:bg-green-700 text-white transition-colors shadow-sm"
-                title="Create new splint"
+                title="Create New 3D Print"
               >
                 <svg 
                   xmlns="http://www.w3.org/2000/svg" 
@@ -255,13 +255,13 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 </Link>
                               )}
                               
-                              {/* Splint Geometry Jobs - All roles */}
+                              {/* Geometry Jobs (aka Design Jobs) - All roles */}
                               <Link
                                 href="/admin/geometry-jobs"
                                 onClick={() => setShowAdminDropdown(false)}
                                 className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                               >
-                                Splint Geometry Jobs
+                                Design Jobs
                               </Link>
                               
                               {/* Print Queue - All roles */}
