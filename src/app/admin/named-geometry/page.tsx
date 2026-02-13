@@ -260,6 +260,12 @@ export default function NamedGeometryListPage() {
                     >
                       Edit
                     </Link>
+                    <Link
+                      href={`/admin/named-geometry/new?copyFrom=${geometry.id}`}
+                      className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 mr-4"
+                    >
+                      Copy
+                    </Link>
                     <button
                       onClick={() => handleDelete(geometry.id, geometry.GeometryName)}
                       className="text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"

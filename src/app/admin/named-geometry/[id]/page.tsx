@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { GeometryInputParameter, InputType } from '@/types/geometry-input-parameter';
 import Header from '@/components/navigation/Header';
 import { INPUT_NAME_PATTERN, INPUT_NAME_PATTERN_STRING, INPUT_NAME_ALLOWED_CHARS } from '@/constants/validation';
@@ -23,7 +23,9 @@ interface ImageFiles {
 export default function EditNamedGeometryPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const resolvedParams = use(params);
+  const copyFromId = searchParams.get('copyFrom');
   const [formData, setFormData] = useState<FormData>({
     GeometryName: '',
     GeometryAlgorithmName: '',
@@ -64,8 +66,11 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
 
     if (!isNew) {
       fetchGeometry();
+    } else if (copyFromId) {
+      // If creating new but copying from existing, fetch the source geometry
+      fetchGeometryForCopy(copyFromId);
     }
-  }, [session, status, router, isNew, resolvedParams.id]);
+  }, [session, status, router, isNew, resolvedParams.id, copyFromId]);
 
   const fetchGeometry = async () => {
     try {
@@ -89,6 +94,38 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
       setExistingImages({
         preview: !!data.previewImageUpdatedAt,
         measurement: !!data.measurementImageUpdatedAt
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGeometryForCopy = async (sourceId: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/named-geometry/${sourceId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch geometry for copy');
+      }
+      const data = await response.json();
+      
+      const parsedSchema = JSON.parse(data.GeometryInputParameterSchema);
+      
+      // Pre-populate form with copied data, adding " (Copy)" to the name
+      setFormData({
+        GeometryName: `${data.GeometryName} (Copy)`,
+        GeometryAlgorithmName: data.GeometryAlgorithmName,
+        shortDescription: data.shortDescription || '',
+        isActive: data.isActive ?? true,
+        parameters: parsedSchema
+      });
+      
+      // Don't copy images - start fresh
+      setExistingImages({
+        preview: false,
+        measurement: false
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -332,7 +369,7 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
         <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-          {isNew ? 'Create New Named Geometry' : 'Edit Named Geometry'}
+          {isNew ? (copyFromId ? 'Copy Named Geometry' : 'Create New Named Geometry') : 'Edit Named Geometry'}
         </h1>
         
         {error && (
