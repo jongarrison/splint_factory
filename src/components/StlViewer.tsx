@@ -5,6 +5,17 @@ import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+// Check if WebGL is available on this device
+function checkWebGLSupport(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    return gl instanceof WebGLRenderingContext;
+  } catch {
+    return false;
+  }
+}
+
 interface StlViewerProps {
   url: string;
   width?: number | string;
@@ -40,6 +51,7 @@ export default function StlViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [webGLSupported, setWebGLSupported] = useState<boolean | null>(null);
   
   // Store Three.js objects for cleanup
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -48,7 +60,14 @@ export default function StlViewer({
   const controlsRef = useRef<OrbitControls | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
+  // Check WebGL support on mount
   useEffect(() => {
+    setWebGLSupported(checkWebGLSupport());
+  }, []);
+
+  useEffect(() => {
+    // Skip if WebGL not supported or not yet checked
+    if (webGLSupported === null || webGLSupported === false) return;
     if (!containerRef.current) return;
 
     const container = containerRef.current;
@@ -197,13 +216,30 @@ export default function StlViewer({
         });
       }
     };
-  }, [url, height, backgroundColor, modelColor]);
+  }, [url, height, backgroundColor, modelColor, webGLSupported]);
+
+  // Show fallback if WebGL is not supported
+  if (webGLSupported === false) {
+    return (
+      <div className={`relative ${className}`} style={{ width, height }}>
+        <div className="w-full h-full rounded-lg overflow-hidden bg-gray-700 flex items-center justify-center">
+          <div className="text-center text-gray-300 px-4">
+            <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <p className="text-sm font-medium">3D Preview Unavailable</p>
+            <p className="text-xs mt-1 opacity-75">This device does not support 3D rendering</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${className}`} style={{ width, height }}>
       <div ref={containerRef} className="w-full h-full rounded-lg overflow-hidden" />
       
-      {loading && (
+      {loading && webGLSupported && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -223,9 +259,9 @@ export default function StlViewer({
         </div>
       )}
       
-      {!loading && !error && (
+      {!loading && !error && webGLSupported && (
         <div className="absolute bottom-2 left-2 bg-white bg-opacity-90 px-3 py-2 rounded text-xs text-gray-600">
-          🖱️ Drag to rotate • Scroll to zoom • Right-click to pan
+          Drag to rotate - Scroll to zoom - Right-click to pan
         </div>
       )}
     </div>
