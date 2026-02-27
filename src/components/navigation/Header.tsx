@@ -122,6 +122,16 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
               </h1>
             </Link>
             
+            {/* About link - visible in browser mode */}
+            {variant === 'browser' && (
+              <Link
+                href="/about"
+                className={`ml-4 text-sm font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors`}
+              >
+                About
+              </Link>
+            )}
+
             {/* Create button - only visible in browser mode and not on geo-job-menu page */}
             {variant === 'browser' && session && pathname !== '/geo-job-menu' && (
               <Link
