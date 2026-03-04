@@ -666,7 +666,7 @@ export default function PrintQueuePage() {
                           )}
                         </td>
                         <td className="px-2 py-2">
-                          <Link href={`/admin/print-queue/${entry.id}`} className="block group">
+                          <Link href={`/print-queue/${entry.id}`} className="block group">
                             <div className="geometry-name text-sm font-medium text-gray-900 truncate max-w-[200px] group-hover:text-blue-600 transition-colors">
                               {entry.geometryProcessingQueue.geometry.GeometryName}
                             </div>

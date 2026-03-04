@@ -139,7 +139,7 @@ export default function GeometryJobDetailPage({
       const newPrintJob = await response.json();
       
       // Navigate to the new print job detail page
-      router.push(`/admin/print-queue/${newPrintJob.id}`);
+      router.push(`/print-queue/${newPrintJob.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create print job');
       setCreatingPrint(false);
@@ -275,7 +275,7 @@ export default function GeometryJobDetailPage({
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold text-gray-900">Design Job Details</h1>
               <Link
-                href="/admin/geometry-jobs"
+                href="/geometry-jobs"
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
               >
                 ← Back to Jobs
@@ -327,20 +327,20 @@ export default function GeometryJobDetailPage({
                 </button>
               )}
               <Link
-                href={`/admin/geometry-jobs/new?template=${job.id}`}
+                href={`/geometry-jobs/new?template=${job.id}`}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium"
                 title="Create new job with same settings"
               >
                 📋 New from Template
               </Link>
               <Link
-                href={`/admin/geometry-jobs/${job.id}/edit`}
+                href={`/geometry-jobs/${job.id}/edit`}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium"
               >
                 Edit Job
               </Link>
               <Link
-                href="/admin/geometry-jobs"
+                href="/geometry-jobs"
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
               >
                 ← Back to Jobs
@@ -419,7 +419,7 @@ export default function GeometryJobDetailPage({
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                             <Link
-                              href={`/admin/print-queue/${printJob.id}`}
+                              href={`/print-queue/${printJob.id}`}
                               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
                             >
                               Details

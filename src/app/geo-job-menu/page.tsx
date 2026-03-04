@@ -90,7 +90,7 @@ export default function GeoJobMenuPage() {
           <p className="mt-2 text-gray-600">
             Select a splint design to get started{' '}
             <Link 
-              href="/admin/geometry-jobs" 
+              href="/geometry-jobs" 
               className="text-blue-600 hover:text-blue-700 underline"
             >
               or start from a previous job
@@ -107,7 +107,7 @@ export default function GeoJobMenuPage() {
             {geometries.map((geometry) => (
               <Link
                 key={geometry.id}
-                href={`/admin/geometry-jobs/new?geometryId=${geometry.id}`}
+                href={`/geometry-jobs/new?geometryId=${geometry.id}`}
                 className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 hover:border-blue-300"
               >
                 <div className="aspect-[4/3] relative bg-gray-100">

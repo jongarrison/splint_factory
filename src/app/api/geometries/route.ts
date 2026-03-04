@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 // GET /api/geometries - Optimized listing for user-facing landing page (/geo-job-menu)
 // Returns lightweight metadata only (no image Bytes), supports activeOnly filter
+// Scoped to geometries visible to the requesting user's organization
 // Differs from /api/named-geometry which returns full data for admin CRUD operations
 export async function GET(request: NextRequest) {
   try {
@@ -13,10 +14,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Look up the user's org to scope visibility
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { organizationId: true },
+    });
+
     const activeOnly = request.nextUrl.searchParams.get('activeOnly') === 'true';
 
+    // Build where clause: active filter + org visibility
+    const where: Record<string, unknown> = {};
+    if (activeOnly) {
+      where.isActive = true;
+    }
+    if (user?.organizationId) {
+      where.organizations = {
+        some: { organizationId: user.organizationId },
+      };
+    }
+
     const geometries = await prisma.namedGeometry.findMany({
-      where: activeOnly ? { isActive: true } : undefined,
+      where,
       select: {
         id: true,
         GeometryName: true,

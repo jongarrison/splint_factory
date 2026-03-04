@@ -183,7 +183,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                 {variant === 'electron' ? (
                   <>
                     <Link 
-                      href="/admin/print-queue" 
+                      href="/print-queue" 
                       className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} px-3 py-2 text-sm font-medium`}
                     >
                       Print Queue
@@ -213,7 +213,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                               {/* Organizations - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (
                                 <Link
-                                  href="/admin"
+                                  href="/admin/organizations"
                                   onClick={() => setShowAdminDropdown(false)}
                                   className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                                 >
@@ -267,7 +267,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                               
                               {/* Geometry Jobs (aka Design Jobs) - All roles */}
                               <Link
-                                href="/admin/geometry-jobs"
+                                href="/geometry-jobs"
                                 onClick={() => setShowAdminDropdown(false)}
                                 className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                               >
@@ -276,7 +276,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                               
                               {/* Print Queue - All roles */}
                               <Link
-                                href="/admin/print-queue"
+                                href="/print-queue"
                                 onClick={() => setShowAdminDropdown(false)}
                                 className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                               >
@@ -286,7 +286,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                               {/* System Status - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (
                                 <Link
-                                  href="/admin/system-status"
+                                  href="/admin"
                                   onClick={() => setShowAdminDropdown(false)}
                                   className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                                 >

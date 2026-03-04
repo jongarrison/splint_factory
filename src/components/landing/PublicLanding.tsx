@@ -13,7 +13,7 @@ export default function PublicLanding() {
   useEffect(() => {
     // Redirect authenticated users to geometry jobs page
     if (status === 'authenticated' && session?.user) {
-      router.push('/admin/geometry-jobs');
+      router.push('/geometry-jobs');
     }
   }, [status, session, router]);
 

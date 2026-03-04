@@ -380,7 +380,7 @@ export default function PrinterConfigurePage() {
             </div>
           </div>
           <a
-            href="/admin/print-queue"
+            href="/print-queue"
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-colors flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

@@ -377,7 +377,7 @@ export default function PrintQueueDetailPage({
       }
 
       // Redirect back to the list after successful deletion
-      router.push('/admin/print-queue');
+      router.push('/print-queue');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete print job');
     } finally {
@@ -424,7 +424,7 @@ export default function PrintQueueDetailPage({
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold text-gray-900">Print Queue Details</h1>
               <Link
-                href="/admin/print-queue"
+                href="/print-queue"
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
               >
                 ← Back to Print Queue
@@ -461,7 +461,7 @@ export default function PrintQueueDetailPage({
               </p>
             </div>
             <Link
-              href="/admin/print-queue"
+              href="/print-queue"
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
             >
               ← Back to Print Queue
@@ -664,7 +664,7 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-gray-500">Geometry Job ID</dt>
                   <dd className="geometry-job-id mt-1 text-sm text-gray-900 font-mono">
                     <Link 
-                      href={`/admin/geometry-jobs/${entry.geometryProcessingQueue.id}`}
+                      href={`/geometry-jobs/${entry.geometryProcessingQueue.id}`}
                       className="text-blue-600 hover:text-blue-500"
                     >
                       {entry.geometryProcessingQueue.id}

@@ -6,8 +6,9 @@ import { INPUT_NAME_PATTERN, INPUT_NAME_ALLOWED_CHARS } from '@/constants/valida
 
 // GET /api/named-geometry - Full geometry data for admin list page
 // Returns all fields including creator details, sorted by creation time
+// Scoped to user's org visibility unless SYSTEM_ADMIN requests all via ?all=true
 // For optimized user-facing listing, use /api/geometries instead
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     
@@ -15,7 +16,24 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { organizationId: true, role: true },
+    });
+
+    // ?all=true bypasses org filter (for admin pages like the org editor)
+    const wantAll = request.nextUrl.searchParams.get('all') === 'true';
+    const skipOrgFilter = wantAll && user?.role === 'SYSTEM_ADMIN';
+
+    const where: Record<string, unknown> = {};
+    if (!skipOrgFilter && user?.organizationId) {
+      where.organizations = {
+        some: { organizationId: user.organizationId },
+      };
+    }
+
     const namedGeometries = await prisma.namedGeometry.findMany({
+      where: Object.keys(where).length > 0 ? where : undefined,
       include: {
         creator: {
           select: {

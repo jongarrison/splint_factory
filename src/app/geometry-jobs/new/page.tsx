@@ -1,34 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Header from '@/components/navigation/Header';
+import GeometryJobProgressModal from '@/components/GeometryJobProgressModal';
 
-interface GeometryJob {
+interface NamedGeometry {
   id: string;
-  CreationTime: string;
-  GeometryInputParameterData: string;
-  CustomerNote?: string;
-  CustomerID?: string;
-  ProcessStartedTime?: string;
-  ProcessCompletedTime?: string;
-  isProcessSuccessful: boolean;
-  isEnabled: boolean;
-  geometry: {
-    GeometryName: string;
-    GeometryAlgorithmName: string;
-    GeometryInputParameterSchema: string;
-  };
-  creator: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  owningOrganization: {
-    name: string;
-  };
+  GeometryName: string;
+  GeometryAlgorithmName: string;
+  GeometryInputParameterSchema: string;
+  measurementImageUpdatedAt?: string | null;
 }
 
 interface GeometryInputParameter {
@@ -41,27 +26,24 @@ interface GeometryInputParameter {
   TextMaxLen?: number;
 }
 
-export default function EditGeometryJobPage({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
-}) {
+function CreateGeometryJobPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [job, setJob] = useState<GeometryJob | null>(null);
+  const searchParams = useSearchParams();
+  const templateId = searchParams.get('template');
+  const geometryId = searchParams.get('geometryId');
+  
+  const [geometries, setGeometries] = useState<NamedGeometry[]>([]);
+  const [selectedGeometry, setSelectedGeometry] = useState<NamedGeometry | null>(null);
   const [parameterSchema, setParameterSchema] = useState<GeometryInputParameter[]>([]);
   const [parameterValues, setParameterValues] = useState<Record<string, any>>({});
   const [customerNote, setCustomerNote] = useState('');
   const [customerID, setCustomerID] = useState('');
-  const [isEnabled, setIsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [id, setId] = useState<string>('');
-
-  useEffect(() => {
-    params.then(p => setId(p.id));
-  }, [params]);
+  const [createdJobId, setCreatedJobId] = useState<string | null>(null);
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -71,49 +53,92 @@ export default function EditGeometryJobPage({
       return;
     }
 
-    if (id) {
-      fetchJob();
-    }
-  }, [session, status, router, id]);
+    fetchGeometries();
+  }, [session, status, router]);
 
-  const fetchJob = async () => {
+  // Load template job if template param is present
+  useEffect(() => {
+    if (templateId && geometries.length > 0 && !selectedGeometry) {
+      loadTemplateJob(templateId);
+    }
+  }, [templateId, geometries]);
+
+  // Pre-select geometry if geometryId param is present
+  useEffect(() => {
+    if (geometryId && geometries.length > 0 && !selectedGeometry) {
+      handleGeometryChange(geometryId);
+    }
+  }, [geometryId, geometries]);
+
+  const loadTemplateJob = async (jobId: string) => {
     try {
-      const response = await fetch(`/api/geometry-jobs/${id}`);
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Geometry job not found');
-        }
-        throw new Error('Failed to fetch geometry job');
-      }
-      const data: GeometryJob = await response.json();
-      setJob(data);
+      const response = await fetch(`/api/geometry-jobs/${jobId}`);
+      if (!response.ok) throw new Error('Failed to fetch template job');
       
-      // Parse parameter schema
-      try {
-        const schema: GeometryInputParameter[] = JSON.parse(data.geometry.GeometryInputParameterSchema);
+      const templateJob = await response.json();
+      const geometry = geometries.find(g => g.id === templateJob.GeometryID);
+      
+      if (geometry) {
+        setSelectedGeometry(geometry);
+        const schema: GeometryInputParameter[] = JSON.parse(geometry.GeometryInputParameterSchema);
         setParameterSchema(schema);
+        
+        // Parse and set parameter values from template
+        const templateParams = JSON.parse(templateJob.GeometryInputParameterData);
+        setParameterValues(templateParams);
+        
+        // Optionally copy customer info (leave blank for new job)
+        // setCustomerID(templateJob.CustomerID || '');
+        // setCustomerNote(templateJob.CustomerNote || '');
+      }
+    } catch (err) {
+      console.error('Failed to load template job:', err);
+      // Don't show error to user, just fail silently and let them create from scratch
+    }
+  };
+
+  const fetchGeometries = async () => {
+    try {
+      const response = await fetch('/api/named-geometry');
+      if (!response.ok) {
+        throw new Error('Failed to fetch geometries');
+      }
+      const data = await response.json();
+      setGeometries(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch geometries');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGeometryChange = (geometryId: string) => {
+    const geometry = geometries.find(g => g.id === geometryId);
+    setSelectedGeometry(geometry || null);
+    
+    if (geometry) {
+      try {
+        const schema: GeometryInputParameter[] = JSON.parse(geometry.GeometryInputParameterSchema);
+        setParameterSchema(schema);
+        
+        // Initialize parameter values with defaults
+        const initialValues: Record<string, any> = {};
+        schema.forEach(param => {
+          if (param.InputType === 'Float' || param.InputType === 'Integer') {
+            initialValues[param.InputName] = param.NumberMin || 0;
+          } else if (param.InputType === 'Text') {
+            initialValues[param.InputName] = '';
+          }
+        });
+        setParameterValues(initialValues);
       } catch (parseError) {
         setError('Failed to parse geometry parameter schema');
         setParameterSchema([]);
-      }
-      
-      // Parse current parameter values
-      try {
-        const currentValues = JSON.parse(data.GeometryInputParameterData);
-        setParameterValues(currentValues);
-      } catch (parseError) {
         setParameterValues({});
       }
-      
-      // Set form state
-      setCustomerNote(data.CustomerNote || '');
-      setCustomerID(data.CustomerID || '');
-      setIsEnabled(data.isEnabled);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch geometry job');
-    } finally {
-      setLoading(false);
+    } else {
+      setParameterSchema([]);
+      setParameterValues({});
     }
   };
 
@@ -180,6 +205,11 @@ export default function EditGeometryJobPage({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!selectedGeometry) {
+      setError('Please select a geometry');
+      return;
+    }
+    
     if (!validateParameters()) {
       return;
     }
@@ -188,27 +218,32 @@ export default function EditGeometryJobPage({
     setError(null);
     
     try {
-      const response = await fetch(`/api/geometry-jobs/${id}`, {
-        method: 'PUT',
+      const response = await fetch('/api/geometry-jobs', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          GeometryID: selectedGeometry.id,
           GeometryInputParameterData: JSON.stringify(parameterValues),
           CustomerNote: customerNote.trim() || null,
           CustomerID: customerID.trim() || null,
-          isEnabled: isEnabled,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update geometry job');
+        throw new Error(errorData.error || 'Failed to create geometry job');
       }
 
-      router.push(`/admin/geometry-jobs/${id}`);
+      const createdJob = await response.json();
+      
+      // Store the job ID and show the progress modal
+      setCreatedJobId(createdJob.id);
+      setShowProgressModal(true);
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update geometry job');
+      setError(err instanceof Error ? err.message : 'Failed to create geometry job');
     } finally {
       setSubmitting(false);
     }
@@ -221,40 +256,11 @@ export default function EditGeometryJobPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading geometry job...</p>
+            <p className="mt-4 text-gray-600">Loading geometries...</p>
           </div>
         </div>
       </div>
     );
-  }
-
-  if (error && !job) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold text-gray-900">Edit Geometry Job</h1>
-              <Link
-                href="/admin/geometry-jobs"
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
-              >
-                ← Back to Jobs
-              </Link>
-            </div>
-          </div>
-          
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!job) {
-    return null;
   }
 
   return (
@@ -264,20 +270,13 @@ export default function EditGeometryJobPage({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Edit Geometry Job</h1>
-              <p className="mt-2 text-gray-600">
-                Modify parameters and settings for this geometry processing job.
-              </p>
-            </div>
-            <div className="flex gap-4">
-              <Link
-                href={`/admin/geometry-jobs/${job.id}`}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
-              >
-                ← Back to Details
-              </Link>
-            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Create New Print</h1>
+            <Link
+              href="/geometry-jobs"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+            >
+              ← Back to Jobs
+            </Link>
           </div>
         </div>
 
@@ -293,15 +292,70 @@ export default function EditGeometryJobPage({
           </div>
         )}
 
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Job Configuration</h2>
-            <p className="text-sm text-gray-500">
-              Geometry: {job.geometry.GeometryName} ({job.geometry.GeometryAlgorithmName})
-            </p>
+        {/* Measurement Helper Image */}
+        {selectedGeometry && (
+          <div className="mb-6 bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Measurement Guide</h2>
+            <div className="flex justify-center">
+              <div className="relative w-full max-w-3xl">
+                {selectedGeometry.measurementImageUpdatedAt ? (
+                  <Image
+                    src={`/api/geometry-images/${selectedGeometry.id}/measurement`}
+                    alt={`${selectedGeometry.GeometryName} measurement guide`}
+                    width={800}
+                    height={600}
+                    className="rounded-lg"
+                    style={{ width: '100%', height: 'auto' }}
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-full aspect-[4/3] bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                    <div className="text-center p-8">
+                      <svg 
+                        className="mx-auto h-16 w-16 text-gray-400 mb-4" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={1.5} 
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                        />
+                      </svg>
+                      <p className="text-gray-500 text-sm">No measurement guide available</p>
+                      <p className="text-gray-400 text-xs mt-1">Contact administrator to add measurement image</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          
+        )}
+
+        <div className="bg-white shadow rounded-lg">
           <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6">
+            <div>
+              <label htmlFor="geometry" className="block text-sm font-medium text-gray-700">
+                Design Type *
+              </label>
+              <select
+                id="geometry"
+                value={selectedGeometry?.id || ''}
+                onChange={(e) => handleGeometryChange(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select a design type</option>
+                {geometries.map((geometry) => (
+                  <option key={geometry.id} value={geometry.id}>
+                    {geometry.GeometryName} ({geometry.GeometryAlgorithmName})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="customerID" className="block text-sm font-medium text-gray-700">
@@ -332,22 +386,10 @@ export default function EditGeometryJobPage({
               </div>
             </div>
 
-            <div>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={isEnabled}
-                  onChange={(e) => setIsEnabled(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">Job is enabled for processing</span>
-              </label>
-            </div>
-
-            {parameterSchema.length > 0 && (
+            {selectedGeometry && parameterSchema.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Geometry Parameters
+                  Geometry Parameters for {selectedGeometry.GeometryName}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {parameterSchema.map((param) => (
@@ -428,22 +470,46 @@ export default function EditGeometryJobPage({
 
             <div className="flex justify-end gap-4 pt-4 border-t">
               <Link
-                href={`/admin/geometry-jobs/${job.id}`}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded text-sm font-medium"
+                href="/geometry-jobs"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !selectedGeometry}
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
               >
-                {submitting ? 'Updating Job...' : 'Update Job'}
+                {submitting ? 'Creating Job...' : 'Create Job'}
               </button>
             </div>
           </form>
         </div>
       </div>
+
+      {/* Progress Modal */}
+      {showProgressModal && createdJobId && (
+        <GeometryJobProgressModal
+          jobId={createdJobId}
+          onClose={() => setShowProgressModal(false)}
+        />
+      )}
     </div>
+  );
+}
+
+// Wrap the page component in Suspense to handle useSearchParams
+export default function CreateGeometryJobPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <CreateGeometryJobPage />
+    </Suspense>
   );
 }

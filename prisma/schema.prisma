@@ -27,6 +27,7 @@ model Organization {
   geometryJobs    GeometryProcessingQueue[]
   invitationLinks InvitationLink[]
   users           User[]
+  visibleGeometries OrganizationGeometry[]
 }
 
 model User {
@@ -87,9 +88,20 @@ model NamedGeometry {
   CreationTime                 DateTime                  @default(now())
   updatedAt                    DateTime                  @default(now()) @updatedAt
   geometryJobs                 GeometryProcessingQueue[] @relation("NamedGeometryJobs")
+  organizations                OrganizationGeometry[]
   creator                      User                      @relation(fields: [CreatorID], references: [id])
 
   @@map("NamedGeometry")
+}
+
+model OrganizationGeometry {
+  organizationId  String
+  namedGeometryId String
+  createdAt       DateTime      @default(now())
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  namedGeometry   NamedGeometry @relation(fields: [namedGeometryId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, namedGeometryId])
 }
 
 model ApiKey {

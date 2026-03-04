@@ -47,12 +47,12 @@ export default function GeometryJobProgressModal({ jobId, onClose }: GeometryJob
 
   const handleDismiss = () => {
     // Navigate to the specific geometry job view page
-    router.push(`/admin/geometry-jobs/${jobId}`);
+    router.push(`/geometry-jobs/${jobId}`);
     onClose();
   };
 
   const handleViewPrintQueue = () => {
-    router.push('/admin/print-queue');
+    router.push('/print-queue');
     onClose();
   };
 

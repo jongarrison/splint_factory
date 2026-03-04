@@ -68,7 +68,7 @@ export default function GeometryJobsPage() {
     
     const job = geometryJobs?.find(j => j.objectID === searchObjectId.trim());
     if (job) {
-      router.push(`/admin/geometry-jobs/${job.id}`);
+      router.push(`/geometry-jobs/${job.id}`);
     } else {
       setSearchError(`No job found with Object ID: ${searchObjectId}`);
     }
@@ -179,7 +179,7 @@ export default function GeometryJobsPage() {
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <Link
-              href="/admin/geometry-jobs/new"
+              href="/geometry-jobs/new"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded text-sm font-medium"
             >
               Create New Job
@@ -220,7 +220,7 @@ export default function GeometryJobsPage() {
                 <div className="text-gray-500 text-lg">No geometry jobs found</div>
                 <p className="text-gray-400 mt-2">Create your first geometry processing job to get started.</p>
                 <Link
-                  href="/admin/geometry-jobs/new"
+                  href="/geometry-jobs/new"
                   className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 >
                   Create New Job
@@ -253,7 +253,7 @@ export default function GeometryJobsPage() {
                       <tr 
                         key={job.id} 
                         className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => router.push(`/admin/geometry-jobs/${job.id}`)}
+                        onClick={() => router.push(`/geometry-jobs/${job.id}`)}
                       >
                         <td className="px-6 py-4">
                           <div className="text-xs text-gray-500">Object:</div>
@@ -290,19 +290,19 @@ export default function GeometryJobsPage() {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Link
-                            href={`/admin/geometry-jobs/${job.id}`}
+                            href={`/geometry-jobs/${job.id}`}
                             className="text-blue-600 hover:text-blue-900 mr-4"
                           >
                             View
                           </Link>
                           <Link
-                            href={`/admin/geometry-jobs/${job.id}/edit`}
+                            href={`/geometry-jobs/${job.id}/edit`}
                             className="text-green-600 hover:text-green-900 mr-4"
                           >
                             Edit
                           </Link>
                           <Link
-                            href={`/admin/geometry-jobs/new?template=${job.id}`}
+                            href={`/geometry-jobs/new?template=${job.id}`}
                             className="text-purple-600 hover:text-purple-900"
                             title="Create new job with same settings"
                           >

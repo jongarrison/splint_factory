@@ -40,7 +40,7 @@ export default function LoginPage() {
         setError("Invalid credentials")
       } else {
         // Electron goes to print queue, browser goes to geo-job-menu
-        router.push(isElectron ? "/admin/print-queue" : "/geo-job-menu")
+        router.push(isElectron ? "/print-queue" : "/geo-job-menu")
       }
     } catch (err) {
       console.error("Login error:", err)

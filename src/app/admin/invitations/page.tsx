@@ -187,7 +187,7 @@ export default function InvitationsPage() {
             </div>
             <div className="flex gap-4">
               <Link 
-                href="/admin" 
+                href="/admin/organizations" 
                 className="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 ← Back to Admin
