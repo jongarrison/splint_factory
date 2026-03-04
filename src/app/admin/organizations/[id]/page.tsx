@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 
 interface OrgDetail {
@@ -10,18 +11,17 @@ interface OrgDetail {
   name: string;
   description: string | null;
   isActive: boolean;
-  createdAt: string;
   _count: { users: number };
 }
 
-interface GeometrySummary {
-  id: string;
-  GeometryName: string;
-  shortDescription: string | null;
-  isActive: boolean;
+interface DesignPrintStats {
+  designName: string;
+  printCount: number;
+  acceptedCount: number;
+  rejectedCount: number;
 }
 
-export default function OrganizationDetailPage({
+export default function OrganizationViewPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -32,17 +32,9 @@ export default function OrganizationDetailPage({
   const orgId = resolvedParams.id;
 
   const [org, setOrg] = useState<OrgDetail | null>(null);
-  const [orgName, setOrgName] = useState('');
-  const [orgDescription, setOrgDescription] = useState('');
-  const [orgIsActive, setOrgIsActive] = useState(true);
-  const [savingOrg, setSavingOrg] = useState(false);
-  const [allGeometries, setAllGeometries] = useState<GeometrySummary[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [stats, setStats] = useState<DesignPrintStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -57,30 +49,19 @@ export default function OrganizationDetailPage({
     setLoading(true);
     setError(null);
     try {
-      const [orgRes, geoRes, visRes] = await Promise.all([
+      const [orgRes, statsRes] = await Promise.all([
         fetch(`/api/organizations/${orgId}`),
-        fetch('/api/named-geometry?all=true'),
-        fetch(`/api/organizations/${orgId}/geometries`),
+        fetch(`/api/organizations/${orgId}/print-stats`),
       ]);
 
-      if (!orgRes.ok) throw new Error('Failed to fetch organization');
-      if (!geoRes.ok) throw new Error('Failed to fetch geometries');
-      if (!visRes.ok) throw new Error('Failed to fetch visibility settings');
+      if (!orgRes.ok) throw new Error('Failed to load organization');
+      if (!statsRes.ok) throw new Error('Failed to load print stats');
 
-      const orgData: OrgDetail = await orgRes.json();
-      const geoData: GeometrySummary[] = await geoRes.json();
-      const visData: string[] = await visRes.json();
+      const orgData = await orgRes.json();
+      const statsData = await statsRes.json();
 
       setOrg(orgData);
-      setOrgName(orgData.name);
-      setOrgDescription(orgData.description || '');
-      setOrgIsActive(orgData.isActive);
-      setAllGeometries(
-        geoData
-          .sort((a, b) => a.GeometryName.localeCompare(b.GeometryName))
-      );
-      setSelectedIds(new Set(visData));
-      setSavedIds(new Set(visData));
+      setStats(statsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -88,113 +69,26 @@ export default function OrganizationDetailPage({
     }
   };
 
-  const toggleGeometry = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  const toggleAll = () => {
-    if (selectedIds.size === allGeometries.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(allGeometries.map((g) => g.id)));
-    }
-  };
-
-  const hasChanges =
-    selectedIds.size !== savedIds.size ||
-    [...selectedIds].some((id) => !savedIds.has(id));
-
-  const hasOrgChanges = org !== null && (
-    orgName !== org.name ||
-    orgDescription !== (org.description || '') ||
-    orgIsActive !== org.isActive
+  // Totals row
+  const totals = stats.reduce(
+    (acc, row) => ({
+      printCount: acc.printCount + row.printCount,
+      acceptedCount: acc.acceptedCount + row.acceptedCount,
+      rejectedCount: acc.rejectedCount + row.rejectedCount,
+    }),
+    { printCount: 0, acceptedCount: 0, rejectedCount: 0 }
   );
 
-  const saveOrg = async () => {
-    setSavingOrg(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const res = await fetch(`/api/organizations/${orgId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: orgName,
-          description: orgDescription,
-          isActive: orgIsActive,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to save organization');
-      }
-      const updated: OrgDetail = await res.json();
-      setOrg(updated);
-      setSuccess('Organization details saved.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setSavingOrg(false);
-    }
-  };
-
-  const save = async () => {
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const res = await fetch(`/api/organizations/${orgId}/geometries`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ geometryIds: [...selectedIds] }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to save');
-      }
-      setSavedIds(new Set(selectedIds));
-      setSuccess('Geometry visibility saved successfully.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading || status === 'loading') {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center dark:text-gray-200">Loading...</div>
+          <div className="text-center text-gray-500 dark:text-gray-400">Loading...</div>
         </div>
       </div>
     );
   }
-
-  if (!org) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-red-600 dark:text-red-400">
-            Organization not found.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const allChecked = allGeometries.length > 0 && selectedIds.size === allGeometries.length;
-  const someChecked = selectedIds.size > 0 && selectedIds.size < allGeometries.length;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -209,156 +103,115 @@ export default function OrganizationDetailPage({
           &larr; Back to Organizations
         </button>
 
-        {/* Org details panel */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-              Organization Details
-            </h2>
-            <button
-              onClick={saveOrg}
-              disabled={savingOrg || !hasOrgChanges}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white px-4 py-2 rounded text-sm font-medium"
-            >
-              {savingOrg ? 'Saving...' : 'Save Details'}
-            </button>
-          </div>
-          <div className="px-6 py-4 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Name
-              </label>
-              <input
-                type="text"
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-                className="block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Description
-              </label>
-              <input
-                type="text"
-                value={orgDescription}
-                onChange={(e) => setOrgDescription(e.target.value)}
-                placeholder="Optional description"
-                className="block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="orgActive"
-                checked={orgIsActive}
-                onChange={(e) => setOrgIsActive(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="orgActive" className="text-sm text-gray-700 dark:text-gray-300">
-                Active
-              </label>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-500">
-              {org._count.users} member{org._count.users !== 1 ? 's' : ''} &middot; Created{' '}
-              {new Date(org.createdAt).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-
-        {/* Messages */}
         {error && (
-          <div className="mb-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded">
+          <div className="mb-6 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded">
             {error}
-            <button
-              onClick={() => setError(null)}
-              className="ml-2 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-            >
-              x
-            </button>
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-600 text-green-700 dark:text-green-200 px-4 py-3 rounded">
-            {success}
           </div>
         )}
 
-        {/* Geometry visibility panel */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-              Visible Splint Designs
-            </h2>
-            <button
-              onClick={save}
-              disabled={saving || !hasChanges}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white px-4 py-2 rounded text-sm font-medium"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-
-          {allGeometries.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-              No splint designs have been created yet.
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {/* Check-all header row */}
-              <label className="flex items-center gap-3 px-6 py-3 bg-gray-50 dark:bg-gray-900 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-850">
-                <input
-                  type="checkbox"
-                  checked={allChecked}
-                  ref={(el) => {
-                    if (el) el.indeterminate = someChecked;
-                  }}
-                  onChange={toggleAll}
-                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {allChecked
-                    ? 'Deselect All'
-                    : someChecked
-                    ? `${selectedIds.size} of ${allGeometries.length} selected`
-                    : 'Select All'}
-                </span>
-              </label>
-
-              {/* Geometry rows */}
-              {allGeometries.map((geo) => (
-                <label
-                  key={geo.id}
-                  className="flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(geo.id)}
-                    onChange={() => toggleGeometry(geo.id)}
-                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {geo.GeometryName}
+        {org && (
+          <>
+            {/* Org header */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+              <div className="px-6 py-4 flex justify-between items-start">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {org.name}
+                  </h1>
+                  {org.description && (
+                    <p className="mt-1 text-gray-600 dark:text-gray-400">
+                      {org.description}
+                    </p>
+                  )}
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-500">
+                    {org._count.users} member{org._count.users !== 1 ? 's' : ''}
+                    {!org.isActive && (
+                      <span className="ml-2 inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                        Inactive
                       </span>
-                      {!geo.isActive && (
-                        <span className="inline-flex px-1.5 py-0.5 text-xs font-semibold rounded bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
-                          Inactive
-                        </span>
-                      )}
-                    </div>
-                    {geo.shortDescription && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {geo.shortDescription}
-                      </p>
                     )}
-                  </div>
-                </label>
-              ))}
+                  </p>
+                </div>
+                <Link
+                  href={`/admin/organizations/${orgId}/edit`}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded"
+                >
+                  Edit
+                </Link>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Print stats table */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Print Summary
+                </h2>
+              </div>
+
+              {stats.length === 0 ? (
+                <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  No prints recorded for this organization yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-900">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Design Name
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Print Count
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Accepted
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Rejected
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {stats.map((row) => (
+                        <tr key={row.designName}>
+                          <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">
+                            {row.designName}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">
+                            {row.printCount}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-green-700 dark:text-green-400 text-right">
+                            {row.acceptedCount}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-red-700 dark:text-red-400 text-right">
+                            {row.rejectedCount}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-gray-50 dark:bg-gray-900 font-semibold">
+                        <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">
+                          Total
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">
+                          {totals.printCount}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-green-700 dark:text-green-400 text-right">
+                          {totals.acceptedCount}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-red-700 dark:text-red-400 text-right">
+                          {totals.rejectedCount}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

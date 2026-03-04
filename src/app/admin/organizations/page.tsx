@@ -208,7 +208,12 @@ export default function AdminPage() {
                 {organizations.map((org) => (
                   <tr key={org.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{org.name}</div>
+                      <button
+                        onClick={() => router.push(`/admin/organizations/${org.id}`)}
+                        className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {org.name}
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-500 dark:text-gray-400">{org.description || '—'}</div>
@@ -230,7 +235,7 @@ export default function AdminPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
-                        onClick={() => router.push(`/admin/organizations/${org.id}`)}
+                        onClick={() => router.push(`/admin/organizations/${org.id}/edit`)}
                         className="text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         Edit
