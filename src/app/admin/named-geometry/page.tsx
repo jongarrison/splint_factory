@@ -96,7 +96,7 @@ export default function NamedGeometryListPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${geometry.GeometryAlgorithmName}.json`;
+    a.download = `${geometry.GeometryName}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };

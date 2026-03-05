@@ -467,7 +467,7 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
                     />
                     <a
                       href={`/api/geometry-images/${resolvedParams.id}/preview`}
-                      download
+                      download={`${formData.GeometryName}_preview.png`}
                       className="inline-block mt-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       Download full image
@@ -503,7 +503,7 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
                     />
                     <a
                       href={`/api/geometry-images/${resolvedParams.id}/measurement`}
-                      download
+                      download={`${formData.GeometryName}_measurement.png`}
                       className="inline-block mt-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       Download full image
