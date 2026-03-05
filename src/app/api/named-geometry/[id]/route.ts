@@ -230,6 +230,84 @@ export async function PUT(
   }
 }
 
+// PATCH /api/named-geometry/[id] - Update schema only (SYSTEM_ADMIN only)
+// Accepts JSON body: { GeometryInputParameterSchema: string }
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+    if (user?.role !== 'SYSTEM_ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden - SYSTEM_ADMIN access required' },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await params;
+
+    const existing = await prisma.namedGeometry.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Named geometry not found' }, { status: 404 });
+    }
+
+    const body = await request.json();
+    const schema = body.GeometryInputParameterSchema;
+    if (typeof schema !== 'string') {
+      return NextResponse.json(
+        { error: 'GeometryInputParameterSchema must be a JSON string' },
+        { status: 400 }
+      );
+    }
+
+    // Validate the schema
+    let parsedSchema: GeometryInputParameterSchema;
+    try {
+      parsedSchema = JSON.parse(schema);
+      if (!Array.isArray(parsedSchema)) {
+        throw new Error('Schema must be an array');
+      }
+      for (const param of parsedSchema) {
+        if (!param.InputName || !param.InputDescription || !param.InputType) {
+          throw new Error('Each parameter must have InputName, InputDescription, and InputType');
+        }
+        if (!INPUT_NAME_PATTERN.test(param.InputName)) {
+          throw new Error(`InputName "${param.InputName}" must contain only ${INPUT_NAME_ALLOWED_CHARS}`);
+        }
+        if (!['Float', 'Integer', 'Text'].includes(param.InputType)) {
+          throw new Error(`Invalid InputType: ${param.InputType}`);
+        }
+      }
+    } catch (parseError) {
+      return NextResponse.json(
+        { error: `Invalid schema: ${parseError}` },
+        { status: 400 }
+      );
+    }
+
+    const updated = await prisma.namedGeometry.update({
+      where: { id },
+      data: { GeometryInputParameterSchema: schema },
+      select: { id: true, GeometryName: true, GeometryInputParameterSchema: true },
+    });
+
+    console.log(`Updated schema for NamedGeometry "${updated.GeometryName}" by user ${session.user.id}`);
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error('Error patching named geometry schema:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 // DELETE /api/named-geometry/[id] - Delete named geometry (SYSTEM_ADMIN only)
 export async function DELETE(
   request: NextRequest,

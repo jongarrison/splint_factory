@@ -29,7 +29,7 @@ export default function NamedGeometryListPage() {
   const [geometries, setGeometries] = useState<NamedGeometry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showSchemaModal, setShowSchemaModal] = useState<string | null>(null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -48,20 +48,6 @@ export default function NamedGeometryListPage() {
 
     fetchGeometries();
   }, [session, status, router]);
-
-  // Handle ESC key to close modal
-  useEffect(() => {
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && showSchemaModal) {
-        setShowSchemaModal(null);
-      }
-    };
-
-    document.addEventListener('keydown', handleEscKey);
-    return () => {
-      document.removeEventListener('keydown', handleEscKey);
-    };
-  }, [showSchemaModal]);
 
   const fetchGeometries = async () => {
     try {
@@ -92,29 +78,54 @@ export default function NamedGeometryListPage() {
         throw new Error('Failed to delete geometry');
       }
 
-      // Refresh the list
       fetchGeometries();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete geometry');
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleDownloadSchema = (geometry: NamedGeometry) => {
+    // Pretty-print the schema JSON for readability
+    let content: string;
+    try {
+      content = JSON.stringify(JSON.parse(geometry.GeometryInputParameterSchema), null, 2);
+    } catch {
+      content = geometry.GeometryInputParameterSchema;
+    }
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${geometry.GeometryAlgorithmName}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const formatSchema = (schemaJson: string) => {
+  const handleUploadSchema = async (id: string, file: File) => {
+    setUploadingId(id);
+    setError(null);
     try {
-      const parsed = JSON.parse(schemaJson);
-      return JSON.stringify(parsed, null, 2);
-    } catch {
-      return schemaJson;
+      const text = await file.text();
+      // Validate it parses as JSON before sending
+      JSON.parse(text);
+
+      const response = await fetch(`/api/named-geometry/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ GeometryInputParameterSchema: text }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to upload schema');
+      }
+
+      // Refresh the list to pick up the updated schema
+      fetchGeometries();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload schema');
+    } finally {
+      setUploadingId(null);
     }
   };
 
@@ -188,10 +199,7 @@ export default function NamedGeometryListPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Schema
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -245,81 +253,73 @@ export default function NamedGeometryListPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => setShowSchemaModal(geometry.id)}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 text-sm"
-                    >
-                      View Schema
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link
-                      href={`/admin/named-geometry/${geometry.id}`}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mr-4"
-                    >
-                      Edit
-                    </Link>
-                    <Link
-                      href={`/admin/named-geometry/new?copyFrom=${geometry.id}`}
-                      className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 mr-4"
-                    >
-                      Copy
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(geometry.id, geometry.GeometryName)}
-                      className="text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {/* Download schema */}
+                      <button
+                        onClick={() => handleDownloadSchema(geometry)}
+                        title="Download schema"
+                        className="p-1.5 rounded text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
+                        </svg>
+                      </button>
+                      {/* Upload schema */}
+                      <label
+                        title="Upload schema"
+                        className={`p-1.5 rounded cursor-pointer text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 ${uploadingId === geometry.id ? 'opacity-50 pointer-events-none' : ''}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5m0 0L7 8m5-5v12" />
+                        </svg>
+                        <input
+                          type="file"
+                          accept=".json"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadSchema(geometry.id, file);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                      {/* Edit */}
+                      <Link
+                        href={`/admin/named-geometry/${geometry.id}`}
+                        title="Edit"
+                        className="p-1.5 rounded text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </Link>
+                      {/* Copy */}
+                      <Link
+                        href={`/admin/named-geometry/new?copyFrom=${geometry.id}`}
+                        title="Copy"
+                        className="p-1.5 rounded text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </Link>
+                      {/* Delete */}
+                      <button
+                        onClick={() => handleDelete(geometry.id, geometry.GeometryName)}
+                        title="Delete"
+                        className="p-1.5 rounded text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Schema Modal */}
-      {showSchemaModal && (
-        <div 
-          className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-75 flex items-center justify-center p-4 z-50"
-          onClick={() => setShowSchemaModal(null)}
-        >
-          <div 
-            className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-96 flex flex-col relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 relative flex-shrink-0">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 pr-8">
-                Geometry Input Parameter Schema
-              </h3>
-              <button
-                onClick={() => setShowSchemaModal(null)}
-                className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
-                aria-label="Close modal"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="px-6 py-4 flex-1 overflow-auto">
-              <pre className="display-field whitespace-pre-wrap text-gray-900 dark:text-gray-100">
-                {formatSchema(
-                  geometries.find(g => g.id === showSchemaModal)?.GeometryInputParameterSchema || ''
-                )}
-              </pre>
-            </div>
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
-              <button
-                onClick={() => setShowSchemaModal(null)}
-                className="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Close
-              </button>
-            </div>
-          </div>
         </div>
       )}
         </div>
