@@ -391,7 +391,7 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Geometry Name
+                  Geometry Name (Users will see this)
                 </label>
                 <input
                   type="text"
@@ -405,7 +405,7 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Algorithm Name (no spaces)
+                  Algorithm Name (Must match backend processor file)
                 </label>
                 <input
                   type="text"
@@ -459,8 +459,19 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
                   Shown as thumbnail on geometry selection page
                 </p>
                 {existingImages.preview && !imageFiles.preview && (
-                  <div className="mb-2 text-sm text-green-600 dark:text-green-400">
-                    ✓ Current image exists
+                  <div className="mb-2">
+                    <img
+                      src={`/api/geometry-images/${resolvedParams.id}/preview`}
+                      alt="Preview"
+                      className="w-24 h-24 rounded object-cover border border-gray-200 dark:border-gray-700"
+                    />
+                    <a
+                      href={`/api/geometry-images/${resolvedParams.id}/preview`}
+                      download
+                      className="inline-block mt-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Download full image
+                    </a>
                   </div>
                 )}
                 <input
@@ -484,8 +495,19 @@ export default function EditNamedGeometryPage({ params }: { params: Promise<{ id
                   Shown as helper guide when creating geometry jobs
                 </p>
                 {existingImages.measurement && !imageFiles.measurement && (
-                  <div className="mb-2 text-sm text-green-600 dark:text-green-400">
-                    ✓ Current image exists
+                  <div className="mb-2">
+                    <img
+                      src={`/api/geometry-images/${resolvedParams.id}/measurement`}
+                      alt="Measurement"
+                      className="w-24 h-24 rounded object-cover border border-gray-200 dark:border-gray-700"
+                    />
+                    <a
+                      href={`/api/geometry-images/${resolvedParams.id}/measurement`}
+                      download
+                      className="inline-block mt-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Download full image
+                    </a>
                   </div>
                 )}
                 <input
