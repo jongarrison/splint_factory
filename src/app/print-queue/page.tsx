@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import PrinterStatusBanner from '@/components/printer/PrinterStatusBanner';
 import PrintAcceptanceModal from '@/components/PrintAcceptanceModal';
+import DeletePrintModal from '@/components/DeletePrintModal';
 import { useSmartPolling } from '@/hooks/useSmartPolling';
 
 interface PrintQueueEntry {
@@ -50,6 +51,10 @@ export default function PrintQueuePage() {
   const [printingJobId, setPrintingJobId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'active' | 'history'>('active');
   const [acceptanceModal, setAcceptanceModal] = useState<{
+    printId: string;
+    geometryName: string;
+  } | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{
     printId: string;
     geometryName: string;
   } | null>(null);
@@ -345,30 +350,36 @@ export default function PrintQueuePage() {
     }
   };
 
-  const handleDelete = async (entryId: string) => {
-    if (!confirm('Are you sure you want to delete this print job? This action cannot be undone.')) {
-      return;
-    }
-
+  const handleDeleteSubmit = async (printId: string, action: 'DELETE' | 'REJECT_DESIGN') => {
     try {
-      const response = await fetch(`/api/print-queue/${entryId}`, {
+      // If rejecting design, record that before disabling
+      if (action === 'REJECT_DESIGN') {
+        const acceptanceResponse = await fetch(`/api/print-queue/${printId}/acceptance`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ printAcceptance: 'REJECT_DESIGN' }),
+        });
+        if (!acceptanceResponse.ok) {
+          throw new Error('Failed to record design rejection');
+        }
+      }
+
+      const response = await fetch(`/api/print-queue/${printId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isEnabled: false,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isEnabled: false }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to delete print job');
       }
 
-      // Refresh the list (the deleted entry will be filtered out)
       refreshPrintQueue();
+      const msg = action === 'REJECT_DESIGN' ? 'Design rejected and removed' : 'Print job removed';
+      showNotification(msg, 'success', 3000);
     } catch (err) {
       showNotification(err instanceof Error ? err.message : 'Failed to delete print job', 'error');
+      throw err;
     }
   };
 
@@ -705,7 +716,10 @@ export default function PrintQueuePage() {
                         </td>
                         <td className="px-2 py-2 text-center">
                           <button
-                            onClick={() => handleDelete(entry.id)}
+                            onClick={() => setDeleteModal({
+                              printId: entry.id,
+                              geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
+                            })}
                             className="action-delete inline-flex items-center justify-center w-10 h-10 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                             title="Delete print job"
                           >
@@ -731,6 +745,16 @@ export default function PrintQueuePage() {
           geometryName={acceptanceModal.geometryName}
           onClose={() => setAcceptanceModal(null)}
           onSubmit={handleAcceptanceSubmit}
+        />
+      )}
+
+      {/* Delete Print Modal */}
+      {deleteModal && (
+        <DeletePrintModal
+          printId={deleteModal.printId}
+          geometryName={deleteModal.geometryName}
+          onClose={() => setDeleteModal(null)}
+          onSubmit={handleDeleteSubmit}
         />
       )}
     </div>
