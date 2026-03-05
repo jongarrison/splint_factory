@@ -3,6 +3,10 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // POST /api/print-queue/[id]/acceptance - Accept or reject a print
+// Valid printAcceptance values: ACCEPTED, REJECT_DESIGN, REJECT_PRINT
+const VALID_ACCEPTANCE_VALUES = ['ACCEPTED', 'REJECT_DESIGN', 'REJECT_PRINT'] as const;
+type PrintAcceptanceValue = typeof VALID_ACCEPTANCE_VALUES[number];
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -19,10 +23,10 @@ export async function POST(
     
     const { printAcceptance, printNote } = body;
 
-    // Validate printAcceptance is a boolean
-    if (typeof printAcceptance !== 'boolean') {
+    // Validate printAcceptance is a valid enum string
+    if (!VALID_ACCEPTANCE_VALUES.includes(printAcceptance)) {
       return NextResponse.json(
-        { error: 'printAcceptance must be a boolean' },
+        { error: `printAcceptance must be one of: ${VALID_ACCEPTANCE_VALUES.join(', ')}` },
         { status: 400 }
       );
     }

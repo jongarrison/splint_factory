@@ -75,8 +75,8 @@ export async function GET(
       for (const job of design.geometryJobs) {
         for (const pq of job.printQueue) {
           printCount++;
-          if (pq.printAcceptance === true) acceptedCount++;
-          else if (pq.printAcceptance === false) rejectedCount++;
+          if (pq.printAcceptance === 'ACCEPTED') acceptedCount++;
+          else if (pq.printAcceptance && pq.printAcceptance !== 'ACCEPTED') rejectedCount++;
         }
       }
 

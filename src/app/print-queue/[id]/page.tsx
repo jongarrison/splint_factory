@@ -16,7 +16,7 @@ interface PrintQueueEntry {
   PrintCompletedTime?: string;
   isPrintSuccessful: boolean;
   printNote?: string;
-  printAcceptance?: boolean | null;
+  printAcceptance?: string | null;
   hasGeometryFile: boolean;
   hasPrintFile: boolean;
   progress?: number | null;
@@ -62,7 +62,6 @@ export default function PrintQueueDetailPage({
   const [acceptanceModal, setAcceptanceModal] = useState<{
     printId: string;
     geometryName: string;
-    isAccepting: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -170,11 +169,18 @@ export default function PrintQueueDetailPage({
   };
 
   const getAcceptanceBadge = (entry: PrintQueueEntry) => {
-    if (entry.printAcceptance === true) {
-      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-teal-100 text-teal-800">✓ Accepted</span>;
+    if (entry.printAcceptance === 'ACCEPTED') {
+      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-teal-100 text-teal-800">Accepted</span>;
     }
-    if (entry.printAcceptance === false) {
-      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-rose-100 text-rose-800">✗ Rejected</span>;
+    if (entry.printAcceptance === 'REJECT_DESIGN') {
+      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-orange-100 text-orange-800">Rejected - Design</span>;
+    }
+    if (entry.printAcceptance === 'REJECT_PRINT') {
+      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-rose-100 text-rose-800">Rejected - Print</span>;
+    }
+    // Legacy fallback
+    if (entry.printAcceptance === 'REJECTED') {
+      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-rose-100 text-rose-800">Rejected</span>;
     }
     return null;
   };
@@ -235,7 +241,7 @@ export default function PrintQueueDetailPage({
     }
   };
 
-  const handleAcceptanceSubmit = async (printId: string, acceptance: boolean, note: string) => {
+  const handleAcceptanceSubmit = async (printId: string, acceptance: string, note: string) => {
     try {
       const response = await fetch(`/api/print-queue/${printId}/acceptance`, {
         method: 'POST',
@@ -549,32 +555,18 @@ export default function PrintQueueDetailPage({
                   </button>
                 )}
                 
-                {/* Accept/Reject buttons - show for completed prints (progress > 99%) that haven't been accepted/rejected */}
+                {/* Review button - show for completed prints that haven't been reviewed */}
                 {entry.progress != null && entry.progress > 99 && entry.printAcceptance === null && (
-                  <>
                     <button
                       onClick={() => setAcceptanceModal({
                         printId: entry.id,
                         geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
-                        isAccepting: true
                       })}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium"
-                      title="Accept print"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
+                      title="Review print quality"
                     >
-                      ✓ Accept Print
+                      Review Print
                     </button>
-                    <button
-                      onClick={() => setAcceptanceModal({
-                        printId: entry.id,
-                        geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
-                        isAccepting: false
-                      })}
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium"
-                      title="Reject print"
-                    >
-                      ✗ Reject Print
-                    </button>
-                  </>
                 )}
                 
                 <button
@@ -774,14 +766,19 @@ export default function PrintQueueDetailPage({
                           ⏸ Ready
                         </span>
                       )}
-                      {entry.printAcceptance === true && (
+                      {entry.printAcceptance === 'ACCEPTED' && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
-                          ✓ Accepted
+                          Accepted
                         </span>
                       )}
-                      {entry.printAcceptance === false && (
+                      {(entry.printAcceptance === 'REJECT_DESIGN' || entry.printAcceptance === 'REJECTED') && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          {entry.printAcceptance === 'REJECT_DESIGN' ? 'Rejected - Design' : 'Rejected'}
+                        </span>
+                      )}
+                      {entry.printAcceptance === 'REJECT_PRINT' && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
-                          ✗ Rejected
+                          Rejected - Print
                         </span>
                       )}
                     </div>
@@ -915,7 +912,6 @@ export default function PrintQueueDetailPage({
         <PrintAcceptanceModal
           printId={acceptanceModal.printId}
           geometryName={acceptanceModal.geometryName}
-          isAccepting={acceptanceModal.isAccepting}
           onClose={() => setAcceptanceModal(null)}
           onSubmit={handleAcceptanceSubmit}
         />

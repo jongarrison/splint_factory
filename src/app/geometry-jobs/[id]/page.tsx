@@ -45,7 +45,7 @@ interface PrintJob {
   PrintCompletedTime?: string | null;
   isPrintSuccessful: boolean;
   printNote?: string | null;
-  printAcceptance?: boolean | null;
+  printAcceptance?: string | null;
   isEnabled: boolean;
   CreationTime: string;
 }
@@ -229,19 +229,33 @@ export default function GeometryJobDetailPage({
       return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Ready to Print</span>;
     })();
 
-    const acceptanceBadge = printJob.printAcceptance === true ? (
+    const acceptanceBadge = printJob.printAcceptance === 'ACCEPTED' ? (
       <span 
         className="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 cursor-help"
         title={printJob.printNote || 'Accepted'}
       >
-        ✓ Accepted
+        Accepted
       </span>
-    ) : printJob.printAcceptance === false ? (
+    ) : printJob.printAcceptance === 'REJECT_DESIGN' ? (
+      <span 
+        className="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 cursor-help"
+        title={printJob.printNote || 'Rejected - Design'}
+      >
+        Rejected - Design
+      </span>
+    ) : printJob.printAcceptance === 'REJECT_PRINT' ? (
+      <span 
+        className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 cursor-help"
+        title={printJob.printNote || 'Rejected - Print'}
+      >
+        Rejected - Print
+      </span>
+    ) : printJob.printAcceptance === 'REJECTED' ? (
       <span 
         className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 cursor-help"
         title={printJob.printNote || 'Rejected'}
       >
-        ✗ Rejected
+        Rejected
       </span>
     ) : null;
 

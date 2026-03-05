@@ -26,7 +26,7 @@ interface GeometryJob {
   };
   printQueue: Array<{
     id: string;
-    printAcceptance: boolean | null;
+    printAcceptance: string | null;
   }>;
 }
 
@@ -92,20 +92,20 @@ export default function GeometryJobsPage() {
     })();
 
     // Count print acceptances
-    const acceptedPrints = job.printQueue.filter(p => p.printAcceptance === true).length;
-    const rejectedPrints = job.printQueue.filter(p => p.printAcceptance === false).length;
+    const acceptedPrints = job.printQueue.filter(p => p.printAcceptance === 'ACCEPTED').length;
+    const rejectedPrints = job.printQueue.filter(p => p.printAcceptance && p.printAcceptance !== 'ACCEPTED').length;
 
     return (
       <div className="flex flex-col gap-1">
         {processingBadge}
         {acceptedPrints > 0 && (
           <span className="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
-            ✓ {acceptedPrints} Accepted
+            {acceptedPrints} Accepted
           </span>
         )}
         {rejectedPrints > 0 && (
           <span className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800">
-            ✗ {rejectedPrints} Rejected
+            {rejectedPrints} Rejected
           </span>
         )}
       </div>
