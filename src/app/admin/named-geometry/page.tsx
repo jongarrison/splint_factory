@@ -51,7 +51,7 @@ export default function NamedGeometryListPage() {
 
   const fetchGeometries = async () => {
     try {
-      const response = await fetch('/api/named-geometry');
+      const response = await fetch('/api/named-geometry?all=true');
       if (!response.ok) {
         throw new Error('Failed to fetch geometries');
       }
