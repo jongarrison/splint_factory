@@ -118,8 +118,8 @@ export async function PUT(
     const { 
       GeometryID, 
       GeometryInputParameterData, 
-      CustomerNote, 
-      CustomerID,
+      JobNote, 
+      JobID,
       isEnabled 
     } = body;
 
@@ -131,15 +131,15 @@ export async function PUT(
     }
 
     // Validate field lengths
-    if (CustomerNote && CustomerNote.length > 500) {
+    if (JobNote && JobNote.length > 500) {
       return NextResponse.json({ 
-        error: 'CustomerNote must be 500 characters or less' 
+        error: 'Job Note must be 500 characters or less' 
       }, { status: 400 });
     }
 
-    if (CustomerID && CustomerID.length > 20) {
+    if (JobID && JobID.length > 20) {
       return NextResponse.json({ 
-        error: 'CustomerID must be 20 characters or less' 
+        error: 'Job ID must be 20 characters or less' 
       }, { status: 400 });
     }
 
@@ -221,8 +221,8 @@ export async function PUT(
       data: {
         GeometryID,
         GeometryInputParameterData,
-        CustomerNote: CustomerNote || null,
-        CustomerID: CustomerID || null,
+        JobNote: JobNote || null,
+        JobID: JobID || null,
         isEnabled: isEnabled !== undefined ? isEnabled : true
       },
       include: {

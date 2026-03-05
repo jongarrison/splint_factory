@@ -191,9 +191,6 @@ export default function NamedGeometryListPage() {
                   Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -205,7 +202,11 @@ export default function NamedGeometryListPage() {
               {geometries.map((geometry) => (
                 <tr key={geometry.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
+                    <Link
+                      href={`/admin/named-geometry/${geometry.id}`}
+                      title={geometry.shortDescription || undefined}
+                      className="flex items-center gap-3 group"
+                    >
                       {geometry.previewImageUpdatedAt ? (
                         <img
                           src={`/api/geometry-images/${geometry.id}/preview`}
@@ -216,19 +217,14 @@ export default function NamedGeometryListPage() {
                         <div className="w-20 h-20 rounded bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
                       )}
                       <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {geometry.GeometryName}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
                           {geometry.GeometryAlgorithmName}
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">
-                      {geometry.shortDescription || <span className="text-gray-400 dark:text-gray-500 italic">No description</span>}
-                    </div>
+                    </Link>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {geometry.isActive ? (

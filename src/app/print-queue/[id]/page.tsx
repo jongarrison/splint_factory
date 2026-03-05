@@ -26,8 +26,8 @@ interface PrintQueueEntry {
     id: string;
     objectID?: string;
     CreationTime: string;
-    CustomerNote?: string;
-    CustomerID?: string;
+    JobNote?: string;
+    JobID?: string;
     GeometryInputParameterData: string;
     geometry: {
       GeometryName: string;
@@ -197,7 +197,7 @@ export default function PrintQueueDetailPage({
       const sessionCookie = document.cookie;
       
       // Generate a job name from the geometry and customer info
-      const jobName = `${entry.geometryProcessingQueue.geometry.GeometryName.replace(/\s+/g, '_')}_${entry.geometryProcessingQueue.CustomerID || 'customer'}`;
+      const jobName = `${entry.geometryProcessingQueue.geometry.GeometryName.replace(/\s+/g, '_')}_${entry.geometryProcessingQueue.JobID || 'job'}`;
 
       // Call the Electron API to print
       const electronAPI = (window as any).electronAPI;
@@ -645,8 +645,8 @@ export default function PrintQueueDetailPage({
                   <dd className="mt-1">
                     <div className="text-xs text-gray-500">Object:</div>
                     <div className="text-sm font-mono font-semibold text-blue-600">{entry.geometryProcessingQueue.objectID || 'N/A'}</div>
-                    <div className="text-xs text-gray-500 mt-2">Customer:</div>
-                    <div className="text-sm text-gray-900">{entry.geometryProcessingQueue.CustomerID || 'N/A'}</div>
+                    <div className="text-xs text-gray-500 mt-2">Job:</div>
+                    <div className="text-sm text-gray-900">{entry.geometryProcessingQueue.JobID || 'N/A'}</div>
                   </dd>
                 </div>
                 <div>
@@ -683,10 +683,10 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-gray-500">Organization</dt>
                   <dd className="organization-name mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.owningOrganization.name}</dd>
                 </div>
-                {entry.geometryProcessingQueue.CustomerNote && (
+                {entry.geometryProcessingQueue.JobNote && (
                   <div className="md:col-span-2">
-                    <dt className="text-sm font-medium text-gray-500">Customer Note</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.CustomerNote}</dd>
+                    <dt className="text-sm font-medium text-gray-500">Job Note</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.JobNote}</dd>
                   </div>
                 )}
               </dl>
@@ -836,20 +836,20 @@ export default function PrintQueueDetailPage({
             </div>
           </div>
 
-          {/* Customer Information */}
+          {/* Job Information */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Customer Information</h2>
+              <h2 className="text-lg font-medium text-gray-900">Job Information</h2>
             </div>
             <div className="px-6 py-4">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Customer ID</dt>
-                  <dd className="customer-id mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.CustomerID || 'Not specified'}</dd>
+                  <dt className="text-sm font-medium text-gray-500">Job ID</dt>
+                  <dd className="job-id mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.JobID || 'Not specified'}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Customer Note</dt>
-                  <dd className="customer-note mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.CustomerNote || 'No note provided'}</dd>
+                  <dt className="text-sm font-medium text-gray-500">Job Note</dt>
+                  <dd className="job-note mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.JobNote || 'No note provided'}</dd>
                 </div>
               </dl>
             </div>

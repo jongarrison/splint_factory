@@ -37,8 +37,8 @@ function CreateGeometryJobPage() {
   const [selectedGeometry, setSelectedGeometry] = useState<NamedGeometry | null>(null);
   const [parameterSchema, setParameterSchema] = useState<GeometryInputParameter[]>([]);
   const [parameterValues, setParameterValues] = useState<Record<string, any>>({});
-  const [customerNote, setCustomerNote] = useState('');
-  const [customerID, setCustomerID] = useState('');
+  const [jobNote, setJobNote] = useState('');
+  const [jobID, setJobID] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,9 +87,9 @@ function CreateGeometryJobPage() {
         const templateParams = JSON.parse(templateJob.GeometryInputParameterData);
         setParameterValues(templateParams);
         
-        // Optionally copy customer info (leave blank for new job)
-        // setCustomerID(templateJob.CustomerID || '');
-        // setCustomerNote(templateJob.CustomerNote || '');
+        // Optionally copy job info (leave blank for new job)
+        // setJobID(templateJob.JobID || '');
+        // setJobNote(templateJob.JobNote || '');
       }
     } catch (err) {
       console.error('Failed to load template job:', err);
@@ -226,8 +226,8 @@ function CreateGeometryJobPage() {
         body: JSON.stringify({
           GeometryID: selectedGeometry.id,
           GeometryInputParameterData: JSON.stringify(parameterValues),
-          CustomerNote: customerNote.trim() || null,
-          CustomerID: customerID.trim() || null,
+          JobNote: jobNote.trim() || null,
+          JobID: jobID.trim() || null,
         }),
       });
 
@@ -358,28 +358,28 @@ function CreateGeometryJobPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="customerID" className="block text-sm font-medium text-gray-700">
-                  Customer ID
+                <label htmlFor="jobID" className="block text-sm font-medium text-gray-700">
+                  Job ID
                 </label>
                 <input
                   type="text"
-                  id="customerID"
-                  value={customerID}
-                  onChange={(e) => setCustomerID(e.target.value)}
+                  id="jobID"
+                  value={jobID}
+                  onChange={(e) => setJobID(e.target.value)}
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Optional customer identifier"
+                  placeholder="Optional job identifier"
                 />
               </div>
               
               <div>
-                <label htmlFor="customerNote" className="block text-sm font-medium text-gray-700">
-                  Customer Note
+                <label htmlFor="jobNote" className="block text-sm font-medium text-gray-700">
+                  Job Note
                 </label>
                 <input
                   type="text"
-                  id="customerNote"
-                  value={customerNote}
-                  onChange={(e) => setCustomerNote(e.target.value)}
+                  id="jobNote"
+                  value={jobNote}
+                  onChange={(e) => setJobNote(e.target.value)}
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Optional note about this job"
                 />

@@ -11,8 +11,8 @@ interface GeometryJob {
   id: string;
   objectID?: string;
   CreationTime: string;
-  CustomerNote?: string;
-  CustomerID?: string;
+  JobNote?: string;
+  JobID?: string;
   ProcessStartedTime?: string;
   ProcessCompletedTime?: string;
   isProcessSuccessful: boolean;
@@ -260,13 +260,13 @@ export default function GeometryJobsPage() {
                           <div className="text-sm font-mono font-semibold text-blue-600">
                             {job.objectID || 'N/A'}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">Customer:</div>
+                          <div className="text-xs text-gray-500 mt-1">Job:</div>
                           <div className="text-sm text-gray-900">
-                            {job.CustomerID || 'N/A'}
+                            {job.JobID || 'N/A'}
                           </div>
-                          {job.CustomerNote && (
+                          {job.JobNote && (
                             <div className="text-xs text-gray-500 truncate max-w-xs mt-1">
-                              {job.CustomerNote}
+                              {job.JobNote}
                             </div>
                           )}
                         </td>

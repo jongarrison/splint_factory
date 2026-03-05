@@ -10,8 +10,8 @@ interface GeometryJob {
   id: string;
   CreationTime: string;
   GeometryInputParameterData: string;
-  CustomerNote?: string;
-  CustomerID?: string;
+  JobNote?: string;
+  JobID?: string;
   ProcessStartedTime?: string;
   ProcessCompletedTime?: string;
   isProcessSuccessful: boolean;
@@ -51,8 +51,8 @@ export default function EditGeometryJobPage({
   const [job, setJob] = useState<GeometryJob | null>(null);
   const [parameterSchema, setParameterSchema] = useState<GeometryInputParameter[]>([]);
   const [parameterValues, setParameterValues] = useState<Record<string, any>>({});
-  const [customerNote, setCustomerNote] = useState('');
-  const [customerID, setCustomerID] = useState('');
+  const [jobNote, setJobNote] = useState('');
+  const [jobID, setJobID] = useState('');
   const [isEnabled, setIsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -106,8 +106,8 @@ export default function EditGeometryJobPage({
       }
       
       // Set form state
-      setCustomerNote(data.CustomerNote || '');
-      setCustomerID(data.CustomerID || '');
+      setJobNote(data.JobNote || '');
+      setJobID(data.JobID || '');
       setIsEnabled(data.isEnabled);
       
     } catch (err) {
@@ -195,8 +195,8 @@ export default function EditGeometryJobPage({
         },
         body: JSON.stringify({
           GeometryInputParameterData: JSON.stringify(parameterValues),
-          CustomerNote: customerNote.trim() || null,
-          CustomerID: customerID.trim() || null,
+          JobNote: jobNote.trim() || null,
+          JobID: jobID.trim() || null,
           isEnabled: isEnabled,
         }),
       });
@@ -304,28 +304,28 @@ export default function EditGeometryJobPage({
           <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="customerID" className="block text-sm font-medium text-gray-700">
-                  Customer ID
+                <label htmlFor="jobID" className="block text-sm font-medium text-gray-700">
+                  Job ID
                 </label>
                 <input
                   type="text"
-                  id="customerID"
-                  value={customerID}
-                  onChange={(e) => setCustomerID(e.target.value)}
+                  id="jobID"
+                  value={jobID}
+                  onChange={(e) => setJobID(e.target.value)}
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Optional customer identifier"
+                  placeholder="Optional job identifier"
                 />
               </div>
               
               <div>
-                <label htmlFor="customerNote" className="block text-sm font-medium text-gray-700">
-                  Customer Note
+                <label htmlFor="jobNote" className="block text-sm font-medium text-gray-700">
+                  Job Note
                 </label>
                 <input
                   type="text"
-                  id="customerNote"
-                  value={customerNote}
-                  onChange={(e) => setCustomerNote(e.target.value)}
+                  id="jobNote"
+                  value={jobNote}
+                  onChange={(e) => setJobNote(e.target.value)}
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Optional note about this job"
                 />

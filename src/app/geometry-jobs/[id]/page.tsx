@@ -13,8 +13,8 @@ interface GeometryJob {
   objectID?: string;
   CreationTime: string;
   GeometryInputParameterData: string;
-  CustomerNote?: string;
-  CustomerID?: string;
+  JobNote?: string;
+  JobID?: string;
   ProcessStartedTime?: string;
   ProcessCompletedTime?: string;
   isProcessSuccessful: boolean;
@@ -446,8 +446,8 @@ export default function GeometryJobDetailPage({
                   <dd className="mt-1">
                     <div className="text-xs text-gray-500">Object:</div>
                     <div className="text-sm font-mono font-semibold text-blue-600">{job.objectID || 'N/A'}</div>
-                    <div className="text-xs text-gray-500 mt-2">Customer:</div>
-                    <div className="text-sm text-gray-900">{job.CustomerID || 'N/A'}</div>
+                    <div className="text-xs text-gray-500 mt-2">Job:</div>
+                    <div className="text-sm text-gray-900">{job.JobID || 'N/A'}</div>
                   </dd>
                 </div>
                 <div>
@@ -493,10 +493,10 @@ export default function GeometryJobDetailPage({
                     <dd className="mt-1 text-sm text-gray-900">{formatDate(job.ProcessCompletedTime)}</dd>
                   </div>
                 )}
-                {job.CustomerNote && (
+                {job.JobNote && (
                   <div className="md:col-span-2">
-                    <dt className="text-sm font-medium text-gray-500">Customer Note</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{job.CustomerNote}</dd>
+                    <dt className="text-sm font-medium text-gray-500">Job Note</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{job.JobNote}</dd>
                   </div>
                 )}
               </dl>

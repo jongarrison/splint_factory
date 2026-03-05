@@ -130,8 +130,8 @@ model GeometryProcessingQueue {
   isProcessSuccessful        Boolean       @default(false)
   isEnabled                  Boolean       @default(true)
   isDebugRequest             Boolean       @default(false)
-  CustomerNote               String?
-  CustomerID                 String?
+  JobNote                    String?
+  JobID                      String?
   objectID                   String?       @unique
   objectIDGeneratedAt        DateTime?
   GeometryFileContents       Bytes?

@@ -26,8 +26,8 @@ interface PrintQueueEntry {
     id: string;
     objectID?: string;
     CreationTime: string;
-    CustomerNote?: string;
-    CustomerID?: string;
+    JobNote?: string;
+    JobID?: string;
     geometry: {
       GeometryName: string;
       GeometryAlgorithmName: string;
@@ -287,7 +287,7 @@ export default function PrintQueuePage() {
       const sessionCookie = document.cookie;
       
       // Generate a job name from the geometry and customer info
-      const jobName = `${entry.geometryProcessingQueue.geometry.GeometryName.replace(/\s+/g, '_')}_${entry.geometryProcessingQueue.CustomerID || 'customer'}`;
+      const jobName = `${entry.geometryProcessingQueue.geometry.GeometryName.replace(/\s+/g, '_')}_${entry.geometryProcessingQueue.JobID || 'job'}`;
 
       // Step 2: Uploading to printer
       showNotification('📤 Uploading file to printer...', 'info');
@@ -655,13 +655,13 @@ export default function PrintQueuePage() {
                           <div className="text-sm font-mono font-semibold text-blue-600">
                             {entry.geometryProcessingQueue.objectID || 'N/A'}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">Customer:</div>
+                          <div className="text-xs text-gray-500 mt-1">Job:</div>
                           <div className="text-sm text-gray-900">
-                            {entry.geometryProcessingQueue.CustomerID || 'N/A'}
+                            {entry.geometryProcessingQueue.JobID || 'N/A'}
                           </div>
-                          {entry.geometryProcessingQueue.CustomerNote && (
+                          {entry.geometryProcessingQueue.JobNote && (
                             <div className="text-xs text-gray-500 truncate max-w-[150px] mt-1">
-                              {entry.geometryProcessingQueue.CustomerNote}
+                              {entry.geometryProcessingQueue.JobNote}
                             </div>
                           )}
                         </td>

@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
           select: {
             id: true, // Required for print operations
             objectID: true,
-            CustomerID: true,
-            CustomerNote: true,
+            JobID: true,
+            JobNote: true,
             GeometryFileName: true,
             PrintFileName: true,
             CreationTime: true, // Required for sorting
