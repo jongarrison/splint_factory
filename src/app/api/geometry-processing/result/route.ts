@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     let geometryBlobPathname: string | undefined;
     let printBlobUrl: string | undefined;
     let printBlobPathname: string | undefined;
+    let meshMetadata: string | undefined;
 
     if (contentType.includes('multipart/form-data')) {
       // Format 1: multipart with actual files (for small files or backward compatibility)
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
       isSuccess = body.isSuccess;
       errorMessage = body.errorMessage;
       processingLog = body.processingLog;
+      meshMetadata = body.meshMetadata;
       
       // Check for blob URL format (preferred)
       geometryBlobUrl = body.geometryBlobUrl;
@@ -219,6 +221,7 @@ export async function POST(request: NextRequest) {
         ProcessCompletedTime: currentTime,
         isProcessSuccessful: isSuccess,
         ProcessingLog: processingLog ?? undefined,
+        MeshMetadata: meshMetadata ?? undefined,
       };
 
       // Handle blob storage (new format)

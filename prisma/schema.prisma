@@ -143,6 +143,7 @@ model GeometryProcessingQueue {
   PrintBlobUrl               String?
   PrintBlobPathname          String?
   ProcessingLog              String?
+  MeshMetadata               String?
   owningOrganization         Organization  @relation(fields: [OwningOrganizationID], references: [id])
   creator                    User          @relation("CreatedGeometryJobs", fields: [CreatorID], references: [id])
   geometry                   NamedGeometry @relation("NamedGeometryJobs", fields: [GeometryID], references: [id])

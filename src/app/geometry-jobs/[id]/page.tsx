@@ -20,6 +20,7 @@ interface GeometryJob {
   isProcessSuccessful: boolean;
   isEnabled: boolean;
   ProcessingLog?: string | null;
+  MeshMetadata?: string | null;
   GeometryFileName?: string | null;
   PrintFileName?: string | null;
   geometry: {
@@ -592,6 +593,27 @@ export default function GeometryJobDetailPage({
             <div className="px-6 py-4">
               <ProcessingLogViewer log={job.ProcessingLog} />
             </div>
+          </div>
+
+          {/* Mesh Output Data */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Mesh Output Data</h2>
+            </div>
+            {!job.MeshMetadata ? (
+              <div className="px-6 py-4">
+                <p className="text-sm text-gray-500 italic">No mesh output data available for this job.</p>
+              </div>
+            ) : (
+              <div className="px-6 py-4">
+                <pre className="display-field">
+                  {(() => {
+                    try { return JSON.stringify(JSON.parse(job.MeshMetadata), null, 2); }
+                    catch { return job.MeshMetadata; }
+                  })()}
+                </pre>
+              </div>
+            )}
           </div>
 
           {/* Raw Data (for debugging) */}
