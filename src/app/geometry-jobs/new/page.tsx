@@ -358,7 +358,7 @@ function CreateGeometryJobPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="jobID" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="jobID" className="block text-sm font-medium text-gray-700" title="Short message that will show in the print queue. Do not include patient data.">
                   Job ID
                 </label>
                 <input
@@ -372,7 +372,7 @@ function CreateGeometryJobPage() {
               </div>
               
               <div>
-                <label htmlFor="jobNote" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="jobNote" className="block text-sm font-medium text-gray-700" title="Do not include patient data.">
                   Job Note
                 </label>
                 <input
