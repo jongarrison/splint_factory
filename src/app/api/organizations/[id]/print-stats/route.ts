@@ -70,13 +70,22 @@ export async function GET(
     const stats = designs.map((design) => {
       let printCount = 0;
       let acceptedCount = 0;
-      let rejectedCount = 0;
+      let rejectDesignCount = 0;
+      let rejectPrintCount = 0;
+      let rejectedLegacyCount = 0;
 
       for (const job of design.geometryJobs) {
         for (const pq of job.printQueue) {
           printCount++;
-          if (pq.printAcceptance === 'ACCEPTED') acceptedCount++;
-          else if (pq.printAcceptance && pq.printAcceptance !== 'ACCEPTED') rejectedCount++;
+          if (pq.printAcceptance === 'ACCEPTED') {
+            acceptedCount++;
+          } else if (pq.printAcceptance === 'REJECT_DESIGN') {
+            rejectDesignCount++;
+          } else if (pq.printAcceptance === 'REJECT_PRINT') {
+            rejectPrintCount++;
+          } else if (pq.printAcceptance === 'REJECTED') {
+            rejectedLegacyCount++;
+          }
         }
       }
 
@@ -84,7 +93,9 @@ export async function GET(
         designName: design.GeometryName,
         printCount,
         acceptedCount,
-        rejectedCount,
+        rejectDesignCount,
+        rejectPrintCount,
+        rejectedLegacyCount,
       };
     });
 

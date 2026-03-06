@@ -18,7 +18,9 @@ interface DesignPrintStats {
   designName: string;
   printCount: number;
   acceptedCount: number;
-  rejectedCount: number;
+  rejectDesignCount: number;
+  rejectPrintCount: number;
+  rejectedLegacyCount: number;
 }
 
 interface DeviceInfo {
@@ -87,9 +89,11 @@ export default function OrganizationViewPage({
     (acc, row) => ({
       printCount: acc.printCount + row.printCount,
       acceptedCount: acc.acceptedCount + row.acceptedCount,
-      rejectedCount: acc.rejectedCount + row.rejectedCount,
+      rejectDesignCount: acc.rejectDesignCount + row.rejectDesignCount,
+      rejectPrintCount: acc.rejectPrintCount + row.rejectPrintCount,
+      rejectedLegacyCount: acc.rejectedLegacyCount + row.rejectedLegacyCount,
     }),
-    { printCount: 0, acceptedCount: 0, rejectedCount: 0 }
+    { printCount: 0, acceptedCount: 0, rejectDesignCount: 0, rejectPrintCount: 0, rejectedLegacyCount: 0 }
   );
 
   if (loading) {
@@ -181,7 +185,13 @@ export default function OrganizationViewPage({
                           Accepted
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Rejected
+                          Design Rejected
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Print Rejected
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Rejected (Legacy)
                         </th>
                       </tr>
                     </thead>
@@ -197,8 +207,14 @@ export default function OrganizationViewPage({
                           <td className="px-6 py-3 text-sm text-green-700 dark:text-green-400 text-right">
                             {row.acceptedCount}
                           </td>
+                          <td className="px-6 py-3 text-sm text-orange-700 dark:text-orange-400 text-right">
+                            {row.rejectDesignCount}
+                          </td>
                           <td className="px-6 py-3 text-sm text-red-700 dark:text-red-400 text-right">
-                            {row.rejectedCount}
+                            {row.rejectPrintCount}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-400 text-right">
+                            {row.rejectedLegacyCount}
                           </td>
                         </tr>
                       ))}
@@ -214,8 +230,14 @@ export default function OrganizationViewPage({
                         <td className="px-6 py-3 text-sm text-green-700 dark:text-green-400 text-right">
                           {totals.acceptedCount}
                         </td>
+                        <td className="px-6 py-3 text-sm text-orange-700 dark:text-orange-400 text-right">
+                          {totals.rejectDesignCount}
+                        </td>
                         <td className="px-6 py-3 text-sm text-red-700 dark:text-red-400 text-right">
-                          {totals.rejectedCount}
+                          {totals.rejectPrintCount}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-400 text-right">
+                          {totals.rejectedLegacyCount}
                         </td>
                       </tr>
                     </tfoot>
