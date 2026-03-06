@@ -88,7 +88,8 @@ export async function POST(
       where: { id },
       data: {
         printAcceptance,
-        printNote: printNote || printJob.printNote, // Update note if provided, keep existing otherwise
+        printNote: printNote || printJob.printNote,
+        acceptedByUserId: session.user.id,
       },
       include: {
         geometryProcessingQueue: {

@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface UseSmartPollingOptions {
   fastInterval?: number;
   slowInterval?: number;
   idleThreshold?: number;
   enabled?: boolean;
+  onResponseHeaders?: (headers: Headers) => void;
 }
 
 interface UseSmartPollingResult<T> {
@@ -24,7 +25,8 @@ export function useSmartPolling<T>(
     fastInterval = 5000,
     slowInterval = 30000,
     idleThreshold = 120000,
-    enabled = true
+    enabled = true,
+    onResponseHeaders
   } = options;
 
   const [data, setData] = useState<T | null>(null);
@@ -66,16 +68,25 @@ export function useSmartPolling<T>(
     };
   }, []);
 
-  const refresh = async () => {
+  const onResponseHeadersRef = useRef(onResponseHeaders);
+  onResponseHeadersRef.current = onResponseHeaders;
+
+  // Shared fetch logic
+  const doFetch = async (): Promise<T> => {
+    const response = await fetch(endpoint);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch: ${response.statusText}`);
+    }
+    onResponseHeadersRef.current?.(response.headers);
+    return response.json();
+  };
+
+  const refresh = useCallback(async () => {
     if (!enabled) return;
 
     setIsFetching(true);
     try {
-      const response = await fetch(endpoint);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.statusText}`);
-      }
-      const result = await response.json();
+      const result = await doFetch();
       
       if (mountedRef.current) {
         setData(result);
@@ -91,7 +102,7 @@ export function useSmartPolling<T>(
         setIsFetching(false);
       }
     }
-  };
+  }, [enabled, endpoint]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!enabled) {
@@ -101,11 +112,7 @@ export function useSmartPolling<T>(
 
     const initialFetch = async () => {
       try {
-        const response = await fetch(endpoint);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.statusText}`);
-        }
-        const result = await response.json();
+        const result = await doFetch();
         
         if (mountedRef.current) {
           setData(result);
@@ -134,11 +141,7 @@ export function useSmartPolling<T>(
 
         setIsFetching(true);
         try {
-          const response = await fetch(endpoint);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch: ${response.statusText}`);
-          }
-          const result = await response.json();
+          const result = await doFetch();
           
           if (mountedRef.current) {
             setData(result);

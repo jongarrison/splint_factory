@@ -97,7 +97,38 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json(formattedQueue);
+    const response = NextResponse.json(formattedQueue);
+
+    // If request came from a known device, check for approved auth challenges
+    const deviceId = request.headers.get('x-device-id');
+    if (deviceId) {
+      const approvedChallenge = await prisma.clientAuthChallenge.findFirst({
+        where: {
+          deviceId,
+          authorizedAt: { not: null },
+          exchangedAt: null, // not yet consumed
+          expiresAt: { gt: new Date() },
+        },
+        include: {
+          authorizedBy: { select: { id: true, name: true } },
+        },
+        orderBy: { authorizedAt: 'desc' },
+      });
+
+      if (approvedChallenge?.authorizedBy) {
+        response.headers.set('X-Device-Auth-Status', 'challenge-approved');
+        response.headers.set('X-Device-Auth-Challenge-Id', approvedChallenge.id);
+        response.headers.set('X-Device-Auth-User', approvedChallenge.authorizedBy.name || '');
+      }
+
+      // Update device lastSeenAt
+      await prisma.clientDevice.update({
+        where: { id: deviceId },
+        data: { lastSeenAt: new Date() },
+      }).catch(() => {}); // non-critical, don't fail the request
+    }
+
+    return response;
   } catch (error) {
     console.error('Error fetching print queue:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

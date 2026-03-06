@@ -161,6 +161,10 @@ export async function PUT(
     
     if (PrintStartedTime !== undefined) {
       updateData.PrintStartedTime = PrintStartedTime ? new Date(PrintStartedTime) : null;
+      // Track who started the print
+      if (PrintStartedTime) {
+        updateData.printedByUserId = session.user.id;
+      }
     }
     
     if (PrintCompletedTime !== undefined) {

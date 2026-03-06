@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,6 +8,7 @@ import Header from '@/components/navigation/Header';
 import ProcessingLogViewer from '@/components/ProcessingLogViewer';
 import PrintAcceptanceModal from '@/components/PrintAcceptanceModal';
 import DeletePrintModal from '@/components/DeletePrintModal';
+import DeviceAuthOverlay from '@/components/DeviceAuthOverlay';
 
 interface PrintQueueEntry {
   id: string;
@@ -51,7 +52,7 @@ export default function PrintQueueDetailPage({
 }: { 
   params: Promise<{ id: string }> 
 }) {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const [entry, setEntry] = useState<PrintQueueEntry | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,6 +70,11 @@ export default function PrintQueueDetailPage({
     geometryName: string;
   } | null>(null);
 
+  // Device auth state (Electron only)
+  const [deviceLocked, setDeviceLocked] = useState(false);
+  const [factoryUrl, setFactoryUrl] = useState('');
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+
   useEffect(() => {
     params.then(p => setId(p.id));
   }, [params]);
@@ -77,6 +83,37 @@ export default function PrintQueueDetailPage({
     // Detect if running in Electron client
     setIsElectronClient(typeof window !== 'undefined' && !!(window as any).electronAPI);
   }, []);
+
+  // Initialize device auth state when running in Electron
+  useEffect(() => {
+    if (!isElectronClient) return;
+    const electronAPI = (window as any).electronAPI;
+    if (!electronAPI?.getEnvironmentInfo) return;
+
+    (async () => {
+      try {
+        const envInfo = await electronAPI.getEnvironmentInfo();
+        if (envInfo.deviceId) setDeviceId(envInfo.deviceId);
+        setFactoryUrl(window.location.origin);
+      } catch (err) {
+        console.error('Failed to get device environment info:', err);
+      }
+    })();
+  }, [isElectronClient]);
+
+  // Register device with the server when we have deviceId + session
+  useEffect(() => {
+    if (!deviceId || !session?.user) return;
+
+    fetch('/api/client-devices/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deviceId,
+        name: `Splint Client (${deviceId.substring(0, 8)})`,
+      }),
+    }).catch(err => console.error('Device registration failed:', err));
+  }, [deviceId, session]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -245,6 +282,32 @@ export default function PrintQueueDetailPage({
       setPrintingJobId(null);
     }
   };
+
+  // Device auth handlers
+  const handleCreateChallenge = useCallback(async () => {
+    if (!deviceId) throw new Error('No device ID available');
+    const res = await fetch('/api/client-auth/challenge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId }),
+    });
+    if (!res.ok) return null;
+    return res.json();
+  }, [deviceId]);
+
+  const handleExchangeSession = useCallback(async (challengeId: string) => {
+    if (!deviceId) return false;
+    const res = await fetch('/api/client-auth/exchange', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challengeId, deviceId }),
+    });
+    if (!res.ok) return false;
+    // Tell NextAuth to re-read the session cookie
+    // Non-critical -- cookie is already set even if this fails
+    try { await updateSession(); } catch { /* ignore */ }
+    return true;
+  }, [deviceId]);
 
   const handleAcceptanceSubmit = async (printId: string, acceptance: string, note: string) => {
     try {
@@ -937,6 +1000,20 @@ export default function PrintQueueDetailPage({
           geometryName={deleteModal.geometryName}
           onClose={() => setDeleteModal(null)}
           onSubmit={handleDeleteSubmit}
+        />
+      )}
+
+      {/* Device Auth Overlay (Electron only) */}
+      {isElectronClient && deviceId && (
+        <DeviceAuthOverlay
+          factoryUrl={factoryUrl}
+          deviceId={deviceId}
+          onCreateChallenge={handleCreateChallenge}
+          onExchangeSession={handleExchangeSession}
+          approvedChallengeId={null}
+          approvedUserName={null}
+          inactivityTimeout={60000}
+          onLockStateChange={setDeviceLocked}
         />
       )}
     </div>

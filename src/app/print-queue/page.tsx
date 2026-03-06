@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,6 +8,7 @@ import Header from '@/components/navigation/Header';
 import PrinterStatusBanner from '@/components/printer/PrinterStatusBanner';
 import PrintAcceptanceModal from '@/components/PrintAcceptanceModal';
 import DeletePrintModal from '@/components/DeletePrintModal';
+import DeviceAuthOverlay from '@/components/DeviceAuthOverlay';
 import { useSmartPolling } from '@/hooks/useSmartPolling';
 
 interface PrintQueueEntry {
@@ -45,7 +46,7 @@ interface PrintQueueEntry {
 }
 
 export default function PrintQueuePage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const [isElectronClient, setIsElectronClient] = useState(false);
   const [printingJobId, setPrintingJobId] = useState<string | null>(null);
@@ -58,6 +59,22 @@ export default function PrintQueuePage() {
     printId: string;
     geometryName: string;
   } | null>(null);
+
+  // Device auth state (Electron only)
+  const [deviceLocked, setDeviceLocked] = useState(false);
+  const [factoryUrl, setFactoryUrl] = useState('');
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [approvedChallengeId, setApprovedChallengeId] = useState<string | null>(null);
+  const [approvedUserName, setApprovedUserName] = useState<string | null>(null);
+
+  // Callback for processing device auth headers from poll responses
+  const handleResponseHeaders = useCallback((headers: Headers) => {
+    const authStatus = headers.get('x-device-auth-status');
+    if (authStatus === 'challenge-approved') {
+      setApprovedChallengeId(headers.get('x-device-auth-challenge-id'));
+      setApprovedUserName(headers.get('x-device-auth-user'));
+    }
+  }, []);
   
   // Use smart polling hook for real-time updates
   const { 
@@ -68,7 +85,8 @@ export default function PrintQueuePage() {
     refresh: refreshPrintQueue,
     isFetching
   } = useSmartPolling<PrintQueueEntry[]>('/api/print-queue', {
-    enabled: !!session?.user
+    enabled: !!session?.user,
+    onResponseHeaders: handleResponseHeaders
   });
   
   const error = fetchError;
@@ -137,6 +155,39 @@ export default function PrintQueuePage() {
       };
     }
   }, []);
+
+  // Initialize device auth state when running in Electron
+  useEffect(() => {
+    if (!isElectronClient) return;
+    const electronAPI = (window as any).electronAPI;
+    if (!electronAPI?.getEnvironmentInfo) return;
+
+    (async () => {
+      try {
+        const envInfo = await electronAPI.getEnvironmentInfo();
+        if (envInfo.deviceId) {
+          setDeviceId(envInfo.deviceId);
+        }
+        setFactoryUrl(window.location.origin);
+      } catch (err) {
+        console.error('Failed to get device environment info:', err);
+      }
+    })();
+  }, [isElectronClient]);
+
+  // Register device with the server when we have deviceId + session
+  useEffect(() => {
+    if (!deviceId || !session?.user) return;
+
+    fetch('/api/client-devices/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deviceId,
+        name: `Splint Client (${deviceId.substring(0, 8)})`,
+      }),
+    }).catch(err => console.error('Device registration failed:', err));
+  }, [deviceId, session]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -382,6 +433,43 @@ export default function PrintQueuePage() {
       throw err;
     }
   };
+
+  // Device auth handlers
+  const handleCreateChallenge = useCallback(async () => {
+    if (!deviceId) throw new Error('No device ID available');
+    const res = await fetch('/api/client-auth/challenge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to create challenge');
+    }
+    return res.json();
+  }, [deviceId]);
+
+  const handleExchangeSession = useCallback(async (challengeId: string) => {
+    console.log('[PrintQueue] handleExchangeSession called with:', challengeId, 'deviceId:', deviceId);
+    if (!deviceId) throw new Error('No device ID available');
+    const res = await fetch('/api/client-auth/exchange', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challengeId, deviceId }),
+    });
+    console.log('[PrintQueue] Exchange response status:', res.status);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error('[PrintQueue] Exchange failed:', res.status, body);
+      return false;
+    }
+    // Tell NextAuth to re-read the session cookie, then refresh data
+    // Non-critical -- cookie is already set even if this fails
+    try { await updateSession(); } catch (e) { console.warn('[PrintQueue] updateSession failed (non-critical):', e); }
+    console.log('[PrintQueue] Exchange succeeded, refreshing print queue');
+    refreshPrintQueue();
+    return true;
+  }, [deviceId, refreshPrintQueue]);
 
   const handleAcceptanceSubmit = async (printId: string, acceptance: string, note: string) => {
     try {
@@ -755,6 +843,21 @@ export default function PrintQueuePage() {
           geometryName={deleteModal.geometryName}
           onClose={() => setDeleteModal(null)}
           onSubmit={handleDeleteSubmit}
+        />
+      )}
+
+      {/* Device Auth Overlay (Electron only) */}
+      {isElectronClient && deviceId && (
+        <DeviceAuthOverlay
+          factoryUrl={factoryUrl}
+          deviceId={deviceId}
+          onCreateChallenge={handleCreateChallenge}
+          onExchangeSession={handleExchangeSession}
+          onRefreshPoll={refreshPrintQueue}
+          approvedChallengeId={approvedChallengeId}
+          approvedUserName={approvedUserName}
+          inactivityTimeout={60000}
+          onLockStateChange={setDeviceLocked}
         />
       )}
     </div>

@@ -21,6 +21,15 @@ interface DesignPrintStats {
   rejectedCount: number;
 }
 
+interface DeviceInfo {
+  id: string;
+  name: string;
+  currentOperator: { name: string; email: string } | null;
+  operatorValidatedAt: string | null;
+  lastSeenAt: string;
+  createdAt: string;
+}
+
 export default function OrganizationViewPage({
   params,
 }: {
@@ -33,6 +42,7 @@ export default function OrganizationViewPage({
 
   const [org, setOrg] = useState<OrgDetail | null>(null);
   const [stats, setStats] = useState<DesignPrintStats[]>([]);
+  const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,9 +59,10 @@ export default function OrganizationViewPage({
     setLoading(true);
     setError(null);
     try {
-      const [orgRes, statsRes] = await Promise.all([
+      const [orgRes, statsRes, devicesRes] = await Promise.all([
         fetch(`/api/organizations/${orgId}`),
         fetch(`/api/organizations/${orgId}/print-stats`),
+        fetch(`/api/organizations/${orgId}/devices`),
       ]);
 
       if (!orgRes.ok) throw new Error('Failed to load organization');
@@ -59,9 +70,11 @@ export default function OrganizationViewPage({
 
       const orgData = await orgRes.json();
       const statsData = await statsRes.json();
+      const devicesData = devicesRes.ok ? await devicesRes.json() : [];
 
       setOrg(orgData);
       setStats(statsData);
+      setDevices(devicesData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -206,6 +219,66 @@ export default function OrganizationViewPage({
                         </td>
                       </tr>
                     </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Devices table */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg mt-6">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Client Devices
+                </h2>
+              </div>
+
+              {devices.length === 0 ? (
+                <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  No devices registered for this organization.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-900">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Device
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Current Operator
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Last Seen
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {devices.map((device) => (
+                        <tr key={device.id}>
+                          <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">
+                            <div className="font-medium">{device.name}</div>
+                            <div className="text-xs text-gray-400 font-mono">{device.id.slice(0, 8)}...</div>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">
+                            {device.currentOperator ? (
+                              <div>
+                                <div>{device.currentOperator.name || device.currentOperator.email}</div>
+                                {device.operatorValidatedAt && (
+                                  <div className="text-xs text-gray-400">
+                                    since {new Date(device.operatorValidatedAt).toLocaleString()}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">None</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-400">
+                            {new Date(device.lastSeenAt).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
                   </table>
                 </div>
               )}
