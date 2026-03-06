@@ -33,10 +33,10 @@ export default function ClientAuthPage({
       router.push(`/login?callbackUrl=/client-auth/${challengeId}`);
       return;
     }
-    fetchChallenge();
+    fetchAndAutoApprove();
   }, [status, session, challengeId]);
 
-  const fetchChallenge = async () => {
+  const fetchAndAutoApprove = async () => {
     try {
       const res = await fetch(`/api/client-auth/${challengeId}`);
       if (!res.ok) {
@@ -45,14 +45,16 @@ export default function ClientAuthPage({
       }
       const data = await res.json();
       setChallenge(data);
+      setLoading(false);
+      // Auto-approve: scanning the QR code is the intentional act
+      await doApprove(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async () => {
+  const doApprove = async (challengeData: typeof challenge) => {
     setApproving(true);
     setError(null);
     try {
@@ -114,34 +116,14 @@ export default function ClientAuthPage({
         )}
 
         {!error && !approved && challenge && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 text-center">
-              Authorize Device
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              Authorizing...
             </h1>
-
-            <div className="mb-6 space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Device</span>
-                <span className="text-gray-900 dark:text-gray-100 font-medium">{challenge.deviceName}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Operator</span>
-                <span className="text-gray-900 dark:text-gray-100 font-medium">{session?.user?.name || session?.user?.email}</span>
-              </div>
-            </div>
-
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">
-              Tap below to become the active operator on this device.
-              All actions will be recorded under your account.
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Signing in as <strong>{session?.user?.name || session?.user?.email}</strong> on <strong>{challenge.deviceName}</strong>
             </p>
-
-            <button
-              onClick={handleApprove}
-              disabled={approving}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-4 px-4 rounded-lg transition-colors text-lg"
-            >
-              {approving ? 'Authorizing...' : 'Authorize'}
-            </button>
           </div>
         )}
       </div>
