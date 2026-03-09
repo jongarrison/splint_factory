@@ -68,8 +68,11 @@ export default async function middleware(request: NextRequest) {
     // If user is authenticated and trying to access auth routes, redirect to geo-job-menu
     if (session && isAuthRoute) {
       console.log(`🏠 REDIRECT: Authenticated user trying to access auth route ${pathname}`)
-      const geoJobMenuUrl = new URL('/geo-job-menu', request.url)
-      return NextResponse.redirect(geoJobMenuUrl)
+      // Honor callbackUrl if present, otherwise go to geo-job-menu (browser default)
+      const callbackUrl = request.nextUrl.searchParams.get('callbackUrl')
+      const destination = callbackUrl || '/geo-job-menu'
+      const redirectUrl = new URL(destination, request.url)
+      return NextResponse.redirect(redirectUrl)
     }
     
     // If user is authenticated and trying to access home page, redirect to geo-job-menu

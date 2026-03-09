@@ -162,7 +162,8 @@ function LoginPageInner() {
       } else {
         // callbackUrl takes priority, then Electron->print-queue, browser->geo-job-menu
         const destination = callbackUrl || (isElectron ? "/print-queue" : "/geo-job-menu")
-        router.push(destination)
+        // Use full page load so SessionProvider initializes with the new session
+        window.location.href = destination
       }
     } catch (err) {
       console.error("Login error:", err)
