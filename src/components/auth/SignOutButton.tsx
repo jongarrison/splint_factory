@@ -26,8 +26,8 @@ export default function SignOutButton({ variant = 'browser', inline = false }: S
       // In Electron, use client-side navigation to avoid opening external browser
       router.push('/login');
     } else {
-      // In browser, force a full page reload to clear all state
-      window.location.href = '/login';
+      // In browser, force a full page reload to clear all state and show landing page
+      window.location.href = '/';
     }
   };
 

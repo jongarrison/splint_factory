@@ -63,7 +63,7 @@ export default function GeometryJobDetailPage({
   const [loadingPrintJobs, setLoadingPrintJobs] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creatingPrint, setCreatingPrint] = useState(false);
-  const [creatingDebug, setCreatingDebug] = useState(false);
+  const [showDebugModal, setShowDebugModal] = useState(false);
   const [id, setId] = useState<string>('');
 
   useEffect(() => {
@@ -147,36 +147,10 @@ export default function GeometryJobDetailPage({
     }
   };
 
-  const handleDebugRequest = async () => {
-    if (!confirm('Create a debug request to launch Grasshopper on the processor with this job\'s script and parameters?')) {
-      return;
-    }
-
-    try {
-      setCreatingDebug(true);
-      
-      const response = await fetch('/api/geometry-processing/debug', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jobId: id,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create debug request');
-      }
-
-      const result = await response.json();
-      alert(result.message);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create debug request');
-    } finally {
-      setCreatingDebug(false);
-    }
+  const getInspectCommand = () => {
+    const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
+    const script = isProduction ? 'inspect:prod' : 'inspect';
+    return `npm run ${script} -- ${job?.objectID || id}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -329,16 +303,11 @@ export default function GeometryJobDetailPage({
             <div className="flex gap-4">
               {session?.user?.role === 'SYSTEM_ADMIN' && (
                 <button
-                  onClick={handleDebugRequest}
-                  disabled={creatingDebug}
-                  className={`${
-                    creatingDebug
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-orange-600 hover:bg-orange-700'
-                  } text-white px-4 py-2 rounded text-sm font-medium`}
-                  title="Launch Grasshopper on processor with this job's script for debugging"
+                  onClick={() => setShowDebugModal(true)}
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-sm font-medium"
+                  title="Show command to launch local Grasshopper inspect session"
                 >
-                  {creatingDebug ? 'Creating...' : '🐞 Debug on Processor'}
+                  Debug Locally
                 </button>
               )}
               <Link
@@ -643,6 +612,39 @@ export default function GeometryJobDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Debug Locally Modal */}
+      {showDebugModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Debug Locally</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              Run this command from the <code className="bg-gray-100 px-1 rounded">splint_geo_processor</code> directory to launch Grasshopper with this job&apos;s data:
+            </p>
+            <div className="relative">
+              <pre className="bg-gray-900 text-green-400 p-4 rounded text-sm font-mono overflow-x-auto">
+                {getInspectCommand()}
+              </pre>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(getInspectCommand());
+                }}
+                className="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs"
+              >
+                Copy
+              </button>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setShowDebugModal(false)}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -99,29 +99,12 @@ export async function GET(request: NextRequest) {
       JobID: nextJob.JobID,
       CreationTime: nextJob.CreationTime,
       ProcessStartedTime: nextJob.ProcessStartedTime,
-      isDebugRequest: nextJob.isDebugRequest || false,
       // File metadata lives on geometry job; no binary returned here
       GeometryFileName: (nextJob as any).GeometryFileName ?? null,
       PrintFileName: (nextJob as any).PrintFileName ?? null,
       creator: nextJob.creator,
       owningOrganization: nextJob.owningOrganization
     });
-
-    // For debug jobs, delete after returning data (fire and forget)
-    if (nextJob.isDebugRequest) {
-      // Delete any associated print queue entries first, then the job
-      prisma.printQueue.deleteMany({
-        where: { GeometryProcessingQueueID: nextJob.id }
-      }).then(() => {
-        return prisma.geometryProcessingQueue.delete({
-          where: { id: nextJob.id }
-        });
-      }).then(() => {
-        console.log(`Deleted debug job ${nextJob.id} after pickup`);
-      }).catch((err) => {
-        console.error(`Failed to delete debug job ${nextJob.id}:`, err);
-      });
-    }
 
     return response;
 

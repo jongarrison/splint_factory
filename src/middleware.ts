@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 
 // Define public routes that don't require authentication
 // Include '/api' so API routes rely on route-level auth (API keys or session) instead of middleware redirects
-const publicRoutes = ['/login', '/register', '/api', '/api/auth', '/api/register', '/l', '/client-auth']
+const publicRoutes = ['/login', '/register', '/api', '/api/auth', '/api/register', '/l', '/client-auth', '/about']
 
 // Define routes that should redirect to home if already authenticated
 const authRoutes = ['/login', '/register']
@@ -57,6 +57,12 @@ export default async function middleware(request: NextRequest) {
       console.log(`🌐 AUTH: ${authState} | ${userInfo} | ${routeType} route`)
     }
 
+    // If user is not authenticated and at root, redirect to about page
+    if (!session && pathname === '/') {
+      const aboutUrl = new URL('/about', request.url)
+      return NextResponse.redirect(aboutUrl)
+    }
+
     // If user is not authenticated and trying to access a protected route
     if (!session && !isPublicRoute) {
       console.log(`🚫 REDIRECT: Unauthenticated user trying to access protected route ${pathname}`)
@@ -106,6 +112,6 @@ export const config = {
     /*
      * Match all request paths except static files and NextAuth routes
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/auth).*)',
+    '/((?!_next/static|_next/image|images|favicon.ico|api/auth).*)',
   ],
 }

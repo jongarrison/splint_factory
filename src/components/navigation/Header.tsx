@@ -14,10 +14,12 @@ interface HeaderProps {
 export default function Header({ variant = 'browser', hideMaintenanceBanner = false }: HeaderProps) {
   const { data: session } = useSession();
   const [showAdminDropdown, setShowAdminDropdown] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [processorHealthy, setProcessorHealthy] = useState<boolean | null>(null);
   const [secondsSinceLastPing, setSecondsSinceLastPing] = useState<number>(0);
   const [maintenanceMode, setMaintenanceMode] = useState<{enabled: boolean; message: string | null} | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
   const isDarkMode = variant === 'electron';
@@ -56,22 +58,25 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
       });
   }, []);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowAdminDropdown(false);
       }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setShowUserDropdown(false);
+      }
     };
 
-    if (showAdminDropdown) {
+    if (showAdminDropdown || showUserDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showAdminDropdown]);
+  }, [showAdminDropdown, showUserDropdown]);
 
   return (
     <>
@@ -305,14 +310,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 </Link>
                               )}
                               
-                              {/* Sign Out - All roles */}
-                              <div className={`border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-200'} my-1`}></div>
-                              <div
-                                onClick={() => setShowAdminDropdown(false)}
-                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'} cursor-pointer`}
-                              >
-                                <SignOutButton variant={variant} inline />
-                              </div>
+
                             </div>
                           </div>
                         )}
@@ -333,26 +331,57 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                 <span className={`hidden sm:inline text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   Welcome, {session.user?.name || session.user?.email}!
                 </span>
-                <Link 
-                  href="/profile" 
-                  className={`${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'} transition-colors`}
-                  title="My Profile"
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    strokeWidth={2} 
-                    stroke="currentColor" 
-                    className="w-8 h-8"
+                <div className="relative" ref={userDropdownRef}>
+                  <button
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                    className={`${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'} transition-colors`}
+                    title="User menu"
                   >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" 
-                    />
-                  </svg>
-                </Link>
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      strokeWidth={2} 
+                      stroke="currentColor" 
+                      className="w-8 h-8"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" 
+                      />
+                    </svg>
+                  </button>
+                  {showUserDropdown && (
+                    <div className={`absolute right-0 mt-2 w-56 rounded-md shadow-lg ${isDarkMode ? 'bg-gray-700 ring-gray-600' : 'bg-white ring-black'} ring-1 ring-opacity-5 z-50`}>
+                      <div className="py-1">
+                        <Link
+                          href="/profile"
+                          onClick={() => setShowUserDropdown(false)}
+                          className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                        >
+                          Profile
+                        </Link>
+                        {session.user?.organizationId && (
+                          <Link
+                            href={`/admin/organizations/${session.user.organizationId}`}
+                            onClick={() => setShowUserDropdown(false)}
+                            className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                          >
+                            Organization Settings
+                          </Link>
+                        )}
+                        <div className={`border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-200'} my-1`}></div>
+                        <div
+                          onClick={() => setShowUserDropdown(false)}
+                          className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'} cursor-pointer`}
+                        >
+                          <SignOutButton variant={variant} inline />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 {variant === 'electron' && <SignOutButton variant={variant} />}
               </>
             ) : (
