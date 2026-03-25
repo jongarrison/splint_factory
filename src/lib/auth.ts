@@ -38,7 +38,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         console.log('[Auth] Login attempt for:', email)
 
         const user = await prisma.user.findUnique({
-          where: { email }
+          where: { email },
+          include: { organization: { select: { name: true } } },
         })
 
         if (!user || !user.password) {
@@ -60,6 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           role: user.role,
           organizationId: user.organizationId,
+          organizationName: user.organization?.name,
         }
       }
     })
@@ -72,6 +74,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.name = token.name
         session.user.role = token.role as string
         session.user.organizationId = token.organizationId as string | undefined
+        session.user.organizationName = token.organizationName as string | undefined
       }
       return session
     },
@@ -82,6 +85,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.name = user.name
         token.role = user.role
         token.organizationId = user.organizationId
+        token.organizationName = user.organizationName
       }
       return token
     }

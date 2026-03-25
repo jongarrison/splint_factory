@@ -10,6 +10,7 @@ interface OrgDetail {
   name: string;
   description: string | null;
   isActive: boolean;
+  screenLockTimeoutMinutes: number;
   createdAt: string;
   _count: { users: number };
 }
@@ -35,6 +36,7 @@ export default function OrganizationDetailPage({
   const [orgName, setOrgName] = useState('');
   const [orgDescription, setOrgDescription] = useState('');
   const [orgIsActive, setOrgIsActive] = useState(true);
+  const [orgScreenLockTimeout, setOrgScreenLockTimeout] = useState(1);
   const [savingOrg, setSavingOrg] = useState(false);
   const [allGeometries, setAllGeometries] = useState<GeometrySummary[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -75,6 +77,7 @@ export default function OrganizationDetailPage({
       setOrgName(orgData.name);
       setOrgDescription(orgData.description || '');
       setOrgIsActive(orgData.isActive);
+      setOrgScreenLockTimeout(orgData.screenLockTimeoutMinutes);
       setAllGeometries(
         geoData
           .sort((a, b) => a.GeometryName.localeCompare(b.GeometryName))
@@ -115,7 +118,8 @@ export default function OrganizationDetailPage({
   const hasOrgChanges = org !== null && (
     orgName !== org.name ||
     orgDescription !== (org.description || '') ||
-    orgIsActive !== org.isActive
+    orgIsActive !== org.isActive ||
+    orgScreenLockTimeout !== org.screenLockTimeoutMinutes
   );
 
   const saveOrg = async () => {
@@ -130,6 +134,7 @@ export default function OrganizationDetailPage({
           name: orgName,
           description: orgDescription,
           isActive: orgIsActive,
+          screenLockTimeoutMinutes: orgScreenLockTimeout,
         }),
       });
       if (!res.ok) {
@@ -258,6 +263,22 @@ export default function OrganizationDetailPage({
               <label htmlFor="orgActive" className="text-sm text-gray-700 dark:text-gray-300">
                 Active
               </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Screen Lock Timeout (minutes)
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={480}
+                value={orgScreenLockTimeout}
+                onChange={(e) => setOrgScreenLockTimeout(Math.max(1, Math.min(480, parseInt(e.target.value) || 1)))}
+                className="block w-32 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                How long before the touchscreen device locks and requires QR scan to unlock.
+              </p>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-500">
               {org._count.users} member{org._count.users !== 1 ? 's' : ''} &middot; Created{' '}

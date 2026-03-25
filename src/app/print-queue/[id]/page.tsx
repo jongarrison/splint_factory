@@ -74,6 +74,26 @@ export default function PrintQueueDetailPage({
   const [deviceLocked, setDeviceLocked] = useState(false);
   const [factoryUrl, setFactoryUrl] = useState('');
   const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [screenLockTimeoutMs, setScreenLockTimeoutMs] = useState(60000);
+
+  // Fetch org screen lock timeout from server
+  const fetchOrgTimeout = useCallback(() => {
+    if (!session?.user?.organizationId) return;
+    fetch(`/api/organizations/${session.user.organizationId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.screenLockTimeoutMinutes) {
+          setScreenLockTimeoutMs(data.screenLockTimeoutMinutes * 60_000);
+        }
+      })
+      .catch(err => console.error('Failed to fetch org settings:', err));
+  }, [session?.user?.organizationId]);
+
+  // Stable callback for lock state changes - re-fetches timeout on unlock
+  const handleLockStateChange = useCallback((locked: boolean) => {
+    setDeviceLocked(locked);
+    if (!locked) fetchOrgTimeout();
+  }, [fetchOrgTimeout]);
 
   useEffect(() => {
     params.then(p => setId(p.id));
@@ -94,7 +114,8 @@ export default function PrintQueueDetailPage({
       try {
         const envInfo = await electronAPI.getEnvironmentInfo();
         if (envInfo.deviceId) setDeviceId(envInfo.deviceId);
-        setFactoryUrl(window.location.origin);
+        // Use the FACTORY_URL from Electron env so QR codes have the network-visible hostname
+        setFactoryUrl(envInfo.factoryUrl || window.location.origin);
       } catch (err) {
         console.error('Failed to get device environment info:', err);
       }
@@ -114,6 +135,11 @@ export default function PrintQueueDetailPage({
       }),
     }).catch(err => console.error('Device registration failed:', err));
   }, [deviceId, session]);
+
+  // Fetch org screen lock timeout on mount
+  useEffect(() => {
+    fetchOrgTimeout();
+  }, [fetchOrgTimeout]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -1012,8 +1038,8 @@ export default function PrintQueueDetailPage({
           onExchangeSession={handleExchangeSession}
           approvedChallengeId={null}
           approvedUserName={null}
-          inactivityTimeout={60000}
-          onLockStateChange={setDeviceLocked}
+          inactivityTimeout={screenLockTimeoutMs}
+          onLockStateChange={handleLockStateChange}
         />
       )}
     </div>

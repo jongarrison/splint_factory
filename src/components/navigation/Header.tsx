@@ -362,13 +362,13 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                         >
                           Profile
                         </Link>
-                        {session.user?.organizationId && (
+                        {session.user?.organizationId && (session.user?.role === 'SYSTEM_ADMIN' || session.user?.role === 'ORG_ADMIN') && (
                           <Link
                             href={`/admin/organizations/${session.user.organizationId}`}
                             onClick={() => setShowUserDropdown(false)}
                             className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                           >
-                            Organization Settings
+                            {session.user.organizationName ? `${session.user.organizationName} Settings` : 'Organization Settings'}
                           </Link>
                         )}
                         <div className={`border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-200'} my-1`}></div>

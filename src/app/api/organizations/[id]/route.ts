@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-// GET /api/organizations/[id] - Get organization details (SYSTEM_ADMIN only)
+// GET /api/organizations/[id] - Get organization details (any member of this org, or SYSTEM_ADMIN)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,16 +15,19 @@ export async function GET(
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true },
+      select: { role: true, organizationId: true },
     });
-    if (user?.role !== 'SYSTEM_ADMIN') {
+
+    const { id } = await params;
+
+    const isSystemAdmin = user?.role === 'SYSTEM_ADMIN';
+    const isOrgMember = user?.organizationId === id;
+    if (!isSystemAdmin && !isOrgMember) {
       return NextResponse.json(
-        { error: 'Forbidden - SYSTEM_ADMIN access required' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }
-
-    const { id } = await params;
 
     const organization = await prisma.organization.findUnique({
       where: { id },
@@ -44,7 +47,7 @@ export async function GET(
   }
 }
 
-// PUT /api/organizations/[id] - Update organization details (SYSTEM_ADMIN only)
+// PUT /api/organizations/[id] - Update organization details (SYSTEM_ADMIN or ORG_ADMIN of this org)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -57,21 +60,33 @@ export async function PUT(
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true },
+      select: { role: true, organizationId: true },
     });
-    if (user?.role !== 'SYSTEM_ADMIN') {
+
+    const { id } = await params;
+
+    const isSystemAdmin = user?.role === 'SYSTEM_ADMIN';
+    const isOrgAdmin = user?.role === 'ORG_ADMIN' && user?.organizationId === id;
+    if (!isSystemAdmin && !isOrgAdmin) {
       return NextResponse.json(
-        { error: 'Forbidden - SYSTEM_ADMIN access required' },
+        { error: 'Forbidden - admin access required' },
         { status: 403 }
       );
     }
 
-    const { id } = await params;
     const body = await request.json();
-    const { name, description, isActive } = body;
+    const { name, description, isActive, screenLockTimeoutMinutes } = body;
 
     if (name !== undefined && (!name || typeof name !== 'string' || !name.trim())) {
       return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 });
+    }
+
+    // Validate screenLockTimeoutMinutes if provided
+    if (screenLockTimeoutMinutes !== undefined) {
+      const timeout = Number(screenLockTimeoutMinutes);
+      if (!Number.isInteger(timeout) || timeout < 1 || timeout > 480) {
+        return NextResponse.json({ error: 'Screen lock timeout must be between 1 and 480 minutes' }, { status: 400 });
+      }
     }
 
     const existing = await prisma.organization.findUnique({ where: { id } });
@@ -85,6 +100,7 @@ export async function PUT(
         ...(name !== undefined && { name: name.trim() }),
         ...(description !== undefined && { description: description?.trim() || null }),
         ...(isActive !== undefined && { isActive }),
+        ...(screenLockTimeoutMinutes !== undefined && { screenLockTimeoutMinutes: Number(screenLockTimeoutMinutes) }),
       },
       include: { _count: { select: { users: true } } },
     });

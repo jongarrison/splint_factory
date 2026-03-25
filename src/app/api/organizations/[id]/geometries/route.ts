@@ -15,16 +15,19 @@ export async function GET(
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true },
+      select: { role: true, organizationId: true },
     });
-    if (user?.role !== 'SYSTEM_ADMIN') {
+
+    const { id } = await params;
+
+    const isSystemAdmin = user?.role === 'SYSTEM_ADMIN';
+    const isOrgAdmin = user?.role === 'ORG_ADMIN' && user?.organizationId === id;
+    if (!isSystemAdmin && !isOrgAdmin) {
       return NextResponse.json(
-        { error: 'Forbidden - SYSTEM_ADMIN access required' },
+        { error: 'Forbidden - admin access required' },
         { status: 403 }
       );
     }
-
-    const { id } = await params;
 
     const rows = await prisma.organizationGeometry.findMany({
       where: { organizationId: id },
@@ -52,16 +55,20 @@ export async function PUT(
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true },
+      select: { role: true, organizationId: true },
     });
-    if (user?.role !== 'SYSTEM_ADMIN') {
+
+    const { id } = await params;
+
+    const isSystemAdmin = user?.role === 'SYSTEM_ADMIN';
+    const isOrgAdmin = user?.role === 'ORG_ADMIN' && user?.organizationId === id;
+    if (!isSystemAdmin && !isOrgAdmin) {
       return NextResponse.json(
-        { error: 'Forbidden - SYSTEM_ADMIN access required' },
+        { error: 'Forbidden - admin access required' },
         { status: 403 }
       );
     }
 
-    const { id } = await params;
     const body = await request.json();
     const geometryIds: string[] = body.geometryIds;
 

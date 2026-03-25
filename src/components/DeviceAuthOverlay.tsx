@@ -172,7 +172,29 @@ export default function DeviceAuthOverlay({
     doExchange();
   }, [approvedInfo, approvedChallengeId, approvedUserName, locked, exchanging, onLockStateChange, resetInactivityTimer]);
 
-  if (!locked) return null;
+  if (!locked) {
+    // Show a compact "Switch User" bar at the bottom when unlocked
+    return (
+      <div className="fixed bottom-0 left-0 right-0 z-40">
+        <div className="bg-gray-900/90 backdrop-blur border-t border-gray-700 px-6 py-3">
+          <div className="max-w-lg mx-auto flex items-center justify-center">
+            <button
+              onClick={() => {
+                setLocked(true);
+                onLockStateChange(true);
+              }}
+              className="flex items-center gap-2 text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Switch User
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const qrUrl = challenge ? `${factoryUrl}/client-auth/${challenge.challengeId}` : null;
 
