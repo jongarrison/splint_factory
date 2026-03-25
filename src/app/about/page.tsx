@@ -7,13 +7,14 @@ import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 
 // Lifestyle images for the scrolling carousel (hero image excluded)
+// Ordered to separate similar content (two guitar shots, splint colors)
 const lifestyleImages = [
   { src: '/images/about/guitar-fretboard-green-splint.jpg', alt: 'Playing guitar while wearing a finger splint' },
-  { src: '/images/about/piano-keys-green-splint.jpg', alt: 'Playing piano while wearing a finger splint' },
-  { src: '/images/about/barbell-grip-green-splint.jpg', alt: 'Gripping a barbell while wearing a finger splint' },
   { src: '/images/about/kitchenaid-orange-splint-colorful-nails.jpg', alt: 'Using a kitchen mixer while wearing a finger splint' },
   { src: '/images/about/frisbee-toss-green-splint.jpg', alt: 'Tossing a frisbee outdoors while wearing a finger splint' },
   { src: '/images/about/notepad-checklist-dark-splint.jpg', alt: 'Writing a to-do list while wearing a finger splint' },
+  { src: '/images/about/piano-keys-green-splint.jpg', alt: 'Playing piano while wearing a finger splint' },
+  { src: '/images/about/barbell-grip-green-splint.jpg', alt: 'Gripping a barbell while wearing a finger splint' },
   { src: '/images/about/guitar-body-green-splint.jpg', alt: 'Hand on guitar body while wearing a finger splint' },
 ];
 
