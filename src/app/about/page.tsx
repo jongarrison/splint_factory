@@ -145,7 +145,7 @@ export default function AboutPage() {
             alt="Hand reaching for a basketball while wearing a Splint Factory orthosis"
             fill
             priority
-            className="object-cover"
+            className="object-cover object-top"
             sizes="100vw"
           />
         </div>
