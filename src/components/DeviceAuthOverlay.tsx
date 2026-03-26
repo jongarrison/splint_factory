@@ -88,16 +88,22 @@ export default function DeviceAuthOverlay({
     }
 
     const createNewChallenge = async () => {
-      const result = await onCreateChallenge();
-      if (result) {
-        console.log('[DeviceAuth] Challenge created:', result.challengeId, 'expires:', result.expiresAt);
-        setChallenge(result);
-        // Auto-refresh challenge before it expires (at 4 minutes)
-        const expiresIn = new Date(result.expiresAt).getTime() - Date.now();
-        const refreshIn = Math.max(expiresIn - 60_000, 30_000);
-        challengeRefreshTimer.current = setTimeout(createNewChallenge, refreshIn);
-      } else {
-        console.warn('[DeviceAuth] Challenge creation returned null');
+      try {
+        const result = await onCreateChallenge();
+        if (result) {
+          console.log('[DeviceAuth] Challenge created:', result.challengeId, 'expires:', result.expiresAt);
+          setChallenge(result);
+          // Auto-refresh challenge before it expires (at 4 minutes)
+          const expiresIn = new Date(result.expiresAt).getTime() - Date.now();
+          const refreshIn = Math.max(expiresIn - 60_000, 30_000);
+          challengeRefreshTimer.current = setTimeout(createNewChallenge, refreshIn);
+        } else {
+          console.warn('[DeviceAuth] Challenge creation returned null, retrying in 10s');
+          challengeRefreshTimer.current = setTimeout(createNewChallenge, 10_000);
+        }
+      } catch (err) {
+        console.error('[DeviceAuth] Challenge creation error, retrying in 10s:', err);
+        challengeRefreshTimer.current = setTimeout(createNewChallenge, 10_000);
       }
     };
 
