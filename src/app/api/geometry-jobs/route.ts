@@ -40,6 +40,7 @@ export async function GET() {
         ProcessCompletedTime: true,
         isProcessSuccessful: true,
         isEnabled: true,
+        isDebugRequest: true,
         // Exclude: GeometryInputParameterData (can be large JSON)
         // Exclude: GeometryFileContents, PrintFileContents (CRITICAL - huge binary files)
         // Exclude: GeometryFileName, PrintFileName, ProcessingLog (not shown in list)

@@ -42,6 +42,7 @@ interface Job {
   ProcessStartedTime?: string;
   ProcessCompletedTime?: string;
   isProcessSuccessful?: boolean;
+  isDebugRequest?: boolean;
   objectID: string | null;
   geometry: {
     GeometryName: string;
@@ -76,6 +77,8 @@ export default function SystemStatusPage() {
   const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState('');
+  const [healthCheckLoading, setHealthCheckLoading] = useState(false);
+  const [healthCheckResult, setHealthCheckResult] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -121,6 +124,67 @@ export default function SystemStatusPage() {
       setError(err instanceof Error ? err.message : 'Failed to update maintenance mode');
     } finally {
       setSavingMaintenance(false);
+    }
+  };
+
+  const handleHealthCheck = async () => {
+    setHealthCheckLoading(true);
+    setHealthCheckResult(null);
+    try {
+      // Create the health check job
+      const response = await fetch('/api/admin/system-status', {
+        method: 'POST'
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create health check job');
+      }
+      const { id: jobId, objectID } = await response.json();
+      setHealthCheckResult(`Waiting for processor to complete job ${objectID}...`);
+
+      // Poll for completion (5s interval, 5 min max)
+      const maxWaitMs = 5 * 60 * 1000;
+      const pollIntervalMs = 5000;
+      const startTime = Date.now();
+
+      while (Date.now() - startTime < maxWaitMs) {
+        await new Promise(r => setTimeout(r, pollIntervalMs));
+        const statusResp = await fetch('/api/admin/system-status');
+        if (!statusResp.ok) continue;
+        const statusData = await statusResp.json();
+        setQueueData(statusData);
+
+        // Check all completed/processing queues for our job
+        const allJobs = [
+          ...statusData.queues.recentlyCompleted,
+          ...statusData.queues.neverStarted,
+          ...statusData.queues.processing,
+          ...statusData.queues.stuckJobs
+        ];
+        const ourJob = allJobs.find((j: Job) => j.id === jobId);
+
+        if (ourJob?.ProcessCompletedTime) {
+          const elapsed = Math.round((Date.now() - startTime) / 1000);
+          if (ourJob.isProcessSuccessful) {
+            setHealthCheckResult(`Processor OK - job ${objectID} completed in ${elapsed}s`);
+          } else {
+            setHealthCheckResult(`Processor FAILED - job ${objectID} failed after ${elapsed}s`);
+          }
+          setHealthCheckLoading(false);
+          return;
+        }
+
+        // Update status message based on job state
+        if (ourJob?.ProcessStartedTime) {
+          setHealthCheckResult(`Processing job ${objectID}...`);
+        }
+      }
+
+      setHealthCheckResult(`Timed out waiting for job ${objectID} to complete (5 min)`);
+    } catch (err) {
+      setHealthCheckResult(err instanceof Error ? err.message : 'Failed to create health check job');
+    } finally {
+      setHealthCheckLoading(false);
     }
   };
 
@@ -209,20 +273,42 @@ export default function SystemStatusPage() {
           {/* Processor Health */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-3">Processor Health</h2>
-            <div className={`p-4 rounded-lg ${queueData.processor.isHealthy ? 'bg-green-100 border border-green-400' : 'bg-red-100 border border-red-400'}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-3 h-3 rounded-full ${queueData.processor.isHealthy ? 'bg-green-600' : 'bg-red-600'}`} />
-                <span className={`font-semibold ${queueData.processor.isHealthy ? 'text-green-800' : 'text-red-800'}`}>
-                  {queueData.processor.isHealthy ? 'Healthy' : 'Offline'}
-                </span>
+            <div className="bg-white border rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left: Polling Status */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-sm font-semibold text-gray-600">Polling Status</h3>
+                  <button
+                    onClick={fetchQueueStatus}
+                    className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                    title="Refresh"
+                  >&#x21bb;</button>
+                </div>
+                <div className="text-sm text-gray-700">
+                  Last ping: {queueData.processor.lastPingTime ? (
+                    <>
+                      {formatTimestamp(queueData.processor.lastPingTime)}
+                      {' '}({queueData.processor.secondsSinceLastPing}s ago)
+                    </>
+                  ) : <span className="text-red-600 font-semibold">Never</span>}
+                </div>
               </div>
-              <div className={`text-sm ${queueData.processor.isHealthy ? 'text-green-700' : 'text-red-700'}`}>
-                Last ping: {queueData.processor.lastPingTime ? (
-                  <>
-                    {formatTimestamp(queueData.processor.lastPingTime)}
-                    {' '}({queueData.processor.secondsSinceLastPing}s ago)
-                  </>
-                ) : 'Never'}
+
+              {/* Right: End-to-End Check */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-600 mb-2">End-to-End Check</h3>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleHealthCheck}
+                    disabled={healthCheckLoading}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {healthCheckLoading ? 'Checking...' : 'Check Design Processor'}
+                  </button>
+                </div>
+                {healthCheckResult && (
+                  <div className="mt-2 text-sm text-gray-700">{healthCheckResult}</div>
+                )}
               </div>
             </div>
           </div>
@@ -404,7 +490,10 @@ export default function SystemStatusPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {queueData.queues.neverStarted.map((job) => (
                         <tr key={job.id} className="hover:bg-gray-50">
-                          <td className="px-3 py-2 text-sm">{job.objectID || job.id.slice(0, 8)}</td>
+                          <td className="px-3 py-2 text-sm">
+                            {job.objectID || job.id.slice(0, 8)}
+                            {job.isDebugRequest && <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700">Test</span>}
+                          </td>
                           <td className="px-3 py-2 text-sm text-gray-500">{getTimeDiff(job.CreationTime)}</td>
                         </tr>
                       ))}
@@ -429,7 +518,10 @@ export default function SystemStatusPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {queueData.queues.stuckJobs.map((job) => (
                         <tr key={job.id} className="hover:bg-gray-50">
-                          <td className="px-3 py-2 text-sm">{job.objectID || job.id.slice(0, 8)}</td>
+                          <td className="px-3 py-2 text-sm">
+                            {job.objectID || job.id.slice(0, 8)}
+                            {job.isDebugRequest && <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700">Test</span>}
+                          </td>
                           <td className="px-3 py-2 text-sm text-gray-500">
                             {job.ProcessStartedTime ? getTimeDiff(job.ProcessStartedTime) : 'N/A'}
                           </td>
@@ -456,7 +548,10 @@ export default function SystemStatusPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {queueData.queues.processing.map((job) => (
                         <tr key={job.id} className="hover:bg-gray-50">
-                          <td className="px-3 py-2 text-sm">{job.objectID || job.id.slice(0, 8)}</td>
+                          <td className="px-3 py-2 text-sm">
+                            {job.objectID || job.id.slice(0, 8)}
+                            {job.isDebugRequest && <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700">Test</span>}
+                          </td>
                           <td className="px-3 py-2 text-sm text-gray-500">
                             {job.ProcessStartedTime ? getTimeDiff(job.ProcessStartedTime) : 'N/A'}
                           </td>
@@ -484,7 +579,10 @@ export default function SystemStatusPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {queueData.queues.recentlyCompleted.map((job) => (
                         <tr key={job.id} className="hover:bg-gray-50">
-                          <td className="px-3 py-2 text-sm">{job.objectID || job.id.slice(0, 8)}</td>
+                          <td className="px-3 py-2 text-sm">
+                            {job.objectID || job.id.slice(0, 8)}
+                            {job.isDebugRequest && <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700">Test</span>}
+                          </td>
                           <td className="px-3 py-2 text-sm">
                             <span className={`px-2 py-1 rounded text-xs ${job.isProcessSuccessful ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                               {job.isProcessSuccessful ? 'Success' : 'Failed'}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getProcessorStatus } from '@/lib/geo-processor-health';
+import { generateObjectID } from '@/lib/objectId';
 
 // GET /api/admin/system-status - View system status including geometry processing queue (admin only)
 export async function GET(request: NextRequest) {
@@ -42,7 +43,8 @@ export async function GET(request: NextRequest) {
           id: true,
           CreationTime: true,
           geometry: { select: { GeometryName: true } },
-          objectID: true
+          objectID: true,
+          isDebugRequest: true
         },
         orderBy: { CreationTime: 'asc' },
         take: 10
@@ -60,7 +62,8 @@ export async function GET(request: NextRequest) {
           CreationTime: true,
           ProcessStartedTime: true,
           geometry: { select: { GeometryName: true } },
-          objectID: true
+          objectID: true,
+          isDebugRequest: true
         },
         orderBy: { CreationTime: 'asc' },
         take: 10
@@ -79,7 +82,8 @@ export async function GET(request: NextRequest) {
           ProcessCompletedTime: true,
           isProcessSuccessful: true,
           geometry: { select: { GeometryName: true } },
-          objectID: true
+          objectID: true,
+          isDebugRequest: true
         },
         orderBy: { ProcessCompletedTime: 'desc' },
         take: 10
@@ -97,36 +101,40 @@ export async function GET(request: NextRequest) {
           CreationTime: true,
           ProcessStartedTime: true,
           geometry: { select: { GeometryName: true } },
-          objectID: true
+          objectID: true,
+          isDebugRequest: true
         },
         orderBy: { ProcessStartedTime: 'desc' },
         take: 10
       }),
       
-      // Failed jobs in last 24 hours
+      // Failed jobs in last 24 hours (exclude test jobs)
       prisma.geometryProcessingQueue.count({
         where: {
           ProcessCompletedTime: { gte: oneDayAgo },
           isProcessSuccessful: false,
-          isEnabled: true
+          isEnabled: true,
+          isDebugRequest: false
         }
       }),
       
-      // Successful jobs in last 24 hours
+      // Successful jobs in last 24 hours (exclude test jobs)
       prisma.geometryProcessingQueue.count({
         where: {
           ProcessCompletedTime: { gte: oneDayAgo },
           isProcessSuccessful: true,
-          isEnabled: true
+          isEnabled: true,
+          isDebugRequest: false
         }
       }),
       
-      // Completed jobs last 24h with timing data
+      // Completed jobs last 24h with timing data (exclude test jobs)
       prisma.geometryProcessingQueue.findMany({
         where: {
           ProcessCompletedTime: { gte: oneDayAgo },
           ProcessStartedTime: { not: null },
-          isEnabled: true
+          isEnabled: true,
+          isDebugRequest: false
         },
         select: {
           ProcessStartedTime: true,
@@ -135,12 +143,13 @@ export async function GET(request: NextRequest) {
         }
       }),
       
-      // Completed jobs 24-48h ago with timing data
+      // Completed jobs 24-48h ago with timing data (exclude test jobs)
       prisma.geometryProcessingQueue.findMany({
         where: {
           ProcessCompletedTime: { gte: twoDaysAgo, lt: oneDayAgo },
           ProcessStartedTime: { not: null },
-          isEnabled: true
+          isEnabled: true,
+          isDebugRequest: false
         },
         select: {
           ProcessStartedTime: true,
@@ -148,24 +157,26 @@ export async function GET(request: NextRequest) {
         }
       }),
       
-      // Jobs by algorithm (last 7 days)
+      // Jobs by algorithm (last 7 days, exclude test jobs)
       prisma.geometryProcessingQueue.groupBy({
         by: ['GeometryID'],
         where: {
           ProcessCompletedTime: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) },
-          isEnabled: true
+          isEnabled: true,
+          isDebugRequest: false
         },
         _count: {
           id: true
         }
       }),
       
-      // Recent failed jobs with error messages
+      // Recent failed jobs with error messages (exclude test jobs)
       prisma.geometryProcessingQueue.findMany({
         where: {
           ProcessCompletedTime: { gte: oneDayAgo },
           isProcessSuccessful: false,
-          isEnabled: true
+          isEnabled: true,
+          isDebugRequest: false
         },
         select: {
           id: true,
@@ -358,6 +369,74 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('Error updating system settings:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// POST /api/admin/system-status - Create a processor health check job (admin only)
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.role || session.user.role !== 'SYSTEM_ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized - admin access required' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { organizationId: true }
+    });
+
+    if (!user?.organizationId) {
+      return NextResponse.json({ error: 'Admin user must be part of an organization' }, { status: 403 });
+    }
+
+    // Always associate health check jobs with "System Administration" org
+    const systemOrg = await prisma.organization.findUnique({
+      where: { name: 'System Administration' }
+    });
+
+    if (!systemOrg) {
+      return NextResponse.json({ error: '"System Administration" organization not found. Run the seed script.' }, { status: 404 });
+    }
+
+    // Find the cylinder test geometry
+    const cylinderGeometry = await prisma.namedGeometry.findFirst({
+      where: { GeometryAlgorithmName: 'cylinder' }
+    });
+
+    if (!cylinderGeometry) {
+      return NextResponse.json(
+        { error: 'Cylinder test geometry not found. Create a NamedGeometry with GeometryAlgorithmName "cylinder" first.' },
+        { status: 404 }
+      );
+    }
+
+    const objectID = await generateObjectID();
+
+    const job = await prisma.geometryProcessingQueue.create({
+      data: {
+        GeometryID: cylinderGeometry.id,
+        CreatorID: session.user.id,
+        OwningOrganizationID: systemOrg.id,
+        GeometryInputParameterData: JSON.stringify({ radius: 10, height: 10 }),
+        isDebugRequest: true,
+        JobNote: 'Processor health check',
+        objectID,
+        objectIDGeneratedAt: new Date(),
+        isEnabled: true
+      },
+      select: {
+        id: true,
+        objectID: true,
+        CreationTime: true
+      }
+    });
+
+    return NextResponse.json(job, { status: 201 });
+
+  } catch (error) {
+    console.error('Error creating health check job:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

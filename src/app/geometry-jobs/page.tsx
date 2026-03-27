@@ -17,6 +17,7 @@ interface GeometryJob {
   ProcessCompletedTime?: string;
   isProcessSuccessful: boolean;
   isEnabled: boolean;
+  isDebugRequest?: boolean;
   geometry: {
     GeometryName: string;
     GeometryAlgorithmName: string;
@@ -259,6 +260,7 @@ export default function GeometryJobsPage() {
                           <div className="text-xs text-gray-500">Object:</div>
                           <div className="text-sm font-mono font-semibold text-blue-600">
                             {job.objectID || 'N/A'}
+                            {job.isDebugRequest && <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700 font-sans font-normal">Test</span>}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">Job:</div>
                           <div className="text-sm text-gray-900">
