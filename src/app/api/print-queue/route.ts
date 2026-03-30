@@ -71,8 +71,13 @@ export async function GET(request: NextRequest) {
                 GeometryName: true,
                 GeometryAlgorithmName: true
               }
+            },
+            creator: {
+              select: {
+                name: true
+              }
             }
-            // Exclude: creator, owningOrganization (not displayed in list)
+            // Exclude: owningOrganization (not displayed in list)
           }
         }
       },
