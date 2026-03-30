@@ -697,10 +697,10 @@ export default function PrintQueuePage() {
                         Actions
                       </th>
                       <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                        IDs
+                        Info
                       </th>
                       <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                        Type
+                        Job
                       </th>
                       <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         Status
@@ -795,6 +795,9 @@ export default function PrintQueuePage() {
                               {entry.geometryProcessingQueue.geometry.GeometryName}
                             </div>
                           </Link>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {entry.geometryProcessingQueue.creator.name}
+                          </div>
                         </td>
                         <td className="px-2 py-2">
                           <div className="print-status flex flex-wrap gap-2">
