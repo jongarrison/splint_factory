@@ -71,7 +71,7 @@ export default function DeletePrintModal({
           <button
             onClick={() => handleAction('REJECT_DESIGN')}
             disabled={submitting}
-            className="w-full bg-orange-700 hover:bg-orange-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-rose-700 hover:bg-rose-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? (
               <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
