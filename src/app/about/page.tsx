@@ -305,7 +305,7 @@ export default function AboutPage() {
                 gaps.&rdquo;
               </p>
               <footer className="mt-3 text-[var(--text-tertiary)]">
-                &mdash; <strong className="text-[var(--text-primary)]">Liz Allstadt, OTR/L, CHT</strong>{' '}
+                - <strong className="text-[var(--text-primary)]">Liz Allstadt, OTR/L, CHT</strong>{' '}
                 &middot; Co-Founder &amp; Chief Medical Officer
               </footer>
             </blockquote>
@@ -402,7 +402,7 @@ export default function AboutPage() {
             </FadeIn>
             <FadeIn>
               <p>
-                Meanwhile, Jon had a conversation with a family member &mdash; a plastic surgeon-in-training
+                Meanwhile, Jon had a conversation with a family member - a plastic surgeon-in-training
                 who was learning to fabricate a mallet finger splint. With
                 years of experience in CAD, parametric design, and manufacturing engineering, he
                 started brainstorming how to automate and simplify the process. He built a few prototypes 
