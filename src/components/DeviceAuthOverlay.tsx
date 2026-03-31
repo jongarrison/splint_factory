@@ -208,9 +208,17 @@ export default function DeviceAuthOverlay({
     <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
       {/* Semi-transparent overlay that blocks interactions on the page beneath */}
       <div
-        className="fixed inset-0 bg-black/30 pointer-events-auto"
+        className="fixed inset-0 bg-blue-900/30 pointer-events-auto flex items-center justify-center"
         onClick={(e) => e.stopPropagation()}
-      />
+      >
+        <div className="text-center bg-gray-900/80 backdrop-blur rounded-xl px-8 py-5 shadow-lg">
+          <svg className="w-10 h-10 mx-auto mb-2 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <div className="text-white text-base font-medium">Screen Locked</div>
+          <div className="text-white/60 text-sm mt-1">Log in below to continue</div>
+        </div>
+      </div>
 
       {/* QR code bar at bottom */}
       <div className="relative pointer-events-auto bg-gray-900/95 backdrop-blur border-t border-gray-700 px-6 py-4">

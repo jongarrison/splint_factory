@@ -338,17 +338,23 @@ export default function GeometryJobDetailPage({
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-lg font-medium text-gray-900">Associated Print Jobs</h2>
-              <button
-                onClick={handleCreatePrint}
-                disabled={creatingPrint}
-                className={`${
-                  creatingPrint 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-purple-600 hover:bg-purple-700'
-                } text-white px-4 py-2 rounded text-sm font-medium`}
-              >
-                {creatingPrint ? 'Creating...' : '🖨️ New Print'}
-              </button>
+              {job && !job.isProcessSuccessful ? (
+                <span className="text-sm text-red-600">Processing failed</span>
+              ) : job && !job.PrintFileName ? (
+                <span className="text-sm text-gray-500">No print file available</span>
+              ) : (
+                <button
+                  onClick={handleCreatePrint}
+                  disabled={creatingPrint}
+                  className={`${
+                    creatingPrint 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-purple-600 hover:bg-purple-700'
+                  } text-white px-4 py-2 rounded text-sm font-medium`}
+                >
+                  {creatingPrint ? 'Creating...' : 'New Print'}
+                </button>
+              )}
             </div>
             
             <div className="px-6 py-4">

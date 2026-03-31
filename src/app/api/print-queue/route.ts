@@ -179,6 +179,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Geometry processing queue entry not found' }, { status: 404 });
     }
 
+    // Reject if processing failed or has no print file
+    if (!geometryJob.isProcessSuccessful) {
+      return NextResponse.json({ error: 'Cannot create print job for a failed geometry processing job' }, { status: 400 });
+    }
+    if (!geometryJob.PrintFileName && !PrintFileName) {
+      return NextResponse.json({ error: 'Cannot create print job without a print file' }, { status: 400 });
+    }
+
     // Get user organization to verify access
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },

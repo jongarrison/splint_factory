@@ -67,10 +67,11 @@ export async function POST(
       );
     }
 
-    // Verify print is completed (progress > 99%)
-    if (!printJob.progress || printJob.progress <= 99) {
+    // Verify print is completed (progress > 99%) before accepting
+    // Exceptions: REJECT_DESIGN can happen anytime, REJECT_PRINT can happen after print started
+    if (printAcceptance === 'ACCEPTED' && (!printJob.progress || printJob.progress <= 99)) {
       return NextResponse.json(
-        { error: 'Print must be completed (progress > 99%) before acceptance decision' },
+        { error: 'Print must be completed (progress > 99%) before acceptance' },
         { status: 400 }
       );
     }

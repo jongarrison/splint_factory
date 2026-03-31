@@ -58,6 +58,7 @@ export default function PrintQueuePage() {
   const [deleteModal, setDeleteModal] = useState<{
     printId: string;
     geometryName: string;
+    printStarted: boolean;
   } | null>(null);
 
   // MQTT-based printer status (Electron only)
@@ -438,17 +439,17 @@ export default function PrintQueuePage() {
     }
   };
 
-  const handleDeleteSubmit = async (printId: string, action: 'DELETE' | 'REJECT_DESIGN') => {
+  const handleDeleteSubmit = async (printId: string, action: 'DELETE' | 'REJECT_DESIGN' | 'REJECT_PRINT') => {
     try {
-      // If rejecting design, record that before disabling
-      if (action === 'REJECT_DESIGN') {
+      // If rejecting design or print, record that before disabling
+      if (action === 'REJECT_DESIGN' || action === 'REJECT_PRINT') {
         const acceptanceResponse = await fetch(`/api/print-queue/${printId}/acceptance`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ printAcceptance: 'REJECT_DESIGN' }),
+          body: JSON.stringify({ printAcceptance: action }),
         });
         if (!acceptanceResponse.ok) {
-          throw new Error('Failed to record design rejection');
+          throw new Error(action === 'REJECT_DESIGN' ? 'Failed to record design rejection' : 'Failed to record print rejection');
         }
       }
 
@@ -463,7 +464,7 @@ export default function PrintQueuePage() {
       }
 
       refreshPrintQueue();
-      const msg = action === 'REJECT_DESIGN' ? 'Design rejected and removed' : 'Print job removed';
+      const msg = action === 'REJECT_DESIGN' ? 'Design rejected and removed' : action === 'REJECT_PRINT' ? 'Print rejected and removed' : 'Print job removed';
       showNotification(msg, 'success', 3000);
     } catch (err) {
       showNotification(err instanceof Error ? err.message : 'Failed to delete print job', 'error');
@@ -845,6 +846,7 @@ export default function PrintQueuePage() {
                             onClick={() => setDeleteModal({
                               printId: entry.id,
                               geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
+                              printStarted: !!entry.PrintStartedTime,
                             })}
                             className="action-delete inline-flex items-center justify-center w-10 h-10 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                             title="Delete print job"
@@ -879,6 +881,7 @@ export default function PrintQueuePage() {
         <DeletePrintModal
           printId={deleteModal.printId}
           geometryName={deleteModal.geometryName}
+          printStarted={deleteModal.printStarted}
           onClose={() => setDeleteModal(null)}
           onSubmit={handleDeleteSubmit}
         />
