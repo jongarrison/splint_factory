@@ -298,12 +298,6 @@ export default function GeometryJobsPage() {
                             View
                           </Link>
                           <Link
-                            href={`/geometry-jobs/${job.id}/edit`}
-                            className="text-green-600 hover:text-green-900 mr-4"
-                          >
-                            Edit
-                          </Link>
-                          <Link
                             href={`/geometry-jobs/new?template=${job.id}`}
                             className="text-purple-600 hover:text-purple-900"
                             title="Create new job with same settings"

@@ -262,7 +262,7 @@ export default function GeometryJobDetailPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold text-gray-900">Design Generation Job Details</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Design Job Details</h1>
               <Link
                 href="/geometry-jobs"
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
@@ -295,9 +295,9 @@ export default function GeometryJobDetailPage({
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Design Generation Job Details</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Design Job Details</h1>
               <p className="mt-2 text-gray-600">
-                View details for design generation job
+                {/* View details for design processing job */}
               </p>
             </div>
             <div className="flex gap-4">
@@ -316,12 +316,6 @@ export default function GeometryJobDetailPage({
                 title="Create new job with same settings"
               >
                 📋 New from Template
-              </Link>
-              <Link
-                href={`/geometry-jobs/${job.id}/edit`}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium"
-              >
-                Edit Job
               </Link>
               <Link
                 href="/geometry-jobs"
