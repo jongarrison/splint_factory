@@ -104,12 +104,12 @@ function VerifyEmailContent() {
                 <p className="text-gray-400 mb-6">
                   Your email has been verified. Please sign in again to continue.
                 </p>
-                <a
-                  href="/login"
+                <button
+                  onClick={() => signOut({ callbackUrl: '/login' })}
                   className="inline-block px-6 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
                 >
                   Sign In
-                </a>
+                </button>
               </>
             )}
             {status === 'error' && (

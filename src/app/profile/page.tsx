@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 import { useProfile } from '@/hooks/useProfile';
 import { validatePassword, PASSWORD_REQUIREMENTS_TEXT } from '@/lib/password';
 
@@ -29,9 +30,20 @@ export default function ProfilePage() {
     }
   }, [profile]);
 
+  const emailChanged = profile ? formData.email !== profile.email : false;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSuccessMessage('');
+
+    // Confirm email change with user
+    if (emailChanged) {
+      const confirmed = window.confirm(
+        'Changing your email address will require re-verification. ' +
+        'You will be signed out and need to verify your new email before signing back in. Continue?'
+      );
+      if (!confirmed) return;
+    }
     
     // Validate password fields if changing password
     if (showPasswordSection) {
@@ -60,6 +72,12 @@ export default function ProfilePage() {
     const result = await updateProfile(updateData);
     
     if (result.success) {
+      // Email change: sign out so user can re-verify and get fresh JWT
+      if (emailChanged) {
+        signOut({ callbackUrl: '/login' });
+        return;
+      }
+
       setSuccessMessage(
         showPasswordSection 
           ? 'Profile and password updated successfully!' 
