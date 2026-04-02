@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 
 // Define public routes that don't require authentication
 // Include '/api' so API routes rely on route-level auth (API keys or session) instead of middleware redirects
-const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/api', '/api/auth', '/api/register', '/l', '/client-auth', '/about']
+const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/api', '/api/auth', '/api/register', '/l', '/client-auth', '/about', '/verify-email']
 
 // Define routes that should redirect to home if already authenticated
 const authRoutes = ['/login', '/register']
@@ -73,12 +73,20 @@ export default async function middleware(request: NextRequest) {
 
     // If user is authenticated and trying to access auth routes, redirect to geo-job-menu
     if (session && isAuthRoute) {
-      console.log(`🏠 REDIRECT: Authenticated user trying to access auth route ${pathname}`)
+      console.log(`REDIRECT: Authenticated user trying to access auth route ${pathname}`)
       // Honor callbackUrl if present, otherwise go to geo-job-menu (browser default)
       const callbackUrl = request.nextUrl.searchParams.get('callbackUrl')
       const destination = callbackUrl || '/geo-job-menu'
       const redirectUrl = new URL(destination, request.url)
       return NextResponse.redirect(redirectUrl)
+    }
+
+    // If user is authenticated but email not verified, redirect to /verify-email
+    // (unless already on /verify-email or a public route)
+    if (session && !session.user.emailVerified && !isPublicRoute && pathname !== '/verify-email') {
+      console.log(`REDIRECT: Unverified user trying to access ${pathname}`)
+      const verifyUrl = new URL('/verify-email', request.url)
+      return NextResponse.redirect(verifyUrl)
     }
     
     // If user is authenticated and trying to access home page, redirect to geo-job-menu

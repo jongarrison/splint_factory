@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { UserRole } from "@prisma/client"
 import { logAuditEvent } from "@/lib/audit"
 import { validatePassword } from "@/lib/password"
+import { sendEmail } from "@/lib/email"
+import EmailVerificationEmail from "@/emails/email-verification"
 
 export async function POST(request: NextRequest) {
   try {
@@ -115,6 +117,25 @@ export async function POST(request: NextRequest) {
         userName: user.name,
       },
     });
+
+    // Send email verification (fire-and-forget, don't block registration)
+    try {
+      const verificationToken = await prisma.emailVerificationToken.create({
+        data: {
+          userId: user.id,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+      const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
+      const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken.token}`;
+      sendEmail({
+        to: user.email,
+        subject: 'Verify your Splint Factory email',
+        react: EmailVerificationEmail({ verifyUrl }),
+      });
+    } catch (emailErr) {
+      console.error('Failed to send verification email:', emailErr);
+    }
 
     return NextResponse.json(
       { message: "User created successfully", user: userWithoutPassword },

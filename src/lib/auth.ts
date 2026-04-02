@@ -62,6 +62,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           role: user.role,
           organizationId: user.organizationId,
           organizationName: user.organization?.name,
+          emailVerified: user.emailVerified?.toISOString() ?? null,
         }
       }
     })
@@ -75,6 +76,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.role = token.role as string
         session.user.organizationId = token.organizationId as string | undefined
         session.user.organizationName = token.organizationName as string | undefined
+        session.user.emailVerified = token.emailVerified as string | null | undefined
       }
       return session
     },
@@ -86,6 +88,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = user.role
         token.organizationId = user.organizationId
         token.organizationName = user.organizationName
+        token.emailVerified = user.emailVerified
       }
       return token
     }
