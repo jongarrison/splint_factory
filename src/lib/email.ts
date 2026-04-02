@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { type ReactElement } from 'react';
 
 let _resend: Resend | null = null;
 
@@ -15,11 +16,12 @@ const FROM_ADDRESS = process.env.EMAIL_FROM || 'Splint Factory <noreply@notifica
 interface SendEmailParams {
   to: string | string[];
   subject: string;
-  html: string;
+  html?: string;
+  react?: ReactElement;
   replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, html, replyTo }: SendEmailParams) {
+export async function sendEmail({ to, subject, html, react, replyTo }: SendEmailParams) {
   const resend = getResend();
   if (!resend) {
     console.warn('[Email] RESEND_API_KEY not set, skipping email send');
@@ -30,7 +32,7 @@ export async function sendEmail({ to, subject, html, replyTo }: SendEmailParams)
     from: FROM_ADDRESS,
     to: Array.isArray(to) ? to : [to],
     subject,
-    html,
+    ...(react ? { react } : { html: html! }),
     replyTo,
   });
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useProfile } from '@/hooks/useProfile';
+import { validatePassword, PASSWORD_REQUIREMENTS_TEXT } from '@/lib/password';
 
 export default function ProfilePage() {
   const { profile, loading, error, updating, updateProfile } = useProfile();
@@ -39,12 +40,11 @@ export default function ProfilePage() {
       }
       
       if (passwordData.newPassword !== passwordData.confirmPassword) {
-        // You could set an error state here
         return;
       }
       
-      if (passwordData.newPassword.length < 6) {
-        // You could set an error state here
+      const passwordCheck = validatePassword(passwordData.newPassword);
+      if (!passwordCheck.valid) {
         return;
       }
     }
@@ -251,10 +251,10 @@ export default function ProfilePage() {
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      minLength={6}
+                      minLength={8}
                       required={showPasswordSection}
                     />
-                    <p className="text-sm text-gray-500 mt-1">Must be at least 6 characters long</p>
+                    <p className="text-sm text-gray-500 mt-1">{PASSWORD_REQUIREMENTS_TEXT}</p>
                   </div>
 
                   <div>

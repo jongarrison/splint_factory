@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { validatePassword, PASSWORD_REQUIREMENTS_TEXT } from "@/lib/password"
 
 function RegisterForm() {
   const [name, setName] = useState("")
@@ -29,6 +30,13 @@ function RegisterForm() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match")
+      setIsLoading(false)
+      return
+    }
+
+    const passwordCheck = validatePassword(password)
+    if (!passwordCheck.valid) {
+      setError(passwordCheck.errors.join('. '))
       setIsLoading(false)
       return
     }
@@ -165,6 +173,7 @@ function RegisterForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <p className="text-xs text-gray-400 mt-1">{PASSWORD_REQUIREMENTS_TEXT}</p>
               </div>
 
               <div>

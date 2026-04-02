@@ -15,6 +15,7 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
     "@prisma/client": "^6.13.0",
+    "@react-email/components": "^1.0.11",
     "@types/three": "^0.180.0",
     "@vercel/blob": "^2.0.0",
     "bcryptjs": "^3.0.2",
@@ -24,6 +25,7 @@
     "qrcode.react": "^4.2.0",
     "react": "19.2.2",
     "react-dom": "19.2.2",
+    "react-email": "^5.2.10",
     "resend": "^6.10.0",
     "simple-keyboard": "^3.8.92",
     "three": "^0.180.0"

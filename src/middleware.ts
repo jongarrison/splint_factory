@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 
 // Define public routes that don't require authentication
 // Include '/api' so API routes rely on route-level auth (API keys or session) instead of middleware redirects
-const publicRoutes = ['/login', '/register', '/api', '/api/auth', '/api/register', '/l', '/client-auth', '/about']
+const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/api', '/api/auth', '/api/register', '/l', '/client-auth', '/about']
 
 // Define routes that should redirect to home if already authenticated
 const authRoutes = ['/login', '/register']

@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useCallback, useRef } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import Header from "@/components/navigation/Header"
 import { QRCodeSVG } from "qrcode.react"
 
@@ -278,6 +279,15 @@ function LoginPageInner() {
             {error && (
               <div className="text-red-600 text-sm text-center">{error}</div>
             )}
+
+            <div className="flex items-center justify-end">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-indigo-400 hover:text-indigo-300"
+              >
+                Forgot your password?
+              </Link>
+            </div>
 
             <div>
               <button
