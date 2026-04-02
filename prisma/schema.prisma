@@ -59,6 +59,8 @@ model User {
   authorizedChallenges ClientAuthChallenge[]     @relation("ChallengeAuthorizer")
   printedJobs          PrintQueue[]              @relation("PrintOperator")
   reviewedPrints       PrintQueue[]              @relation("PrintReviewer")
+  actorEvents          AuditEvent[]              @relation("AuditActor")
+  targetEvents         AuditEvent[]              @relation("AuditTarget")
 }
 
 model InvitationLink {
@@ -250,4 +252,24 @@ model ClientAuthChallenge {
 
   @@index([deviceId])
   @@index([exchangeToken])
+}
+
+model AuditEvent {
+  id              String    @id @default(cuid())
+  timestamp       DateTime  @default(now())
+  eventType       String    // e.g. "USER_REGISTERED", "EMAIL_SENT", "EMAIL_VERIFIED"
+  channel         String    // e.g. "AUTH", "EMAIL", "SYSTEM", "BILLING", "PRINT"
+  actorId         String?   // user who triggered it (null for system events)
+  targetUserId    String?   // user being acted upon
+  organizationId  String?
+  metadata        Json?     // flexible event-specific data
+  actor           User?     @relation("AuditActor", fields: [actorId], references: [id])
+  targetUser      User?     @relation("AuditTarget", fields: [targetUserId], references: [id])
+
+  @@index([eventType])
+  @@index([channel])
+  @@index([actorId])
+  @@index([targetUserId])
+  @@index([organizationId])
+  @@index([timestamp])
 }

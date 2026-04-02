@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { UserRole } from "@prisma/client"
+import { logAuditEvent } from "@/lib/audit"
 
 export async function POST(request: NextRequest) {
   try {
@@ -90,6 +91,20 @@ export async function POST(request: NextRequest) {
     
     // Suppress unused variable warning - _password is intentionally unused
     void _password
+
+    // Log the registration event (fire-and-forget)
+    logAuditEvent({
+      eventType: 'USER_REGISTERED',
+      channel: 'AUTH',
+      actorId: invitationData.createdByUserId,
+      targetUserId: user.id,
+      organizationId: invitationData.organizationId,
+      metadata: {
+        invitationToken: invitationData.token,
+        userEmail: user.email,
+        userName: user.name,
+      },
+    });
 
     return NextResponse.json(
       { message: "User created successfully", user: userWithoutPassword },

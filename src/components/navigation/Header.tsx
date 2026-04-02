@@ -310,6 +310,17 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 </Link>
                               )}
                               
+                              {/* Email Admin - SYSTEM_ADMIN only */}
+                              {session?.user?.role === 'SYSTEM_ADMIN' && (
+                                <Link
+                                  href="/admin/email"
+                                  onClick={() => setShowAdminDropdown(false)}
+                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                >
+                                  Email
+                                </Link>
+                              )}
+                              
 
                             </div>
                           </div>
