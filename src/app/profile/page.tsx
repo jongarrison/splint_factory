@@ -179,6 +179,7 @@ export default function ProfilePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
+              <p className="mt-1 text-sm text-gray-500">Changing your email will require re-verification.</p>
             </div>
 
             {/* Organization Information */}

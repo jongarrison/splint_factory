@@ -83,7 +83,8 @@ export default async function middleware(request: NextRequest) {
 
     // If user is authenticated but email not verified, redirect to /verify-email
     // (unless already on /verify-email or a public route)
-    if (session && !session.user.emailVerified && !isPublicRoute && pathname !== '/verify-email') {
+    // Use === null to distinguish unverified users from old JWTs where field is undefined
+    if (session && session.user.emailVerified === null && !isPublicRoute && pathname !== '/verify-email') {
       console.log(`REDIRECT: Unverified user trying to access ${pathname}`)
       const verifyUrl = new URL('/verify-email', request.url)
       return NextResponse.redirect(verifyUrl)

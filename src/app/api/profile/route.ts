@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { validatePassword } from '@/lib/password';
+import { sendEmail } from '@/lib/email';
+import EmailVerificationEmail from '@/emails/email-verification';
 
 // GET /api/profile - Get current user's profile
 export async function GET() {
@@ -137,11 +139,13 @@ export async function PUT(request: NextRequest) {
     }
 
     // Prepare update data
+    const emailChanged = email !== session.user.email;
     const updateData: {
       name: string;
       email: string;
       updatedAt: Date;
       password?: string;
+      emailVerified?: null;
     } = {
       name,
       email,
@@ -151,6 +155,11 @@ export async function PUT(request: NextRequest) {
     // Hash new password if provided
     if (newPassword) {
       updateData.password = await bcrypt.hash(newPassword, 12);
+    }
+
+    // Reset verification if email changed
+    if (emailChanged) {
+      updateData.emailVerified = null;
     }
 
     // Update the user
@@ -174,6 +183,25 @@ export async function PUT(request: NextRequest) {
         updatedAt: true,
       },
     });
+
+    // Send verification email for new address
+    if (emailChanged) {
+      const verificationToken = await prisma.emailVerificationToken.create({
+        data: {
+          userId: updatedUser.id,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+
+      const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
+      const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken.token}`;
+
+      await sendEmail({
+        to: email,
+        subject: 'Verify your new Splint Factory email',
+        react: EmailVerificationEmail({ verifyUrl }),
+      });
+    }
 
     return NextResponse.json(updatedUser);
   } catch (error) {
