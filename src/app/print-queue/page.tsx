@@ -13,26 +13,26 @@ import { useSmartPolling } from '@/hooks/useSmartPolling';
 
 interface PrintQueueEntry {
   id: string;
-  GeometryFileName?: string;
-  PrintFileName?: string;
-  PrintStartedTime?: string;
-  PrintCompletedTime?: string;
+  meshFileName?: string;
+  printFileName?: string;
+  printStartedAt?: string;
+  printCompletedAt?: string;
   isPrintSuccessful: boolean;
   printNote?: string;
   printAcceptance?: string | null;
   hasGeometryFile: boolean;
   hasPrintFile: boolean;
   progress?: number | null;
-  progressLastReportTime?: string | null;
-  geometryProcessingQueue: {
+  progressLastReportAt?: string | null;
+  designJob: {
     id: string;
-    objectID?: string;
-    CreationTime: string;
-    JobNote?: string;
-    JobID?: string;
-    geometry: {
-      GeometryName: string;
-      GeometryAlgorithmName: string;
+    objectId?: string;
+    createdAt: string;
+    jobNote?: string;
+    jobLabel?: string;
+    design: {
+      name: string;
+      algorithmName: string;
     };
     creator: {
       id: string;
@@ -241,7 +241,7 @@ export default function PrintQueuePage() {
   const isActivePrint = (entry: PrintQueueEntry) => {
     // A print is active if it hasn't been accepted, rejected, or failed
     if (entry.printAcceptance !== null) return false; // Accepted or rejected
-    if (entry.PrintCompletedTime && !entry.isPrintSuccessful) return false; // Failed
+    if (entry.printCompletedAt && !entry.isPrintSuccessful) return false; // Failed
     return true; // Otherwise active
   };
 
@@ -251,8 +251,8 @@ export default function PrintQueuePage() {
     )
     .sort((a, b) => {
       // Get creation times
-      const timeA = new Date(a.geometryProcessingQueue.CreationTime).getTime();
-      const timeB = new Date(b.geometryProcessingQueue.CreationTime).getTime();
+      const timeA = new Date(a.designJob.createdAt).getTime();
+      const timeB = new Date(b.designJob.createdAt).getTime();
       
       if (viewMode === 'active') {
         // Active: oldest first (ascending)
@@ -264,13 +264,13 @@ export default function PrintQueuePage() {
     });
 
   const getStatusBadge = (entry: PrintQueueEntry) => {
-    if (entry.PrintCompletedTime && entry.isPrintSuccessful) {
+    if (entry.printCompletedAt && entry.isPrintSuccessful) {
       return <span className="status-badge status-completed px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Print Successful</span>;
     }
-    if (entry.PrintCompletedTime && !entry.isPrintSuccessful) {
+    if (entry.printCompletedAt && !entry.isPrintSuccessful) {
       return <span className="status-badge status-failed px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Print Failed</span>;
     }
-    if (entry.PrintStartedTime) {
+    if (entry.printStartedAt) {
       const progressText = entry.progress != null ? ` ${entry.progress.toFixed(1)}%` : '';
       return <span className="status-badge status-printing px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Printing{progressText && <span className="progress-percentage">{progressText}</span>}</span>;
     }
@@ -294,12 +294,12 @@ export default function PrintQueuePage() {
   };
   
   const getProgressInfo = (entry: PrintQueueEntry) => {
-    if (!entry.PrintStartedTime || entry.PrintCompletedTime) {
+    if (!entry.printStartedAt || entry.printCompletedAt) {
       return null;
     }
     
-    if (entry.progressLastReportTime) {
-      const lastUpdate = new Date(entry.progressLastReportTime);
+    if (entry.progressLastReportAt) {
+      const lastUpdate = new Date(entry.progressLastReportAt);
       const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
       
       if (minutesAgo < 1) {
@@ -328,7 +328,7 @@ export default function PrintQueuePage() {
         },
         body: JSON.stringify({
           isPrintSuccessful: true,
-          PrintCompletedTime: new Date().toISOString(),
+          printCompletedAt: new Date().toISOString(),
         }),
       });
 
@@ -351,7 +351,7 @@ export default function PrintQueuePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          PrintStartedTime: new Date().toISOString(),
+          printStartedAt: new Date().toISOString(),
         }),
       });
 
@@ -380,13 +380,13 @@ export default function PrintQueuePage() {
 
       // Get the print queue ID and geometry processing queue ID
       const printQueueId = entry.id;
-      const geometryJobId = entry.geometryProcessingQueue.id;
+      const geometryJobId = entry.designJob.id;
       
       // Get session cookie for authentication
       const sessionCookie = document.cookie;
       
       // Generate a job name from the geometry and customer info
-      const jobName = `${entry.geometryProcessingQueue.geometry.GeometryName.replace(/\s+/g, '_')}_${entry.geometryProcessingQueue.JobID || 'job'}`;
+      const jobName = `${entry.designJob.design.name.replace(/\s+/g, '_')}_${entry.designJob.jobLabel || 'job'}`;
 
       // Step 2: Uploading to printer
       showNotification('📤 Uploading file to printer...', 'info');
@@ -417,7 +417,7 @@ export default function PrintQueuePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          PrintStartedTime: new Date().toISOString(),
+          printStartedAt: new Date().toISOString(),
         }),
       });
 
@@ -425,7 +425,7 @@ export default function PrintQueuePage() {
       await refreshPrintQueue();
       
       // Success notification (stays longer - 5 seconds)
-      showNotification(`✅ Print started: ${entry.geometryProcessingQueue.geometry.GeometryName}`, 'success', 5000);
+      showNotification(`✅ Print started: ${entry.designJob.design.name}`, 'success', 5000);
     } catch (err) {
       // Show error notification instead of setting error state
       showNotification(
@@ -720,7 +720,7 @@ export default function PrintQueuePage() {
                         <td className="px-2 py-2 whitespace-nowrap">
                           <div className="flex flex-row sm:flex-col gap-1">
                             {/* Print button - shows for all users but only enabled in Electron client */}
-                            {!entry.PrintStartedTime && entry.hasPrintFile && (
+                            {!entry.printStartedAt && entry.hasPrintFile && (
                               <button
                                 onClick={() => isElectronClient && !printerBusy ? handlePrint(entry) : null}
                                 disabled={!isElectronClient || printingJobId === entry.id || printerBusy}
@@ -751,7 +751,7 @@ export default function PrintQueuePage() {
                               </button>
                             )}
                             
-                            {entry.PrintCompletedTime && !entry.isPrintSuccessful && (
+                            {entry.printCompletedAt && !entry.isPrintSuccessful && (
                               <button
                                 onClick={() => handleMarkPrintSuccessful(entry.id)}
                                 className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs min-w-[60px]"
@@ -765,7 +765,7 @@ export default function PrintQueuePage() {
                                 <button
                                   onClick={() => setAcceptanceModal({
                                     printId: entry.id,
-                                    geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
+                                    geometryName: entry.designJob.design.name,
                                   })}
                                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-semibold min-w-[80px]"
                                   title="Review print quality"
@@ -778,27 +778,27 @@ export default function PrintQueuePage() {
                         <td className="px-2 py-2">
                           <div className="text-xs text-gray-500">Object:</div>
                           <div className="text-sm font-mono font-semibold text-blue-600">
-                            {entry.geometryProcessingQueue.objectID || 'N/A'}
+                            {entry.designJob.objectId || 'N/A'}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">Job:</div>
                           <div className="text-sm text-gray-900">
-                            {entry.geometryProcessingQueue.JobID || 'N/A'}
+                            {entry.designJob.jobLabel || 'N/A'}
                           </div>
-                          {entry.geometryProcessingQueue.JobNote && (
+                          {entry.designJob.jobNote && (
                             <div className="text-xs text-gray-500 truncate max-w-[150px] mt-1">
-                              {entry.geometryProcessingQueue.JobNote}
+                              {entry.designJob.jobNote}
                             </div>
                           )}
                         </td>
                         <td className="px-2 py-2">
                           <Link href={`/print-queue/${entry.id}`} className="block group">
                             <div className="geometry-name text-sm font-medium text-gray-900 truncate max-w-[200px] group-hover:text-blue-600 transition-colors">
-                              {entry.geometryProcessingQueue.geometry.GeometryName}
+                              {entry.designJob.design.name}
                             </div>
                           </Link>
-                          {entry.geometryProcessingQueue.creator?.name && (
+                          {entry.designJob.creator?.name && (
                             <div className="text-xs text-gray-500 mt-0.5">
-                              {entry.geometryProcessingQueue.creator.name}
+                              {entry.designJob.creator.name}
                             </div>
                           )}
                         </td>
@@ -807,9 +807,9 @@ export default function PrintQueuePage() {
                             {getStatusBadge(entry)}
                             {getAcceptanceBadge(entry)}
                           </div>
-                          {entry.PrintStartedTime && (
+                          {entry.printStartedAt && (
                             <div className="print-started-time text-xs text-gray-500 mt-1 hidden sm:block">
-                              {formatDate(entry.PrintStartedTime)}
+                              {formatDate(entry.printStartedAt)}
                             </div>
                           )}
                         </td>
@@ -819,10 +819,10 @@ export default function PrintQueuePage() {
                               <div className="progress-percentage text-sm font-semibold text-gray-900">
                                 {entry.progress.toFixed(1)}%
                               </div>
-                              {entry.progressLastReportTime && (
+                              {entry.progressLastReportAt && (
                                 <div className="last-updated-time text-xs text-gray-500 mt-0.5">
                                   {(() => {
-                                    const lastUpdate = new Date(entry.progressLastReportTime);
+                                    const lastUpdate = new Date(entry.progressLastReportAt);
                                     const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
                                     
                                     if (minutesAgo < 1) {
@@ -845,8 +845,8 @@ export default function PrintQueuePage() {
                           <button
                             onClick={() => setDeleteModal({
                               printId: entry.id,
-                              geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
-                              printStarted: !!entry.PrintStartedTime,
+                              geometryName: entry.designJob.design.name,
+                              printStarted: !!entry.printStartedAt,
                             })}
                             className="action-delete inline-flex items-center justify-center w-10 h-10 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                             title="Delete print job"

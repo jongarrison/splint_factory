@@ -29,12 +29,12 @@ export async function GET(
       return NextResponse.json({ error: 'User must be part of an organization' }, { status: 403 });
     }
 
-    const printQueueEntry = await prisma.printQueue.findUnique({
+    const printQueueEntry = await prisma.printJob.findUnique({
       where: { id },
       include: {
-        geometryProcessingQueue: {
+        designJob: {
           include: {
-            geometry: { select: { GeometryName: true, GeometryAlgorithmName: true } },
+            design: { select: { name: true, algorithmName: true } },
             creator: { select: { id: true, name: true, email: true } },
             owningOrganization: { select: { name: true } }
           }
@@ -47,25 +47,25 @@ export async function GET(
     }
 
     // Verify user has access to this entry (same organization)
-    if (printQueueEntry.geometryProcessingQueue.OwningOrganizationID !== user.organizationId) {
+    if (printQueueEntry.designJob.owningOrganizationId !== user.organizationId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Return without binary data unless specifically requested (files live on geometryProcessingQueue)
     const includeFiles = request.nextUrl.searchParams.get('includeFiles') === 'true';
-    const gpq: any = (printQueueEntry as any).geometryProcessingQueue;
+    const gpq: any = (printQueueEntry as any).designJob;
     const response = {
       ...printQueueEntry,
-      GeometryFileName: gpq?.GeometryFileName ?? null,
-      PrintFileName: gpq?.PrintFileName ?? null,
-      GeometryFileContents: includeFiles && gpq?.GeometryFileContents
-        ? gpq.GeometryFileContents.toString('base64')
-        : (gpq?.GeometryFileContents ? '[Binary Data]' : null),
-      PrintFileContents: includeFiles && gpq?.PrintFileContents
-        ? gpq.PrintFileContents.toString('base64')
-        : (gpq?.PrintFileContents ? '[Binary Data]' : null),
-      hasGeometryFile: !!gpq?.GeometryFileContents,
-      hasPrintFile: !!gpq?.PrintFileContents
+      meshFileName: gpq?.meshFileName ?? null,
+      printFileName: gpq?.printFileName ?? null,
+      meshFileContents: includeFiles && gpq?.meshFileContents
+        ? gpq.meshFileContents.toString('base64')
+        : (gpq?.meshFileContents ? '[Binary Data]' : null),
+      printFileContents: includeFiles && gpq?.printFileContents
+        ? gpq.printFileContents.toString('base64')
+        : (gpq?.printFileContents ? '[Binary Data]' : null),
+      hasGeometryFile: !!gpq?.meshFileContents,
+      hasPrintFile: !!gpq?.printFileContents
     };
 
     return NextResponse.json(response);
@@ -103,12 +103,12 @@ export async function PUT(
     }
 
     // Check if entry exists and user has access
-    const existingEntry = await prisma.printQueue.findUnique({
+    const existingEntry = await prisma.printJob.findUnique({
       where: { id },
       include: {
-        geometryProcessingQueue: {
+        designJob: {
           select: {
-            OwningOrganizationID: true
+            owningOrganizationId: true
           }
         }
       }
@@ -118,28 +118,28 @@ export async function PUT(
       return NextResponse.json({ error: 'Print queue entry not found' }, { status: 404 });
     }
 
-    if (existingEntry.geometryProcessingQueue.OwningOrganizationID !== user.organizationId) {
+    if (existingEntry.designJob.owningOrganizationId !== user.organizationId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const body = await request.json();
     const { 
-      PrintStartedTime,
-      PrintCompletedTime,
+      printStartedAt,
+      printCompletedAt,
       isPrintSuccessful,
       printNote,
       isEnabled,
-      GeometryFileContents,
-      GeometryFileName,
-      PrintFileContents,
-      PrintFileName
+      meshFileContents,
+      meshFileName,
+      printFileContents,
+      printFileName
     } = body;
 
     // Validate file size limits if files are being updated
     const maxFileSize = 10 * 1024 * 1024; // 10MB
     
-    if (GeometryFileContents) {
-      const geometryBuffer = Buffer.from(GeometryFileContents, 'base64');
+    if (meshFileContents) {
+      const geometryBuffer = Buffer.from(meshFileContents, 'base64');
       if (geometryBuffer.length > maxFileSize) {
         return NextResponse.json({ 
           error: 'Geometry file exceeds 10MB limit' 
@@ -147,8 +147,8 @@ export async function PUT(
       }
     }
     
-    if (PrintFileContents) {
-      const printBuffer = Buffer.from(PrintFileContents, 'base64');
+    if (printFileContents) {
+      const printBuffer = Buffer.from(printFileContents, 'base64');
       if (printBuffer.length > maxFileSize) {
         return NextResponse.json({ 
           error: 'Print file exceeds 10MB limit' 
@@ -159,16 +159,16 @@ export async function PUT(
     // Prepare update data - only include fields that are provided
     const updateData: any = {};
     
-    if (PrintStartedTime !== undefined) {
-      updateData.PrintStartedTime = PrintStartedTime ? new Date(PrintStartedTime) : null;
+    if (printStartedAt !== undefined) {
+      updateData.printStartedAt = printStartedAt ? new Date(printStartedAt) : null;
       // Track who started the print
-      if (PrintStartedTime) {
+      if (printStartedAt) {
         updateData.printedByUserId = session.user.id;
       }
     }
     
-    if (PrintCompletedTime !== undefined) {
-      updateData.PrintCompletedTime = PrintCompletedTime ? new Date(PrintCompletedTime) : null;
+    if (printCompletedAt !== undefined) {
+      updateData.printCompletedAt = printCompletedAt ? new Date(printCompletedAt) : null;
     }
     
     if (isPrintSuccessful !== undefined) {
@@ -183,32 +183,32 @@ export async function PUT(
       updateData.isEnabled = isEnabled;
     }
     
-    if (GeometryFileContents !== undefined) {
-      updateData.GeometryFileContents = GeometryFileContents ? Buffer.from(GeometryFileContents, 'base64') : null;
+    if (meshFileContents !== undefined) {
+      updateData.meshFileContents = meshFileContents ? Buffer.from(meshFileContents, 'base64') : null;
     }
     
-    if (GeometryFileName !== undefined) {
-      updateData.GeometryFileName = GeometryFileName;
+    if (meshFileName !== undefined) {
+      updateData.meshFileName = meshFileName;
     }
     
-    if (PrintFileContents !== undefined) {
-      updateData.PrintFileContents = PrintFileContents ? Buffer.from(PrintFileContents, 'base64') : null;
+    if (printFileContents !== undefined) {
+      updateData.printFileContents = printFileContents ? Buffer.from(printFileContents, 'base64') : null;
     }
     
-    if (PrintFileName !== undefined) {
-      updateData.PrintFileName = PrintFileName;
+    if (printFileName !== undefined) {
+      updateData.printFileName = printFileName;
     }
 
-    const updatedEntry = await prisma.printQueue.update({
+    const updatedEntry = await prisma.printJob.update({
       where: { id },
       data: updateData,
       include: {
-        geometryProcessingQueue: {
+        designJob: {
           include: {
-            geometry: {
+            design: {
               select: {
-                GeometryName: true,
-                GeometryAlgorithmName: true
+                name: true,
+                algorithmName: true
               }
             }
           }
@@ -219,13 +219,13 @@ export async function PUT(
     console.log(`Updated print queue entry ${id} by user ${session.user.id}`);
     
     // Return without binary data
-    const gpqUpdate: any = (updatedEntry as any).geometryProcessingQueue;
+    const gpqUpdate: any = (updatedEntry as any).designJob;
     const response = {
       ...updatedEntry,
-      GeometryFileContents: gpqUpdate?.GeometryFileContents ? '[Binary Data]' : null,
-      PrintFileContents: gpqUpdate?.PrintFileContents ? '[Binary Data]' : null,
-      hasGeometryFile: !!gpqUpdate?.GeometryFileContents,
-      hasPrintFile: !!gpqUpdate?.PrintFileContents
+      meshFileContents: gpqUpdate?.meshFileContents ? '[Binary Data]' : null,
+      printFileContents: gpqUpdate?.printFileContents ? '[Binary Data]' : null,
+      hasGeometryFile: !!gpqUpdate?.meshFileContents,
+      hasPrintFile: !!gpqUpdate?.printFileContents
     };
 
     return NextResponse.json(response);

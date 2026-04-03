@@ -12,29 +12,29 @@ import DeviceAuthOverlay from '@/components/DeviceAuthOverlay';
 
 interface PrintQueueEntry {
   id: string;
-  GeometryFileName?: string;
-  PrintFileName?: string;
-  PrintStartedTime?: string;
-  PrintCompletedTime?: string;
+  meshFileName?: string;
+  printFileName?: string;
+  printStartedAt?: string;
+  printCompletedAt?: string;
   isPrintSuccessful: boolean;
   printNote?: string;
   printAcceptance?: string | null;
   hasGeometryFile: boolean;
   hasPrintFile: boolean;
   progress?: number | null;
-  progressLastReportTime?: string | null;
+  progressLastReportAt?: string | null;
   logs?: string | null;
-  geometryProcessingQueue: {
+  designJob: {
     id: string;
-    objectID?: string;
-    CreationTime: string;
-    JobNote?: string;
-    JobID?: string;
-    GeometryInputParameterData: string;
-    geometry: {
-      GeometryName: string;
-      GeometryAlgorithmName: string;
-      GeometryInputParameterSchema: string;
+    objectId?: string;
+    createdAt: string;
+    jobNote?: string;
+    jobLabel?: string;
+    inputParameters: string;
+    design: {
+      name: string;
+      algorithmName: string;
+      inputParameterSchema: string;
     };
     creator: {
       id: string;
@@ -174,7 +174,7 @@ export default function PrintQueueDetailPage({
                 prev ? {
                   ...prev,
                   progress: data.progress,
-                  progressLastReportTime: data.progressLastReportTime,
+                  progressLastReportAt: data.progressLastReportAt,
                 } : null
               );
             }
@@ -223,13 +223,13 @@ export default function PrintQueueDetailPage({
   };
 
   const getStatusBadge = (entry: PrintQueueEntry) => {
-    if (entry.PrintCompletedTime && entry.isPrintSuccessful) {
+    if (entry.printCompletedAt && entry.isPrintSuccessful) {
       return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">Print Successful</span>;
     }
-    if (entry.PrintCompletedTime && !entry.isPrintSuccessful) {
+    if (entry.printCompletedAt && !entry.isPrintSuccessful) {
       return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-red-100 text-red-800">Print Failed</span>;
     }
-    if (entry.PrintStartedTime) {
+    if (entry.printStartedAt) {
       const progressText = entry.progress != null ? ` ${entry.progress.toFixed(1)}%` : '';
       return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">Printing{progressText}</span>;
     }
@@ -265,13 +265,13 @@ export default function PrintQueueDetailPage({
 
       // Get the print queue ID and geometry processing queue ID
       const printQueueId = entry.id;
-      const geometryJobId = entry.geometryProcessingQueue.id;
+      const geometryJobId = entry.designJob.id;
       
       // Get session cookie for authentication
       const sessionCookie = document.cookie;
       
       // Generate a job name from the geometry and customer info
-      const jobName = `${entry.geometryProcessingQueue.geometry.GeometryName.replace(/\s+/g, '_')}_${entry.geometryProcessingQueue.JobID || 'job'}`;
+      const jobName = `${entry.designJob.design.name.replace(/\s+/g, '_')}_${entry.designJob.jobLabel || 'job'}`;
 
       // Call the Electron API to print
       const electronAPI = (window as any).electronAPI;
@@ -293,7 +293,7 @@ export default function PrintQueueDetailPage({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          PrintStartedTime: new Date().toISOString(),
+          printStartedAt: new Date().toISOString(),
         }),
       });
 
@@ -374,7 +374,7 @@ export default function PrintQueueDetailPage({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          PrintStartedTime: new Date().toISOString(),
+          printStartedAt: new Date().toISOString(),
         }),
       });
 
@@ -405,7 +405,7 @@ export default function PrintQueueDetailPage({
         },
         body: JSON.stringify({
           isPrintSuccessful: true,
-          PrintCompletedTime: new Date().toISOString(),
+          printCompletedAt: new Date().toISOString(),
         }),
       });
 
@@ -436,7 +436,7 @@ export default function PrintQueueDetailPage({
         },
         body: JSON.stringify({
           isPrintSuccessful: false,
-          PrintCompletedTime: new Date().toISOString(),
+          printCompletedAt: new Date().toISOString(),
         }),
       });
 
@@ -549,8 +549,8 @@ export default function PrintQueueDetailPage({
     return null;
   }
 
-  const parameterData = parseParameterData(entry.geometryProcessingQueue.GeometryInputParameterData);
-  const parameterSchema = parseParameterSchema(entry.geometryProcessingQueue.geometry.GeometryInputParameterSchema);
+  const parameterData = parseParameterData(entry.designJob.inputParameters);
+  const parameterSchema = parseParameterSchema(entry.designJob.design.inputParameterSchema);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -600,7 +600,7 @@ export default function PrintQueueDetailPage({
             </div>
             <div className="px-6 py-4">
               <div className="flex flex-wrap gap-3">
-                {!entry.PrintStartedTime && entry.hasPrintFile && (
+                {!entry.printStartedAt && entry.hasPrintFile && (
                   <div className="relative group">
                     <button
                       onClick={() => isElectronClient ? handlePrint() : null}
@@ -625,7 +625,7 @@ export default function PrintQueueDetailPage({
                   </div>
                 )}
                 
-                {entry.PrintStartedTime && !entry.PrintCompletedTime && (
+                {entry.printStartedAt && !entry.printCompletedAt && (
                   <>
                     <button
                       onClick={handleMarkSuccessful}
@@ -644,7 +644,7 @@ export default function PrintQueueDetailPage({
                   </>
                 )}
 
-                {entry.PrintCompletedTime && !entry.isPrintSuccessful && (
+                {entry.printCompletedAt && !entry.isPrintSuccessful && (
                   <button
                     onClick={handleMarkSuccessful}
                     disabled={updating}
@@ -659,7 +659,7 @@ export default function PrintQueueDetailPage({
                     <button
                       onClick={() => setAcceptanceModal({
                         printId: entry.id,
-                        geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
+                        geometryName: entry.designJob.design.name,
                       })}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
                       title="Review print quality"
@@ -671,7 +671,7 @@ export default function PrintQueueDetailPage({
                 <button
                   onClick={() => setDeleteModal({
                     printId: entry.id,
-                    geometryName: entry.geometryProcessingQueue.geometry.GeometryName,
+                    geometryName: entry.designJob.design.name,
                   })}
                   disabled={updating}
                   className="action-delete bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
@@ -681,7 +681,7 @@ export default function PrintQueueDetailPage({
               </div>
               
               {/* Progress Bar and Info */}
-              {entry.PrintStartedTime && !entry.PrintCompletedTime && (
+              {entry.printStartedAt && !entry.printCompletedAt && (
                 <div className="mt-6 border-t border-gray-200 pt-4">
                   {entry.progress != null && (
                     <div className="print-progress-section">
@@ -698,11 +698,11 @@ export default function PrintQueueDetailPage({
                     </div>
                   )}
                   
-                  {entry.progressLastReportTime && (
+                  {entry.progressLastReportAt && (
                     <div className="last-updated-time mt-3 text-sm text-gray-600">
-                      Last updated: <span className="timestamp">{formatDate(entry.progressLastReportTime)}</span>
+                      Last updated: <span className="timestamp">{formatDate(entry.progressLastReportAt)}</span>
                       {(() => {
-                        const lastUpdate = new Date(entry.progressLastReportTime);
+                        const lastUpdate = new Date(entry.progressLastReportAt);
                         const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
                         
                         if (minutesAgo < 1) {
@@ -717,7 +717,7 @@ export default function PrintQueueDetailPage({
                     </div>
                   )}
                   
-                  {!entry.progress && !entry.progressLastReportTime && (
+                  {!entry.progress && !entry.progressLastReportAt && (
                     <div className="text-sm text-gray-500 italic">
                       Waiting for progress updates from printer...
                     </div>
@@ -738,16 +738,16 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-gray-500">IDs</dt>
                   <dd className="mt-1">
                     <div className="text-xs text-gray-500">Object:</div>
-                    <div className="text-sm font-mono font-semibold text-blue-600">{entry.geometryProcessingQueue.objectID || 'N/A'}</div>
+                    <div className="text-sm font-mono font-semibold text-blue-600">{entry.designJob.objectId || 'N/A'}</div>
                     <div className="text-xs text-gray-500 mt-2">Job:</div>
-                    <div className="text-sm text-gray-900">{entry.geometryProcessingQueue.JobID || 'N/A'}</div>
+                    <div className="text-sm text-gray-900">{entry.designJob.jobLabel || 'N/A'}</div>
                   </dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Type</dt>
                   <dd className="mt-1">
-                    <div className="text-sm font-medium text-gray-900">{entry.geometryProcessingQueue.geometry.GeometryName}</div>
-                    <div className="text-xs text-gray-500">{entry.geometryProcessingQueue.geometry.GeometryAlgorithmName}</div>
+                    <div className="text-sm font-medium text-gray-900">{entry.designJob.design.name}</div>
+                    <div className="text-xs text-gray-500">{entry.designJob.design.algorithmName}</div>
                   </dd>
                 </div>
                 <div>
@@ -758,29 +758,29 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-gray-500">Geometry Job ID</dt>
                   <dd className="geometry-job-id mt-1 text-sm text-gray-900 font-mono">
                     <Link 
-                      href={`/geometry-jobs/${entry.geometryProcessingQueue.id}`}
+                      href={`/design-jobs/${entry.designJob.id}`}
                       className="text-blue-600 hover:text-blue-500"
                     >
-                      {entry.geometryProcessingQueue.id}
+                      {entry.designJob.id}
                     </Link>
                   </dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Geometry Created</dt>
-                  <dd className="geometry-creation-time mt-1 text-sm text-gray-900">{formatDate(entry.geometryProcessingQueue.CreationTime)}</dd>
+                  <dd className="geometry-creation-time mt-1 text-sm text-gray-900">{formatDate(entry.designJob.createdAt)}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Created By</dt>
-                  <dd className="creator-name mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.creator.name || entry.geometryProcessingQueue.creator.email}</dd>
+                  <dd className="creator-name mt-1 text-sm text-gray-900">{entry.designJob.creator.name || entry.designJob.creator.email}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Organization</dt>
-                  <dd className="organization-name mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.owningOrganization.name}</dd>
+                  <dd className="organization-name mt-1 text-sm text-gray-900">{entry.designJob.owningOrganization.name}</dd>
                 </div>
-                {entry.geometryProcessingQueue.JobNote && (
+                {entry.designJob.jobNote && (
                   <div className="md:col-span-2">
                     <dt className="text-sm font-medium text-gray-500">Job Note</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.JobNote}</dd>
+                    <dd className="mt-1 text-sm text-gray-900">{entry.designJob.jobNote}</dd>
                   </div>
                 )}
               </dl>
@@ -797,7 +797,7 @@ export default function PrintQueueDetailPage({
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Print Started</dt>
                   <dd className="print-started-time mt-1 text-sm text-gray-900">
-                    {entry.PrintStartedTime ? formatDate(entry.PrintStartedTime) : (
+                    {entry.printStartedAt ? formatDate(entry.printStartedAt) : (
                       <span className="text-gray-400 italic">Not started</span>
                     )}
                   </dd>
@@ -805,7 +805,7 @@ export default function PrintQueueDetailPage({
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Print Completed</dt>
                   <dd className="print-completed-time mt-1 text-sm text-gray-900">
-                    {entry.PrintCompletedTime ? formatDate(entry.PrintCompletedTime) : (
+                    {entry.printCompletedAt ? formatDate(entry.printCompletedAt) : (
                       <span className="text-gray-400 italic">In progress</span>
                     )}
                   </dd>
@@ -823,11 +823,11 @@ export default function PrintQueueDetailPage({
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Last Progress Update</dt>
                   <dd className="progress-last-report-time mt-1 text-sm text-gray-900">
-                    {entry.progressLastReportTime ? (
+                    {entry.progressLastReportAt ? (
                       <>
-                        {formatDate(entry.progressLastReportTime)}
+                        {formatDate(entry.progressLastReportAt)}
                         {(() => {
-                          const lastUpdate = new Date(entry.progressLastReportTime);
+                          const lastUpdate = new Date(entry.progressLastReportAt);
                           const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
                           
                           if (minutesAgo < 1) {
@@ -849,7 +849,7 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-gray-500">Print Status</dt>
                   <dd className="is-print-successful mt-1 text-sm">
                     <div className="flex flex-wrap gap-2">
-                      {entry.PrintCompletedTime ? (
+                      {entry.printCompletedAt ? (
                         entry.isPrintSuccessful ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             ✓ Successful
@@ -859,7 +859,7 @@ export default function PrintQueueDetailPage({
                             ✗ Failed
                           </span>
                         )
-                      ) : entry.PrintStartedTime ? (
+                      ) : entry.printStartedAt ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                           ⟳ In Progress
                         </span>
@@ -911,8 +911,8 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-gray-500">Geometry File (3MF)</dt>
                   <dd className="mt-1 text-sm text-gray-900">
                     {entry.hasGeometryFile ? (
-                      <span className="geometry-filename file-status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {entry.GeometryFileName || 'geometry.3mf'}
+                      <span className="mesh-filename file-status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {entry.meshFileName || 'geometry.3mf'}
                       </span>
                     ) : (
                       <span className="text-gray-500">Not available</span>
@@ -924,7 +924,7 @@ export default function PrintQueueDetailPage({
                   <dd className="mt-1 text-sm text-gray-900">
                     {entry.hasPrintFile ? (
                       <span className="print-filename file-status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {entry.PrintFileName || 'print.gcode'}
+                        {entry.printFileName || 'print.gcode'}
                       </span>
                     ) : (
                       <span className="text-gray-500">Not available</span>
@@ -944,11 +944,11 @@ export default function PrintQueueDetailPage({
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Job ID</dt>
-                  <dd className="job-id mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.JobID || 'Not specified'}</dd>
+                  <dd className="job-id mt-1 text-sm text-gray-900">{entry.designJob.jobLabel || 'Not specified'}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Job Note</dt>
-                  <dd className="job-note mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.JobNote || 'No note provided'}</dd>
+                  <dd className="job-note mt-1 text-sm text-gray-900">{entry.designJob.jobNote || 'No note provided'}</dd>
                 </div>
               </dl>
             </div>
@@ -963,11 +963,11 @@ export default function PrintQueueDetailPage({
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Geometry Name</dt>
-                  <dd className="geometry-name mt-1 text-sm text-gray-900">{entry.geometryProcessingQueue.geometry.GeometryName}</dd>
+                  <dd className="geometry-name mt-1 text-sm text-gray-900">{entry.designJob.design.name}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Algorithm</dt>
-                  <dd className="geometry-algorithm mt-1 text-sm text-gray-900 font-mono">{entry.geometryProcessingQueue.geometry.GeometryAlgorithmName}</dd>
+                  <dd className="geometry-algorithm mt-1 text-sm text-gray-900 font-mono">{entry.designJob.design.algorithmName}</dd>
                 </div>
               </dl>
 

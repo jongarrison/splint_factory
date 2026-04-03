@@ -17,7 +17,7 @@ interface OrgDetail {
 
 interface GeometrySummary {
   id: string;
-  GeometryName: string;
+  name: string;
   shortDescription: string | null;
   isActive: boolean;
 }
@@ -61,7 +61,7 @@ export default function OrganizationDetailPage({
     try {
       const [orgRes, geoRes, visRes] = await Promise.all([
         fetch(`/api/organizations/${orgId}`),
-        fetch('/api/named-geometry?all=true'),
+        fetch('/api/admin/design-definitions?all=true'),
         fetch(`/api/organizations/${orgId}/geometries`),
       ]);
 
@@ -80,7 +80,7 @@ export default function OrganizationDetailPage({
       setOrgScreenLockTimeout(orgData.screenLockTimeoutMinutes);
       setAllGeometries(
         geoData
-          .sort((a, b) => a.GeometryName.localeCompare(b.GeometryName))
+          .sort((a, b) => a.name.localeCompare(b.name))
       );
       setSelectedIds(new Set(visData));
       setSavedIds(new Set(visData));
@@ -361,7 +361,7 @@ export default function OrganizationDetailPage({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {geo.GeometryName}
+                        {geo.name}
                       </span>
                       {!geo.isActive && (
                         <span className="inline-flex px-1.5 py-0.5 text-xs font-semibold rounded bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">

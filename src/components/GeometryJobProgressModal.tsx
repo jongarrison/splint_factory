@@ -7,12 +7,12 @@ import StlViewer from '@/components/StlViewer';
 
 interface GeometryJob {
   id: string;
-  objectID?: string;
-  ProcessStartedTime?: string;
-  ProcessCompletedTime?: string;
+  objectId?: string;
+  processStartedAt?: string;
+  processCompletedAt?: string;
   isProcessSuccessful: boolean;
-  geometry: {
-    GeometryName: string;
+  design: {
+    name: string;
   };
 }
 
@@ -30,14 +30,14 @@ export default function GeometryJobProgressModal({ jobId, onClose }: GeometryJob
     data: job, 
     isLoading,
     error 
-  } = useSmartPolling<GeometryJob>(`/api/geometry-jobs/${jobId}`, {
+  } = useSmartPolling<GeometryJob>(`/api/design-jobs/${jobId}`, {
     fastInterval: 2000, // Poll every 2 seconds
     enabled: true
   });
 
   // Check if job is complete
   useEffect(() => {
-    if (job?.ProcessCompletedTime) {
+    if (job?.processCompletedAt) {
       if (job.isProcessSuccessful) {
         setShowSuccess(true);
       }
@@ -47,7 +47,7 @@ export default function GeometryJobProgressModal({ jobId, onClose }: GeometryJob
 
   const handleDismiss = () => {
     // Navigate to the specific geometry job view page
-    router.push(`/geometry-jobs/${jobId}`);
+    router.push(`/design-jobs/${jobId}`);
     onClose();
   };
 
@@ -84,29 +84,29 @@ export default function GeometryJobProgressModal({ jobId, onClose }: GeometryJob
       };
     }
 
-    if (job.ProcessCompletedTime && job.isProcessSuccessful) {
+    if (job.processCompletedAt && job.isProcessSuccessful) {
       return {
         icon: '✅',
         title: 'Processing Complete!',
-        message: `${job.geometry.GeometryName} has been successfully processed and is ready to print.`,
+        message: `${job.design.name} has been successfully processed and is ready to print.`,
         color: 'text-green-600'
       };
     }
 
-    if (job.ProcessCompletedTime && !job.isProcessSuccessful) {
+    if (job.processCompletedAt && !job.isProcessSuccessful) {
       return {
         icon: '❌',
         title: 'Processing Failed',
-        message: `${job.geometry.GeometryName} processing encountered an error. View details for more information.`,
+        message: `${job.design.name} processing encountered an error. View details for more information.`,
         color: 'text-red-600'
       };
     }
 
-    if (job.ProcessStartedTime) {
+    if (job.processStartedAt) {
       return {
         icon: '⚙️',
         title: 'Processing Geometry...',
-        message: `Processing ${job.geometry.GeometryName}. This may take a few moments.`,
+        message: `Processing ${job.design.name}. This may take a few moments.`,
         color: 'text-yellow-600'
       };
     }
@@ -114,13 +114,13 @@ export default function GeometryJobProgressModal({ jobId, onClose }: GeometryJob
     return {
       icon: '📋',
       title: 'Job Queued',
-      message: `${job.geometry.GeometryName} is waiting to be processed.`,
+      message: `${job.design.name} is waiting to be processed.`,
       color: 'text-blue-600'
     };
   };
 
   const status = getStatusDisplay();
-  const isComplete = job?.ProcessCompletedTime !== undefined;
+  const isComplete = job?.processCompletedAt !== undefined;
   const isSuccess = job?.isProcessSuccessful === true;
 
   return (
@@ -148,11 +148,11 @@ export default function GeometryJobProgressModal({ jobId, onClose }: GeometryJob
           <p className="text-gray-600 dark:text-gray-300">
             {status.message}
           </p>
-          {job?.objectID && (
+          {job?.objectId && (
             <div className="mt-4 inline-block bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg">
               <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Object ID</div>
               <div className="text-2xl font-mono font-bold text-blue-600 dark:text-blue-400">
-                {job.objectID}
+                {job.objectId}
               </div>
             </div>
           )}
@@ -166,7 +166,7 @@ export default function GeometryJobProgressModal({ jobId, onClose }: GeometryJob
             </h3>
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
               <StlViewer
-                url={`/api/geometry-jobs/${jobId}/geometry-file`}
+                url={`/api/design-jobs/${jobId}/mesh-file`}
                 width="100%"
                 height={400}
               />

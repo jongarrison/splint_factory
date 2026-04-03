@@ -1,0 +1,314 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { validateApiKey, checkApiPermission } from '@/lib/api-auth';
+import { getBlobStorageInstance } from '@/lib/blob-storage';
+
+// POST /api/design-processing/result - Report geometry processing result from external software
+export async function POST(request: NextRequest) {
+  try {
+    // Try API key authentication first
+    const apiAuth = await validateApiKey(request);
+    
+    if (apiAuth.success) {
+      // Validate API key has required permission
+      if (!checkApiPermission(apiAuth.apiKey, 'geometry-queue:write')) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      }
+      console.log(`API key access: ${apiAuth.apiKey?.name} reporting processing result`);
+    } else {
+      // Fall back to session authentication
+      const session = await auth();
+      
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    }
+
+    // Handle three formats: JSON with blob URLs, multipart with files, or legacy JSON with base64
+    const contentType = request.headers.get('content-type') || '';
+    let designJobId: string;
+    let isSuccess: boolean;
+    let errorMessage: string | undefined;
+    let processingLog: string | undefined;
+    let meshFileContents: string | undefined;
+    let meshFileName: string | undefined;
+    let printFileContents: string | undefined;
+    let printFileName: string | undefined;
+    let geometryFile: File | undefined;
+    let printFile: File | undefined;
+    let geometryBlobUrl: string | undefined;
+    let geometryBlobPathname: string | undefined;
+    let printBlobUrl: string | undefined;
+    let printBlobPathname: string | undefined;
+    let meshMetadata: string | undefined;
+
+    if (contentType.includes('multipart/form-data')) {
+      // Format 1: multipart with actual files (for small files or backward compatibility)
+      const formData = await request.formData();
+      designJobId = formData.get('designJobId') as string;
+      isSuccess = formData.get('isSuccess') === 'true';
+      errorMessage = formData.get('errorMessage') as string | undefined;
+      processingLog = formData.get('processingLog') as string | undefined;
+      geometryFile = formData.get('geometryFile') as File | undefined;
+      printFile = formData.get('printFile') as File | undefined;
+      meshFileName = geometryFile?.name;
+      printFileName = printFile?.name;
+    } else {
+      // Format 2 & 3: JSON (either with blob URLs or legacy base64)
+      const body = await request.json();
+      designJobId = body.designJobId;
+      isSuccess = body.isSuccess;
+      errorMessage = body.errorMessage;
+      processingLog = body.processingLog;
+      meshMetadata = body.meshMetadata;
+      
+      // Check for blob URL format (preferred)
+      geometryBlobUrl = body.geometryBlobUrl;
+      geometryBlobPathname = body.geometryBlobPathname;
+      printBlobUrl = body.printBlobUrl;
+      printBlobPathname = body.printBlobPathname;
+      meshFileName = body.meshFileName;
+      printFileName = body.printFileName;
+      
+      // Legacy base64 format (fallback)
+      meshFileContents = body.meshFileContents;
+      printFileContents = body.printFileContents;
+    }
+
+    // Validate required fields
+    if (!designJobId || isSuccess === undefined) {
+      return NextResponse.json({ 
+        error: 'designJobId and isSuccess are required' 
+      }, { status: 400 });
+    }
+
+    // Validate that geometry processing queue entry exists
+    const geometryJob = await prisma.designJob.findUnique({
+      where: { id: designJobId },
+      select: {
+        id: true,
+        processStartedAt: true,
+        isProcessSuccessful: true
+      }
+    });
+
+    if (!geometryJob) {
+      return NextResponse.json({ 
+        error: 'Geometry processing queue entry not found' 
+      }, { status: 404 });
+    }
+
+    // Validate that the job was actually started (has processStartedAt)
+    if (!geometryJob.processStartedAt) {
+      return NextResponse.json({ 
+        error: 'Job has not been started yet' 
+      }, { status: 400 });
+    }
+
+    // Validate file size limits (500MB for blob storage, 10MB for legacy base64)
+    const maxFileSize = 500 * 1024 * 1024; // 500MB for blob storage
+    const maxLegacyFileSize = 10 * 1024 * 1024; // 10MB for base64 (legacy)
+    const maxFileNameLen = 255;
+    const invalidName = /[\\/]/; // prevent path traversal
+    
+    // Validate multipart files
+    if (geometryFile) {
+      if (geometryFile.size > maxFileSize) {
+        return NextResponse.json({ 
+          error: 'Geometry file exceeds 500MB limit' 
+        }, { status: 400 });
+      }
+    }
+    
+    if (printFile) {
+      if (printFile.size > maxFileSize) {
+        return NextResponse.json({ 
+          error: 'Print file exceeds 500MB limit' 
+        }, { status: 400 });
+      }
+    }
+    
+    // Validate legacy base64 files
+    if (meshFileContents) {
+      try {
+        const geometryBuffer = Buffer.from(meshFileContents, 'base64');
+        if (geometryBuffer.length > maxLegacyFileSize) {
+          return NextResponse.json({ 
+            error: 'Geometry file exceeds 10MB limit (use multipart upload for larger files)' 
+          }, { status: 400 });
+        }
+      } catch (e) {
+        return NextResponse.json({ 
+          error: 'Invalid base64 encoding for geometry file' 
+        }, { status: 400 });
+      }
+    }
+    
+    if (printFileContents) {
+      try {
+        const printBuffer = Buffer.from(printFileContents, 'base64');
+        if (printBuffer.length > maxLegacyFileSize) {
+          return NextResponse.json({ 
+            error: 'Print file exceeds 10MB limit (use multipart upload for larger files)' 
+          }, { status: 400 });
+        }
+      } catch (e) {
+        return NextResponse.json({ 
+          error: 'Invalid base64 encoding for print file' 
+        }, { status: 400 });
+      }
+    }
+
+    // Validate filenames (length and path traversal chars)
+    if (meshFileName && (meshFileName.length > maxFileNameLen || invalidName.test(meshFileName))) {
+      return NextResponse.json({ error: 'Invalid meshFileName' }, { status: 400 });
+    }
+    if (printFileName && (printFileName.length > maxFileNameLen || invalidName.test(printFileName))) {
+      return NextResponse.json({ error: 'Invalid printFileName' }, { status: 400 });
+    }
+
+    // Validate processingLog size (limit to 100KB)
+    const maxLogSize = 100 * 1024; // 100KB
+    if (processingLog && typeof processingLog === 'string' && processingLog.length > maxLogSize) {
+      return NextResponse.json({ error: 'Processing log exceeds 100KB limit' }, { status: 400 });
+    }
+
+    const currentTime = new Date();
+
+    // Upload files to blob storage if provided as multipart files
+    const blobStorage = getBlobStorageInstance();
+    let geometryBlobResult: { url: string; pathname: string; size: number; contentType: string } | undefined;
+    let printBlobResult: { url: string; pathname: string; size: number; contentType: string } | undefined;
+
+    if (geometryFile) {
+      const geometryBuffer = Buffer.from(await geometryFile.arrayBuffer());
+      geometryBlobResult = await blobStorage.upload(geometryBuffer, geometryFile.name);
+      console.log(`Uploaded geometry file to blob storage: ${geometryBlobResult.pathname} (${geometryBlobResult.size} bytes)`);
+    }
+
+    if (printFile) {
+      const printBuffer = Buffer.from(await printFile.arrayBuffer());
+      printBlobResult = await blobStorage.upload(printBuffer, printFile.name);
+      console.log(`Uploaded print file to blob storage: ${printBlobResult.pathname} (${printBlobResult.size} bytes)`);
+    }
+
+    // Or use blob URLs if provided (preferred for large files)
+    if (geometryBlobUrl && geometryBlobPathname) {
+      geometryBlobResult = {
+        url: geometryBlobUrl,
+        pathname: geometryBlobPathname,
+        size: 0, // Size not needed for pre-uploaded blobs
+        contentType: '',
+      };
+      console.log(`Using pre-uploaded geometry file: ${geometryBlobPathname}`);
+    }
+
+    if (printBlobUrl && printBlobPathname) {
+      printBlobResult = {
+        url: printBlobUrl,
+        pathname: printBlobPathname,
+        size: 0,
+        contentType: '',
+      };
+      console.log(`Using pre-uploaded print file: ${printBlobPathname}`);
+    }
+
+    // Start transaction to update geometry processing queue and create print queue entry if successful
+    const result = await prisma.$transaction(async (tx) => {
+      // Prepare update data
+      const updateData: any = {
+        processCompletedAt: currentTime,
+        isProcessSuccessful: isSuccess,
+        processingLog: processingLog ?? undefined,
+        meshMetadata: meshMetadata ?? undefined,
+      };
+
+      // Handle blob storage (new format)
+      if (geometryBlobResult) {
+        updateData.meshBlobUrl = geometryBlobResult.url;
+        updateData.meshBlobPathname = geometryBlobResult.pathname;
+        updateData.meshFileName = meshFileName;
+      }
+      if (printBlobResult) {
+        updateData.printBlobUrl = printBlobResult.url;
+        updateData.printBlobPathname = printBlobResult.pathname;
+        updateData.printFileName = printFileName;
+      }
+
+      // Handle legacy base64 format (fallback)
+      if (meshFileContents && !geometryBlobResult) {
+        updateData.meshFileContents = Buffer.from(meshFileContents, 'base64');
+        updateData.meshFileName = meshFileName;
+      }
+      if (printFileContents && !printBlobResult) {
+        updateData.printFileContents = Buffer.from(printFileContents, 'base64');
+        updateData.printFileName = printFileName;
+      }
+
+      // Update the geometry processing queue entry
+      const updatedGeometryJob = await tx.designJob.update({
+        where: { id: designJobId },
+        data: updateData,
+        include: {
+          design: {
+            select: {
+              name: true,
+              algorithmName: true
+            }
+          }
+        }
+      });
+
+      let printQueueEntry = null;
+
+      // If processing was successful, create print queue entry referencing this job
+      if (isSuccess) {
+        printQueueEntry = await tx.printJob.create({
+          data: {
+            designJobId
+          }
+        });
+      }
+
+      return { updatedGeometryJob, printQueueEntry };
+    });
+
+    const logMessage = result.updatedGeometryJob.isProcessSuccessful 
+      ? `Successfully processed geometry job ${designJobId} (${result.updatedGeometryJob.design.name})`
+      : `Failed to process geometry job ${designJobId} (${result.updatedGeometryJob.design.name}): ${errorMessage || 'No error message provided'}`;
+    
+    console.log(logMessage);
+    
+    // Log error message if processing failed
+    if (!isSuccess && errorMessage) {
+      console.error(`Geometry processing error for job ${designJobId}: ${errorMessage}`);
+    }
+
+    const response: any = {
+      message: 'Processing result recorded successfully',
+      geometryJob: {
+        id: result.updatedGeometryJob.id,
+        processCompletedAt: result.updatedGeometryJob.processCompletedAt,
+        isProcessSuccessful: result.updatedGeometryJob.isProcessSuccessful
+      }
+    };
+
+    if (result.printQueueEntry) {
+      response.printQueueEntry = {
+        id: result.printQueueEntry.id,
+        hasGeometryFile: !!(geometryFile || meshFileContents),
+        hasPrintFile: !!(printFile || printFileContents),
+        meshFileName: meshFileName || null,
+        printFileName: printFileName || null,
+        usedBlobStorage: !!(geometryBlobResult || printBlobResult)
+      };
+    }
+
+    return NextResponse.json(response, { status: 201 });
+
+  } catch (error) {
+    console.error('Error recording geometry processing result:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

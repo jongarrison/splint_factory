@@ -37,25 +37,25 @@ export async function GET(
     }
 
     // Fetch all designs that have prints for this org, with their print records
-    const designs = await prisma.namedGeometry.findMany({
+    const designs = await prisma.design.findMany({
       where: {
-        geometryJobs: {
+        designJobs: {
           some: {
-            OwningOrganizationID: id,
-            printQueue: { some: {} },
+            owningOrganizationId: id,
+            printJobs: { some: {} },
           },
         },
       },
       select: {
         id: true,
-        GeometryName: true,
-        geometryJobs: {
+        name: true,
+        designJobs: {
           where: {
-            OwningOrganizationID: id,
-            printQueue: { some: {} },
+            owningOrganizationId: id,
+            printJobs: { some: {} },
           },
           select: {
-            printQueue: {
+            printJobs: {
               select: {
                 printAcceptance: true,
               },
@@ -63,7 +63,7 @@ export async function GET(
           },
         },
       },
-      orderBy: { GeometryName: 'asc' },
+      orderBy: { name: 'asc' },
     });
 
     // Aggregate counts per design
@@ -74,8 +74,8 @@ export async function GET(
       let rejectPrintCount = 0;
       let rejectedLegacyCount = 0;
 
-      for (const job of design.geometryJobs) {
-        for (const pq of job.printQueue) {
+      for (const job of design.designJobs) {
+        for (const pq of job.printJobs) {
           printCount++;
           if (pq.printAcceptance === 'ACCEPTED') {
             acceptedCount++;
@@ -90,7 +90,7 @@ export async function GET(
       }
 
       return {
-        designName: design.GeometryName,
+        designName: design.name,
         printCount,
         acceptedCount,
         rejectDesignCount,

@@ -22,7 +22,7 @@ export async function PUT(
     }
 
     // Update the print queue record with logs
-    const updated = await prisma.printQueue.update({
+    const updated = await prisma.printJob.update({
       where: { id },
       data: { logs }
     });

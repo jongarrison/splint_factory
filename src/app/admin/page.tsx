@@ -38,14 +38,14 @@ interface Metrics {
 
 interface Job {
   id: string;
-  CreationTime: string;
-  ProcessStartedTime?: string;
-  ProcessCompletedTime?: string;
+  createdAt: string;
+  processStartedAt?: string;
+  processCompletedAt?: string;
   isProcessSuccessful?: boolean;
   isDebugRequest?: boolean;
-  objectID: string | null;
-  geometry: {
-    GeometryName: string;
+  objectId: string | null;
+  design: {
+    name: string;
   };
 }
 
@@ -139,8 +139,8 @@ export default function SystemStatusPage() {
         const data = await response.json();
         throw new Error(data.error || 'Failed to create health check job');
       }
-      const { id: jobId, objectID } = await response.json();
-      setHealthCheckResult(`Waiting for processor to complete job ${objectID}...`);
+      const { id: jobId, objectId } = await response.json();
+      setHealthCheckResult(`Waiting for processor to complete job ${objectId}...`);
 
       // Poll for completion (5s interval, 5 min max)
       const maxWaitMs = 5 * 60 * 1000;
@@ -163,24 +163,24 @@ export default function SystemStatusPage() {
         ];
         const ourJob = allJobs.find((j: Job) => j.id === jobId);
 
-        if (ourJob?.ProcessCompletedTime) {
+        if (ourJob?.processCompletedAt) {
           const elapsed = Math.round((Date.now() - startTime) / 1000);
           if (ourJob.isProcessSuccessful) {
-            setHealthCheckResult(`Processor OK - job ${objectID} completed in ${elapsed}s`);
+            setHealthCheckResult(`Processor OK - job ${objectId} completed in ${elapsed}s`);
           } else {
-            setHealthCheckResult(`Processor FAILED - job ${objectID} failed after ${elapsed}s`);
+            setHealthCheckResult(`Processor FAILED - job ${objectId} failed after ${elapsed}s`);
           }
           setHealthCheckLoading(false);
           return;
         }
 
         // Update status message based on job state
-        if (ourJob?.ProcessStartedTime) {
-          setHealthCheckResult(`Processing job ${objectID}...`);
+        if (ourJob?.processStartedAt) {
+          setHealthCheckResult(`Processing job ${objectId}...`);
         }
       }
 
-      setHealthCheckResult(`Timed out waiting for job ${objectID} to complete (5 min)`);
+      setHealthCheckResult(`Timed out waiting for job ${objectId} to complete (5 min)`);
     } catch (err) {
       setHealthCheckResult(err instanceof Error ? err.message : 'Failed to create health check job');
     } finally {
@@ -491,10 +491,10 @@ export default function SystemStatusPage() {
                       {queueData.queues.neverStarted.map((job) => (
                         <tr key={job.id} className="hover:bg-gray-50">
                           <td className="px-3 py-2 text-sm">
-                            {job.objectID || job.id.slice(0, 8)}
+                            {job.objectId || job.id.slice(0, 8)}
                             {job.isDebugRequest && <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700">Test</span>}
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-500">{getTimeDiff(job.CreationTime)}</td>
+                          <td className="px-3 py-2 text-sm text-gray-500">{getTimeDiff(job.createdAt)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -519,11 +519,11 @@ export default function SystemStatusPage() {
                       {queueData.queues.stuckJobs.map((job) => (
                         <tr key={job.id} className="hover:bg-gray-50">
                           <td className="px-3 py-2 text-sm">
-                            {job.objectID || job.id.slice(0, 8)}
+                            {job.objectId || job.id.slice(0, 8)}
                             {job.isDebugRequest && <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700">Test</span>}
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-500">
-                            {job.ProcessStartedTime ? getTimeDiff(job.ProcessStartedTime) : 'N/A'}
+                            {job.processStartedAt ? getTimeDiff(job.processStartedAt) : 'N/A'}
                           </td>
                         </tr>
                       ))}
@@ -549,11 +549,11 @@ export default function SystemStatusPage() {
                       {queueData.queues.processing.map((job) => (
                         <tr key={job.id} className="hover:bg-gray-50">
                           <td className="px-3 py-2 text-sm">
-                            {job.objectID || job.id.slice(0, 8)}
+                            {job.objectId || job.id.slice(0, 8)}
                             {job.isDebugRequest && <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700">Test</span>}
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-500">
-                            {job.ProcessStartedTime ? getTimeDiff(job.ProcessStartedTime) : 'N/A'}
+                            {job.processStartedAt ? getTimeDiff(job.processStartedAt) : 'N/A'}
                           </td>
                         </tr>
                       ))}
@@ -580,7 +580,7 @@ export default function SystemStatusPage() {
                       {queueData.queues.recentlyCompleted.map((job) => (
                         <tr key={job.id} className="hover:bg-gray-50">
                           <td className="px-3 py-2 text-sm">
-                            {job.objectID || job.id.slice(0, 8)}
+                            {job.objectId || job.id.slice(0, 8)}
                             {job.isDebugRequest && <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700">Test</span>}
                           </td>
                           <td className="px-3 py-2 text-sm">
@@ -589,7 +589,7 @@ export default function SystemStatusPage() {
                             </span>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-500">
-                            {job.ProcessCompletedTime ? getTimeDiff(job.ProcessCompletedTime) : 'N/A'}
+                            {job.processCompletedAt ? getTimeDiff(job.processCompletedAt) : 'N/A'}
                           </td>
                         </tr>
                       ))}

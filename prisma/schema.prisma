@@ -25,11 +25,11 @@ model Organization {
   createdAt                 DateTime                  @default(now())
   updatedAt                 DateTime                  @updatedAt
   apiKeys         ApiKey[]
-  geometryJobs    GeometryProcessingQueue[]
+  designJobs      DesignJob[]
   invitationLinks InvitationLink[]
   users           User[]
-  visibleGeometries OrganizationGeometry[]
-  clientDevices    ClientDevice[]
+  visibleDesigns  OrganizationDesign[]
+  clientDevices   ClientDevice[]
 }
 
 model User {
@@ -46,10 +46,10 @@ model User {
   createdAt            DateTime                  @default(now())
   updatedAt            DateTime                  @updatedAt
   createdApiKeys       ApiKey[]                  @relation("CreatedApiKeys")
-  createdGeometryJobs  GeometryProcessingQueue[] @relation("CreatedGeometryJobs")
+  createdDesignJobs    DesignJob[]               @relation("CreatedDesignJobs")
   usedInvitation       InvitationLink?           @relation("InvitationUsage")
   createdInvitations   InvitationLink[]          @relation("InvitationCreator")
-  createdGeometries    NamedGeometry[]
+  createdDesigns       Design[]
   createdLinks         Link[]
   sessions             Session[]
   invitedBy            User?                     @relation("UserInvitations", fields: [invitedByUserId], references: [id])
@@ -57,8 +57,8 @@ model User {
   organization         Organization?             @relation(fields: [organizationId], references: [id])
   operatingDevices     ClientDevice[]            @relation("DeviceOperator")
   authorizedChallenges ClientAuthChallenge[]     @relation("ChallengeAuthorizer")
-  printedJobs          PrintQueue[]              @relation("PrintOperator")
-  reviewedPrints       PrintQueue[]              @relation("PrintReviewer")
+  printedJobs          PrintJob[]                @relation("PrintOperator")
+  reviewedPrints       PrintJob[]                @relation("PrintReviewer")
   actorEvents          AuditEvent[]              @relation("AuditActor")
   targetEvents         AuditEvent[]              @relation("AuditTarget")
   passwordResetTokens  PasswordResetToken[]
@@ -81,37 +81,38 @@ model InvitationLink {
   organization    Organization @relation(fields: [organizationId], references: [id])
 }
 
-model NamedGeometry {
-  id                           String                    @id @default(cuid())
-  GeometryName                 String                    @unique
-  GeometryAlgorithmName        String
-  GeometryInputParameterSchema String
-  shortDescription             String?
-  isActive                     Boolean                   @default(true)
-  previewImage                 Bytes?
-  previewImageContentType      String?
-  previewImageUpdatedAt        DateTime?
-  measurementImage             Bytes?
-  measurementImageContentType  String?
-  measurementImageUpdatedAt    DateTime?
-  CreatorID                    String
-  CreationTime                 DateTime                  @default(now())
-  updatedAt                    DateTime                  @default(now()) @updatedAt
-  geometryJobs                 GeometryProcessingQueue[] @relation("NamedGeometryJobs")
-  organizations                OrganizationGeometry[]
-  creator                      User                      @relation(fields: [CreatorID], references: [id])
+model Design {
+  id                     String                    @id @default(cuid())
+  name                   String                    @unique
+  algorithmName          String
+  inputParameterSchema   String
+  shortDescription       String?
+  isActive               Boolean                   @default(true)
+  previewImage           Bytes?
+  previewImageContentType    String?
+  previewImageUpdatedAt      DateTime?
+  measurementImage           Bytes?
+  measurementImageContentType String?
+  measurementImageUpdatedAt   DateTime?
+  creatorId              String
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @default(now()) @updatedAt
+  designJobs             DesignJob[]               @relation("DesignJobs")
+  organizations          OrganizationDesign[]
+  creator                User                      @relation(fields: [creatorId], references: [id])
 
   @@map("NamedGeometry")
 }
 
-model OrganizationGeometry {
+model OrganizationDesign {
   organizationId  String
-  namedGeometryId String
+  designId        String
   createdAt       DateTime      @default(now())
   organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  namedGeometry   NamedGeometry @relation(fields: [namedGeometryId], references: [id], onDelete: Cascade)
+  design          Design        @relation(fields: [designId], references: [id], onDelete: Cascade)
 
-  @@id([organizationId, namedGeometryId])
+  @@id([organizationId, designId])
+  @@map("OrganizationGeometry")
 }
 
 model ApiKey {
@@ -128,56 +129,60 @@ model ApiKey {
   organization   Organization? @relation(fields: [organizationId], references: [id])
 }
 
-model GeometryProcessingQueue {
-  id                         String        @id @default(cuid())
-  GeometryID                 String
-  CreatorID                  String
-  OwningOrganizationID       String
-  CreationTime               DateTime      @default(now())
-  GeometryInputParameterData String
-  ProcessStartedTime         DateTime?
-  ProcessCompletedTime       DateTime?
-  isProcessSuccessful        Boolean       @default(false)
-  isEnabled                  Boolean       @default(true)
-  isDebugRequest             Boolean       @default(false)
-  JobNote                    String?
-  JobID                      String?
-  objectID                   String?       @unique
-  objectIDGeneratedAt        DateTime?
-  GeometryFileContents       Bytes?
-  GeometryFileName           String?
-  GeometryBlobUrl            String?
-  GeometryBlobPathname       String?
-  PrintFileContents          Bytes?
-  PrintFileName              String?
-  PrintBlobUrl               String?
-  PrintBlobPathname          String?
-  ProcessingLog              String?
-  MeshMetadata               String?
-  owningOrganization         Organization  @relation(fields: [OwningOrganizationID], references: [id])
-  creator                    User          @relation("CreatedGeometryJobs", fields: [CreatorID], references: [id])
-  geometry                   NamedGeometry @relation("NamedGeometryJobs", fields: [GeometryID], references: [id])
-  printQueue                 PrintQueue[]
+model DesignJob {
+  id                    String        @id @default(cuid())
+  designId              String
+  creatorId             String
+  owningOrganizationId  String
+  createdAt             DateTime      @default(now())
+  inputParameters       String
+  processStartedAt      DateTime?
+  processCompletedAt    DateTime?
+  isProcessSuccessful   Boolean       @default(false)
+  isEnabled             Boolean       @default(true)
+  isDebugRequest        Boolean       @default(false)
+  jobNote               String?
+  jobLabel              String?
+  objectId              String?       @unique
+  objectIdGeneratedAt   DateTime?
+  meshFileContents      Bytes?
+  meshFileName          String?
+  meshBlobUrl           String?
+  meshBlobPathname      String?
+  printFileContents     Bytes?
+  printFileName         String?
+  printBlobUrl          String?
+  printBlobPathname     String?
+  processingLog         String?
+  meshMetadata          String?
+  owningOrganization    Organization  @relation(fields: [owningOrganizationId], references: [id])
+  creator               User          @relation("CreatedDesignJobs", fields: [creatorId], references: [id])
+  design                Design        @relation("DesignJobs", fields: [designId], references: [id])
+  printJobs             PrintJob[]
+
+  @@map("GeometryProcessingQueue")
 }
 
-model PrintQueue {
-  id                        String                  @id @default(cuid())
-  GeometryProcessingQueueID String
-  PrintStartedTime          DateTime?
-  PrintCompletedTime        DateTime?
-  isPrintSuccessful         Boolean                 @default(false)
-  printNote                 String?
-  printAcceptance           String?
-  isEnabled                 Boolean                 @default(true)
-  CreationTime              DateTime                @default(now())
-  progress                  Float?
-  progressLastReportTime    DateTime?
-  logs                      String?
-  printedByUserId           String?
-  acceptedByUserId          String?
-  geometryProcessingQueue   GeometryProcessingQueue @relation(fields: [GeometryProcessingQueueID], references: [id])
-  printedBy                 User?                   @relation("PrintOperator", fields: [printedByUserId], references: [id])
-  acceptedBy                User?                   @relation("PrintReviewer", fields: [acceptedByUserId], references: [id])
+model PrintJob {
+  id                  String      @id @default(cuid())
+  designJobId         String
+  printStartedAt      DateTime?
+  printCompletedAt    DateTime?
+  isPrintSuccessful   Boolean     @default(false)
+  printNote           String?
+  printAcceptance     String?
+  isEnabled           Boolean     @default(true)
+  createdAt           DateTime    @default(now())
+  progress            Float?
+  progressLastReportAt DateTime?
+  logs                String?
+  printedByUserId     String?
+  acceptedByUserId    String?
+  designJob           DesignJob   @relation(fields: [designJobId], references: [id])
+  printedBy           User?       @relation("PrintOperator", fields: [printedByUserId], references: [id])
+  acceptedBy          User?       @relation("PrintReviewer", fields: [acceptedByUserId], references: [id])
+
+  @@map("PrintQueue")
 }
 
 enum UserRole {

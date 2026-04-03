@@ -161,8 +161,8 @@ function LoginPageInner() {
       if (result?.error) {
         setError("Invalid credentials")
       } else {
-        // callbackUrl takes priority, then Electron->print-queue, browser->geo-job-menu
-        const destination = callbackUrl || (isElectron ? "/print-queue" : "/geo-job-menu")
+        // callbackUrl takes priority, then Electron->print-queue, browser->design-menu
+        const destination = callbackUrl || (isElectron ? "/print-queue" : "/design-menu")
         // Use full page load so SessionProvider initializes with the new session
         window.location.href = destination
       }

@@ -25,12 +25,12 @@ export async function PUT(
 
     // Find the print queue entry by ID
     // TODO: In the future, we could match by filename if needed
-    const printQueueEntry = await prisma.printQueue.findUnique({
+    const printQueueEntry = await prisma.printJob.findUnique({
       where: { id },
       include: {
-        geometryProcessingQueue: {
+        designJob: {
           include: {
-            geometry: true,
+            design: true,
           },
         },
       },
@@ -41,16 +41,16 @@ export async function PUT(
     }
 
     // Update the progress
-    const updatedEntry = await prisma.printQueue.update({
+    const updatedEntry = await prisma.printJob.update({
       where: { id: printQueueEntry.id },
       data: {
         progress,
-        progressLastReportTime: new Date(),
+        progressLastReportAt: new Date(),
       } as any, // Type assertion needed until Prisma Client regenerates
       include: {
-        geometryProcessingQueue: {
+        designJob: {
           include: {
-            geometry: true,
+            design: true,
             creator: true,
             owningOrganization: true,
           },
@@ -63,7 +63,7 @@ export async function PUT(
       type: 'progress',
       id: updatedEntry.id,
       progress,
-      progressLastReportTime: (updatedEntry as any).progressLastReportTime,
+      progressLastReportAt: (updatedEntry as any).progressLastReportAt,
     });
 
     return NextResponse.json({ 

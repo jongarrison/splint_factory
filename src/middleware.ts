@@ -71,12 +71,12 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    // If user is authenticated and trying to access auth routes, redirect to geo-job-menu
+    // If user is authenticated and trying to access auth routes, redirect to design-menu
     if (session && isAuthRoute) {
       console.log(`REDIRECT: Authenticated user trying to access auth route ${pathname}`)
-      // Honor callbackUrl if present, otherwise go to geo-job-menu (browser default)
+      // Honor callbackUrl if present, otherwise go to design-menu (browser default)
       const callbackUrl = request.nextUrl.searchParams.get('callbackUrl')
-      const destination = callbackUrl || '/geo-job-menu'
+      const destination = callbackUrl || '/design-menu'
       const redirectUrl = new URL(destination, request.url)
       return NextResponse.redirect(redirectUrl)
     }
@@ -90,10 +90,10 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.redirect(verifyUrl)
     }
     
-    // If user is authenticated and trying to access home page, redirect to geo-job-menu
+    // If user is authenticated and trying to access home page, redirect to design-menu
     if (session && pathname === '/') {
-      console.log(`🏠 REDIRECT: Authenticated user at homepage, redirecting to geo-job-menu`)
-      const geoJobMenuUrl = new URL('/geo-job-menu', request.url)
+      console.log(`🏠 REDIRECT: Authenticated user at homepage, redirecting to design-menu`)
+      const geoJobMenuUrl = new URL('/design-menu', request.url)
       return NextResponse.redirect(geoJobMenuUrl)
     }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getProcessorStatus } from '@/lib/geo-processor-health';
-import { generateObjectID } from '@/lib/objectId';
+import { generateObjectId } from '@/lib/objectId';
 
 // GET /api/admin/system-status - View system status including geometry processing queue (admin only)
 export async function GET(request: NextRequest) {
@@ -33,85 +33,85 @@ export async function GET(request: NextRequest) {
       recentErrors
     ] = await Promise.all([
       // Never started
-      prisma.geometryProcessingQueue.findMany({
+      prisma.designJob.findMany({
         where: {
-          ProcessStartedTime: null,
-          ProcessCompletedTime: null,
+          processStartedAt: null,
+          processCompletedAt: null,
           isEnabled: true
         },
         select: {
           id: true,
-          CreationTime: true,
-          geometry: { select: { GeometryName: true } },
-          objectID: true,
+          createdAt: true,
+          design: { select: { name: true } },
+          objectId: true,
           isDebugRequest: true
         },
-        orderBy: { CreationTime: 'asc' },
+        orderBy: { createdAt: 'asc' },
         take: 10
       }),
       
       // Started but stuck (>10 min, not completed)
-      prisma.geometryProcessingQueue.findMany({
+      prisma.designJob.findMany({
         where: {
-          ProcessStartedTime: { lt: tenMinutesAgo },
-          ProcessCompletedTime: null,
+          processStartedAt: { lt: tenMinutesAgo },
+          processCompletedAt: null,
           isEnabled: true
         },
         select: {
           id: true,
-          CreationTime: true,
-          ProcessStartedTime: true,
-          geometry: { select: { GeometryName: true } },
-          objectID: true,
+          createdAt: true,
+          processStartedAt: true,
+          design: { select: { name: true } },
+          objectId: true,
           isDebugRequest: true
         },
-        orderBy: { CreationTime: 'asc' },
+        orderBy: { createdAt: 'asc' },
         take: 10
       }),
       
       // Recently completed (last hour)
-      prisma.geometryProcessingQueue.findMany({
+      prisma.designJob.findMany({
         where: {
-          ProcessCompletedTime: { gte: new Date(now.getTime() - 60 * 60 * 1000) },
+          processCompletedAt: { gte: new Date(now.getTime() - 60 * 60 * 1000) },
           isEnabled: true
         },
         select: {
           id: true,
-          CreationTime: true,
-          ProcessStartedTime: true,
-          ProcessCompletedTime: true,
+          createdAt: true,
+          processStartedAt: true,
+          processCompletedAt: true,
           isProcessSuccessful: true,
-          geometry: { select: { GeometryName: true } },
-          objectID: true,
+          design: { select: { name: true } },
+          objectId: true,
           isDebugRequest: true
         },
-        orderBy: { ProcessCompletedTime: 'desc' },
+        orderBy: { processCompletedAt: 'desc' },
         take: 10
       }),
       
       // Currently processing (started in last 10 min, not completed)
-      prisma.geometryProcessingQueue.findMany({
+      prisma.designJob.findMany({
         where: {
-          ProcessStartedTime: { gte: tenMinutesAgo },
-          ProcessCompletedTime: null,
+          processStartedAt: { gte: tenMinutesAgo },
+          processCompletedAt: null,
           isEnabled: true
         },
         select: {
           id: true,
-          CreationTime: true,
-          ProcessStartedTime: true,
-          geometry: { select: { GeometryName: true } },
-          objectID: true,
+          createdAt: true,
+          processStartedAt: true,
+          design: { select: { name: true } },
+          objectId: true,
           isDebugRequest: true
         },
-        orderBy: { ProcessStartedTime: 'desc' },
+        orderBy: { processStartedAt: 'desc' },
         take: 10
       }),
       
       // Failed jobs in last 24 hours (exclude test jobs)
-      prisma.geometryProcessingQueue.count({
+      prisma.designJob.count({
         where: {
-          ProcessCompletedTime: { gte: oneDayAgo },
+          processCompletedAt: { gte: oneDayAgo },
           isProcessSuccessful: false,
           isEnabled: true,
           isDebugRequest: false
@@ -119,9 +119,9 @@ export async function GET(request: NextRequest) {
       }),
       
       // Successful jobs in last 24 hours (exclude test jobs)
-      prisma.geometryProcessingQueue.count({
+      prisma.designJob.count({
         where: {
-          ProcessCompletedTime: { gte: oneDayAgo },
+          processCompletedAt: { gte: oneDayAgo },
           isProcessSuccessful: true,
           isEnabled: true,
           isDebugRequest: false
@@ -129,39 +129,39 @@ export async function GET(request: NextRequest) {
       }),
       
       // Completed jobs last 24h with timing data (exclude test jobs)
-      prisma.geometryProcessingQueue.findMany({
+      prisma.designJob.findMany({
         where: {
-          ProcessCompletedTime: { gte: oneDayAgo },
-          ProcessStartedTime: { not: null },
+          processCompletedAt: { gte: oneDayAgo },
+          processStartedAt: { not: null },
           isEnabled: true,
           isDebugRequest: false
         },
         select: {
-          ProcessStartedTime: true,
-          ProcessCompletedTime: true,
+          processStartedAt: true,
+          processCompletedAt: true,
           isProcessSuccessful: true
         }
       }),
       
       // Completed jobs 24-48h ago with timing data (exclude test jobs)
-      prisma.geometryProcessingQueue.findMany({
+      prisma.designJob.findMany({
         where: {
-          ProcessCompletedTime: { gte: twoDaysAgo, lt: oneDayAgo },
-          ProcessStartedTime: { not: null },
+          processCompletedAt: { gte: twoDaysAgo, lt: oneDayAgo },
+          processStartedAt: { not: null },
           isEnabled: true,
           isDebugRequest: false
         },
         select: {
-          ProcessStartedTime: true,
-          ProcessCompletedTime: true
+          processStartedAt: true,
+          processCompletedAt: true
         }
       }),
       
       // Jobs by algorithm (last 7 days, exclude test jobs)
-      prisma.geometryProcessingQueue.groupBy({
-        by: ['GeometryID'],
+      prisma.designJob.groupBy({
+        by: ['designId'],
         where: {
-          ProcessCompletedTime: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) },
+          processCompletedAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) },
           isEnabled: true,
           isDebugRequest: false
         },
@@ -171,20 +171,20 @@ export async function GET(request: NextRequest) {
       }),
       
       // Recent failed jobs with error messages (exclude test jobs)
-      prisma.geometryProcessingQueue.findMany({
+      prisma.designJob.findMany({
         where: {
-          ProcessCompletedTime: { gte: oneDayAgo },
+          processCompletedAt: { gte: oneDayAgo },
           isProcessSuccessful: false,
           isEnabled: true,
           isDebugRequest: false
         },
         select: {
           id: true,
-          ProcessingLog: true,
-          geometry: {
+          processingLog: true,
+          design: {
             select: {
-              GeometryName: true,
-              GeometryAlgorithmName: true
+              name: true,
+              algorithmName: true
             }
           }
         },
@@ -193,10 +193,10 @@ export async function GET(request: NextRequest) {
     ]);
     
     // Get geometry names for algorithm stats
-    const geometryIds = jobsByAlgorithm.map(j => j.GeometryID);
-    const geometries = geometryIds.length > 0 ? await prisma.namedGeometry.findMany({
+    const geometryIds = jobsByAlgorithm.map(j => j.designId);
+    const geometries = geometryIds.length > 0 ? await prisma.design.findMany({
       where: { id: { in: geometryIds } },
-      select: { id: true, GeometryName: true, GeometryAlgorithmName: true }
+      select: { id: true, name: true, algorithmName: true }
     }) : [];
     
     const geometryMap = new Map(geometries.map(g => [g.id, g]));
@@ -205,8 +205,8 @@ export async function GET(request: NextRequest) {
     const calcAvgProcessingTime = (jobs: any[]) => {
       if (jobs.length === 0) return null;
       const times = jobs
-        .filter(j => j.ProcessStartedTime && j.ProcessCompletedTime)
-        .map(j => new Date(j.ProcessCompletedTime!).getTime() - new Date(j.ProcessStartedTime!).getTime());
+        .filter(j => j.processStartedAt && j.processCompletedAt)
+        .map(j => new Date(j.processCompletedAt!).getTime() - new Date(j.processStartedAt!).getTime());
       return times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : null;
     };
     
@@ -225,8 +225,8 @@ export async function GET(request: NextRequest) {
     // Calculate hourly throughput (last 24 hours)
     const hourlyBuckets = new Map<number, number>();
     completedLast24h.forEach(job => {
-      if (job.ProcessCompletedTime) {
-        const hour = Math.floor((now.getTime() - new Date(job.ProcessCompletedTime).getTime()) / (60 * 60 * 1000));
+      if (job.processCompletedAt) {
+        const hour = Math.floor((now.getTime() - new Date(job.processCompletedAt).getTime()) / (60 * 60 * 1000));
         hourlyBuckets.set(hour, (hourlyBuckets.get(hour) || 0) + 1);
       }
     });
@@ -239,15 +239,15 @@ export async function GET(request: NextRequest) {
     // Parse error messages and categorize
     const errorBreakdown = new Map<string, number>();
     recentErrors.forEach(job => {
-      if (job.ProcessingLog) {
+      if (job.processingLog) {
         // Extract error type from log
-        if (job.ProcessingLog.includes('mesh export failed')) {
+        if (job.processingLog.includes('mesh export failed')) {
           errorBreakdown.set('Mesh Export Failed', (errorBreakdown.get('Mesh Export Failed') || 0) + 1);
-        } else if (job.ProcessingLog.includes('timeout')) {
+        } else if (job.processingLog.includes('timeout')) {
           errorBreakdown.set('Timeout', (errorBreakdown.get('Timeout') || 0) + 1);
-        } else if (job.ProcessingLog.includes('ECONNREFUSED') || job.ProcessingLog.includes('ETIMEDOUT')) {
+        } else if (job.processingLog.includes('ECONNREFUSED') || job.processingLog.includes('ETIMEDOUT')) {
           errorBreakdown.set('Network Error', (errorBreakdown.get('Network Error') || 0) + 1);
-        } else if (job.ProcessingLog.includes('Exception') || job.ProcessingLog.includes('Error')) {
+        } else if (job.processingLog.includes('Exception') || job.processingLog.includes('Error')) {
           errorBreakdown.set('Processing Error', (errorBreakdown.get('Processing Error') || 0) + 1);
         } else {
           errorBreakdown.set('Other', (errorBreakdown.get('Other') || 0) + 1);
@@ -259,10 +259,10 @@ export async function GET(request: NextRequest) {
     
     // Jobs by algorithm
     const algorithmStats = jobsByAlgorithm.map(item => {
-      const geom = geometryMap.get(item.GeometryID);
+      const geom = geometryMap.get(item.designId);
       return {
-        algorithm: geom?.GeometryAlgorithmName || 'Unknown',
-        name: geom?.GeometryName || 'Unknown',
+        algorithm: geom?.algorithmName || 'Unknown',
+        name: geom?.name || 'Unknown',
         count: item._count.id
       };
     }).sort((a, b) => b.count - a.count);
@@ -401,35 +401,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the cylinder test geometry
-    const cylinderGeometry = await prisma.namedGeometry.findFirst({
-      where: { GeometryAlgorithmName: 'cylinder' }
+    const cylinderGeometry = await prisma.design.findFirst({
+      where: { algorithmName: 'cylinder' }
     });
 
     if (!cylinderGeometry) {
       return NextResponse.json(
-        { error: 'Cylinder test geometry not found. Create a NamedGeometry with GeometryAlgorithmName "cylinder" first.' },
+        { error: 'Cylinder test geometry not found. Create a Design with algorithmName "cylinder" first.' },
         { status: 404 }
       );
     }
 
-    const objectID = await generateObjectID();
+    const objectId = await generateObjectId();
 
-    const job = await prisma.geometryProcessingQueue.create({
+    const job = await prisma.designJob.create({
       data: {
-        GeometryID: cylinderGeometry.id,
-        CreatorID: session.user.id,
-        OwningOrganizationID: systemOrg.id,
-        GeometryInputParameterData: JSON.stringify({ radius: 10, height: 10 }),
+        designId: cylinderGeometry.id,
+        creatorId: session.user.id,
+        owningOrganizationId: systemOrg.id,
+        inputParameters: JSON.stringify({ radius: 10, height: 10 }),
         isDebugRequest: true,
-        JobNote: 'Processor health check',
-        objectID,
-        objectIDGeneratedAt: new Date(),
+        jobNote: 'Processor health check',
+        objectId,
+        objectIdGeneratedAt: new Date(),
         isEnabled: true
       },
       select: {
         id: true,
-        objectID: true,
-        CreationTime: true
+        objectId: true,
+        createdAt: true
       }
     });
 

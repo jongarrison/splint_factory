@@ -32,44 +32,44 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const whereClause: any = {
       isEnabled: true, // Only show enabled (non-deleted) entries
-      geometryProcessingQueue: {
-        OwningOrganizationID: user.organizationId
+      designJob: {
+        owningOrganizationId: user.organizationId
       }
     };
 
     // Add geometry job filter if provided
     if (geometryJobId) {
-      whereClause.GeometryProcessingQueueID = geometryJobId;
+      whereClause.designJobId = geometryJobId;
     }
 
-    const printQueue = await prisma.printQueue.findMany({
+    const printQueue = await prisma.printJob.findMany({
       where: whereClause,
       select: {
         // Print Queue fields
         id: true,
-        PrintStartedTime: true,
-        PrintCompletedTime: true,
+        printStartedAt: true,
+        printCompletedAt: true,
         isPrintSuccessful: true,
         printNote: true,
         printAcceptance: true,
         progress: true,
-        progressLastReportTime: true,
+        progressLastReportAt: true,
         // Nested geometry processing queue - ONLY fields needed for list view
-        geometryProcessingQueue: {
+        designJob: {
           select: {
             id: true, // Required for print operations
-            objectID: true,
-            JobID: true,
-            JobNote: true,
-            GeometryFileName: true,
-            PrintFileName: true,
-            CreationTime: true, // Required for sorting
-            // Exclude: GeometryInputParameterData, ProcessStartedTime, ProcessCompletedTime
-            // Exclude: GeometryFileContents, PrintFileContents (CRITICAL - these are huge binary files)
-            geometry: {
+            objectId: true,
+            jobLabel: true,
+            jobNote: true,
+            meshFileName: true,
+            printFileName: true,
+            createdAt: true, // Required for sorting
+            // Exclude: inputParameters, processStartedAt, processCompletedAt
+            // Exclude: meshFileContents, printFileContents (CRITICAL - these are huge binary files)
+            design: {
               select: {
-                GeometryName: true,
-                GeometryAlgorithmName: true
+                name: true,
+                algorithmName: true
               }
             },
             creator: {
@@ -83,22 +83,22 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [
         { isPrintSuccessful: 'asc' }, // Show unsuccessful first
-        { PrintStartedTime: { sort: 'asc', nulls: 'first' } } // Then by start time, nulls first
+        { printStartedAt: { sort: 'asc', nulls: 'first' } } // Then by start time, nulls first
       ]
     });
 
     // Format response - add convenience flags for file existence
     // Note: We're already excluding binary file contents in the select above (CRITICAL optimization)
     const formattedQueue = printQueue.map(item => {
-      const gpq = item.geometryProcessingQueue;
+      const gpq = item.designJob;
       return {
         ...item,
-        GeometryFileName: gpq?.GeometryFileName ?? null,
-        PrintFileName: gpq?.PrintFileName ?? null,
+        meshFileName: gpq?.meshFileName ?? null,
+        printFileName: gpq?.printFileName ?? null,
         // Note: We can't check file existence anymore since we excluded the binary fields
         // This is intentional - files are managed separately, use filename presence as proxy
-        hasGeometryFile: !!gpq?.GeometryFileName,
-        hasPrintFile: !!gpq?.PrintFileName
+        hasGeometryFile: !!gpq?.meshFileName,
+        hasPrintFile: !!gpq?.printFileName
       };
     });
 
@@ -151,23 +151,23 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { 
-      GeometryProcessingQueueID,
-      GeometryFileContents,
-      GeometryFileName,
-      PrintFileContents,
-      PrintFileName
+      designJobId,
+      meshFileContents,
+      meshFileName,
+      printFileContents,
+      printFileName
     } = body;
 
     // Validate required fields
-    if (!GeometryProcessingQueueID) {
+    if (!designJobId) {
       return NextResponse.json({ 
-        error: 'GeometryProcessingQueueID is required' 
+        error: 'designJobId is required' 
       }, { status: 400 });
     }
 
     // Validate that geometry processing queue entry exists and user has access
-    const geometryJob = await prisma.geometryProcessingQueue.findUnique({
-      where: { id: GeometryProcessingQueueID },
+    const geometryJob = await prisma.designJob.findUnique({
+      where: { id: designJobId },
       include: {
         owningOrganization: {
           select: { id: true }
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
     if (!geometryJob.isProcessSuccessful) {
       return NextResponse.json({ error: 'Cannot create print job for a failed geometry processing job' }, { status: 400 });
     }
-    if (!geometryJob.PrintFileName && !PrintFileName) {
+    if (!geometryJob.printFileName && !printFileName) {
       return NextResponse.json({ error: 'Cannot create print job without a print file' }, { status: 400 });
     }
 
@@ -204,54 +204,54 @@ export async function POST(request: NextRequest) {
 
     // Validate file size limits (10MB as specified in requirements) if files are provided.
     const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
-    if (GeometryFileContents) {
-      const geometryBuffer = Buffer.from(GeometryFileContents, 'base64');
+    if (meshFileContents) {
+      const geometryBuffer = Buffer.from(meshFileContents, 'base64');
       if (geometryBuffer.length > maxFileSize) {
         return NextResponse.json({ error: 'Geometry file exceeds 10MB limit' }, { status: 400 });
       }
     }
-    if (PrintFileContents) {
-      const printBuffer = Buffer.from(PrintFileContents, 'base64');
+    if (printFileContents) {
+      const printBuffer = Buffer.from(printFileContents, 'base64');
       if (printBuffer.length > maxFileSize) {
         return NextResponse.json({ error: 'Print file exceeds 10MB limit' }, { status: 400 });
       }
     }
 
-    // In the new model, files are stored on the GeometryProcessingQueue.
-    // If files are provided here, persist them to the GeometryProcessingQueue first, then create a PrintQueue entry.
+    // In the new model, files are stored on the DesignJob.
+    // If files are provided here, persist them to the DesignJob first, then create a PrintJob entry.
     const result = await prisma.$transaction(async (tx) => {
-      if (GeometryFileContents || PrintFileContents || GeometryFileName || PrintFileName) {
-        await tx.geometryProcessingQueue.update({
-          where: { id: GeometryProcessingQueueID },
+      if (meshFileContents || printFileContents || meshFileName || printFileName) {
+        await tx.designJob.update({
+          where: { id: designJobId },
           data: ({
-            ...(GeometryFileContents !== undefined ? { GeometryFileContents: GeometryFileContents ? Buffer.from(GeometryFileContents, 'base64') : null } : {}),
-            ...(GeometryFileName !== undefined ? { GeometryFileName: GeometryFileName || null } : {}),
-            ...(PrintFileContents !== undefined ? { PrintFileContents: PrintFileContents ? Buffer.from(PrintFileContents, 'base64') : null } : {}),
-            ...(PrintFileName !== undefined ? { PrintFileName: PrintFileName || null } : {})
+            ...(meshFileContents !== undefined ? { meshFileContents: meshFileContents ? Buffer.from(meshFileContents, 'base64') : null } : {}),
+            ...(meshFileName !== undefined ? { meshFileName: meshFileName || null } : {}),
+            ...(printFileContents !== undefined ? { printFileContents: printFileContents ? Buffer.from(printFileContents, 'base64') : null } : {}),
+            ...(printFileName !== undefined ? { printFileName: printFileName || null } : {})
           }) as any
         });
       }
 
-      const created = await tx.printQueue.create({
-        data: { GeometryProcessingQueueID },
-        include: { geometryProcessingQueue: true }
+      const created = await tx.printJob.create({
+        data: { designJobId },
+        include: { designJob: true }
       });
 
       return created;
     });
 
-  console.log(`Created print queue entry for geometry processing job ${GeometryProcessingQueueID}`);
+  console.log(`Created print queue entry for geometry processing job ${designJobId}`);
     
     // Return without binary data in response
-    const gpq: any = (result as any).geometryProcessingQueue;
+    const gpq: any = (result as any).designJob;
     const response = {
       ...result,
-      GeometryFileName: gpq?.GeometryFileName ?? null,
-      PrintFileName: gpq?.PrintFileName ?? null,
-      hasGeometryFile: !!gpq?.GeometryFileContents,
-      hasPrintFile: !!gpq?.PrintFileContents,
-      GeometryFileContents: undefined,
-      PrintFileContents: undefined
+      meshFileName: gpq?.meshFileName ?? null,
+      printFileName: gpq?.printFileName ?? null,
+      hasGeometryFile: !!gpq?.meshFileContents,
+      hasPrintFile: !!gpq?.printFileContents,
+      meshFileContents: undefined,
+      printFileContents: undefined
     };
 
     return NextResponse.json(response, { status: 201 });

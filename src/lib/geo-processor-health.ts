@@ -1,6 +1,6 @@
 /**
  * In-memory tracking of geometry processor health
- * Tracks last time the geo processor called /api/geometry-processing/next-job
+ * Tracks last time the geo processor called /api/design-processing/next-job
  */
 
 let lastProcessorPing: number | null = null;

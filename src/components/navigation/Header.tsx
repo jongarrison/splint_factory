@@ -30,7 +30,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
   // Check geometry processor health on mount (SYSTEM_ADMIN only)
   useEffect(() => {
     if (session?.user?.role === 'SYSTEM_ADMIN') {
-      fetch('/api/geometry-processing/processor-health')
+      fetch('/api/design-processing/processor-health')
         .then(res => res.json())
         .then(data => {
           setProcessorHealthy(data.isHealthy);
@@ -137,10 +137,10 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
               </Link>
             )}
 
-            {/* Create button - only visible in browser mode and not on geo-job-menu page */}
-            {variant === 'browser' && session && pathname !== '/geo-job-menu' && (
+            {/* Create button - only visible in browser mode and not on design-menu page */}
+            {variant === 'browser' && session && pathname !== '/design-menu' && (
               <Link
-                href="/geo-job-menu"
+                href="/design-menu"
                 className="ml-4 inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md bg-green-600 hover:bg-green-700 text-white transition-colors shadow-sm"
                 title="Create New 3D Print"
               >
@@ -248,14 +248,14 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 </Link>
                               )}
                               
-                              {/* Named Geometry Designs - SYSTEM_ADMIN only */}
+                              {/* Design Definitions - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (
                                 <Link
-                                  href="/admin/named-geometry"
+                                  href="/admin/design-definitions"
                                   onClick={() => setShowAdminDropdown(false)}
                                   className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                                 >
-                                  Named Geometry Designs
+                                  Design Definitions
                                 </Link>
                               )}
                               
@@ -272,7 +272,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                               
                               {/* Geometry Jobs (aka Design Generation Jobs) - All roles */}
                               <Link
-                                href="/geometry-jobs"
+                                href="/design-jobs"
                                 onClick={() => setShowAdminDropdown(false)}
                                 className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                               >

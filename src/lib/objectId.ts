@@ -33,10 +33,10 @@ function encodeCrockford(num: number): string {
  * Uses random generation with collision detection and retry logic.
  * Character set: 0-9, A-Z (excluding I, L, O, U for readability)
  * 
- * @returns Promise<string> - A unique 4-character objectID
+ * @returns Promise<string> - A unique 4-character objectId
  * @throws Error if unable to generate unique ID after MAX_RETRIES attempts
  */
-export async function generateObjectID(): Promise<string> {
+export async function generateObjectId(): Promise<string> {
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     // Generate random number in valid range for 4 Base32 characters
     // 4 chars = 32^4 = 1,048,576 combinations (0 to 1,048,575)
@@ -51,40 +51,40 @@ export async function generateObjectID(): Promise<string> {
     const randomNum = randomBytes.readUIntBE(0, 3) % randomRange + minValue;
     
     // Encode to Crockford Base32 (will always be exactly 4 characters)
-    const objectID = encodeCrockford(randomNum);
+    const objectId = encodeCrockford(randomNum);
     
     // Verify length (should always be 4, this is a safety check)
-    if (objectID.length !== OBJECT_ID_LENGTH) {
-      console.warn(`Generated objectID has unexpected length: ${objectID} (length ${objectID.length})`);
+    if (objectId.length !== OBJECT_ID_LENGTH) {
+      console.warn(`Generated objectId has unexpected length: ${objectId} (length ${objectId.length})`);
       continue; // Try again
     }
     
     // Check for uniqueness
-    const existing = await prisma.geometryProcessingQueue.findUnique({
-      where: { objectID },
+    const existing = await prisma.designJob.findUnique({
+      where: { objectId },
       select: { id: true }
     });
     
     if (!existing) {
-      return objectID;
+      return objectId;
     }
     
     // Collision detected, log and retry
-    console.warn(`ObjectID collision detected: ${objectID} (attempt ${attempt + 1}/${MAX_RETRIES})`);
+    console.warn(`ObjectId collision detected: ${objectId} (attempt ${attempt + 1}/${MAX_RETRIES})`);
   }
   
-  throw new Error(`Failed to generate unique objectID after ${MAX_RETRIES} attempts`);
+  throw new Error(`Failed to generate unique objectId after ${MAX_RETRIES} attempts`);
 }
 
 /**
- * Decodes an objectID string, handling common human errors.
- * Crockford Base32 automatically corrects: O→0, I/L→1, case-insensitive
+ * Decodes an objectId string, handling common human errors.
+ * Crockford Base32 automatically corrects: O->0, I/L->1, case-insensitive
  * 
- * @param objectID - The objectID to decode
+ * @param objectId - The objectId to decode
  * @returns number - The decoded numeric value
  */
-export function decodeObjectID(objectID: string): number {
-  let normalized = objectID.toUpperCase();
+export function decodeObjectId(objectId: string): number {
+  let normalized = objectId.toUpperCase();
   
   // Handle common human errors (Crockford substitutions)
   normalized = normalized.replace(/O/g, '0');
@@ -96,7 +96,7 @@ export function decodeObjectID(objectID: string): number {
     const value = CROCKFORD_ALPHABET.indexOf(char);
     
     if (value === -1) {
-      throw new Error(`Invalid character in objectID: ${char}`);
+      throw new Error(`Invalid character in objectId: ${char}`);
     }
     
     result = result * 32 + value;
@@ -106,22 +106,22 @@ export function decodeObjectID(objectID: string): number {
 }
 
 /**
- * Validates if a string is a valid Crockford Base32 objectID format
+ * Validates if a string is a valid Crockford Base32 objectId format
  * 
- * @param objectID - The string to validate
+ * @param objectId - The string to validate
  * @returns boolean - True if valid format
  */
-export function isValidObjectID(objectID: string): boolean {
-  if (!objectID || typeof objectID !== 'string') {
+export function isValidObjectId(objectId: string): boolean {
+  if (!objectId || typeof objectId !== 'string') {
     return false;
   }
   
   // Must be 4+ characters (allows for future expansion to 5+ chars)
-  if (objectID.length < 4) {
+  if (objectId.length < 4) {
     return false;
   }
   
   // Must only contain valid Crockford Base32 characters (with lenient decoding support)
   const validPattern = /^[0-9A-Za-z]+$/;
-  return validPattern.test(objectID);
+  return validPattern.test(objectId);
 }

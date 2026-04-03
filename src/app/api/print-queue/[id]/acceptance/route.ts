@@ -45,12 +45,12 @@ export async function POST(
     }
 
     // Verify print job exists and belongs to user's organization
-    const printJob = await prisma.printQueue.findUnique({
+    const printJob = await prisma.printJob.findUnique({
       where: { id },
       include: {
-        geometryProcessingQueue: {
+        designJob: {
           select: {
-            OwningOrganizationID: true
+            owningOrganizationId: true
           }
         }
       }
@@ -60,7 +60,7 @@ export async function POST(
       return NextResponse.json({ error: 'Print job not found' }, { status: 404 });
     }
 
-    if (printJob.geometryProcessingQueue.OwningOrganizationID !== user.organizationId) {
+    if (printJob.designJob.owningOrganizationId !== user.organizationId) {
       return NextResponse.json(
         { error: 'Print job belongs to different organization' },
         { status: 403 }
@@ -85,7 +85,7 @@ export async function POST(
     }
 
     // Update the print job
-    const updatedPrint = await prisma.printQueue.update({
+    const updatedPrint = await prisma.printJob.update({
       where: { id },
       data: {
         printAcceptance,
@@ -93,12 +93,12 @@ export async function POST(
         acceptedByUserId: session.user.id,
       },
       include: {
-        geometryProcessingQueue: {
+        designJob: {
           include: {
-            geometry: {
+            design: {
               select: {
-                GeometryName: true,
-                GeometryAlgorithmName: true
+                name: true,
+                algorithmName: true
               }
             }
           }

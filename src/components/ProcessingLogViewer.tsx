@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-interface ProcessingLogViewerProps {
+interface processingLogViewerProps {
   log: string | null | undefined;
   title?: string;
 }
@@ -16,7 +16,7 @@ interface ProcessingLogViewerProps {
  * - Auto-scroll to bottom
  * - Highlight error/warning lines
  */
-export default function ProcessingLogViewer({ log, title = 'Processing Log' }: ProcessingLogViewerProps) {
+export default function processingLogViewer({ log, title = 'Processing Log' }: processingLogViewerProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!log) {
