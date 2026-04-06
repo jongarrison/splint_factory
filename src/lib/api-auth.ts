@@ -18,6 +18,7 @@ export async function validateApiKey(request: NextRequest): Promise<ApiAuthResul
     const authorization = request.headers.get('authorization');
     
     if (!authorization) {
+      console.warn('API auth failed: no Authorization header present');
       return { success: false, error: 'Authorization header missing' };
     }
 
@@ -28,6 +29,7 @@ export async function validateApiKey(request: NextRequest): Promise<ApiAuthResul
     const apiKeyValue = authorization.slice(7); // Remove 'Bearer ' prefix
     
     if (!apiKeyValue) {
+      console.warn('API auth failed: Bearer token is empty');
       return { success: false, error: 'API key missing' };
     }
 
@@ -71,7 +73,10 @@ export async function validateApiKey(request: NextRequest): Promise<ApiAuthResul
       }
     }
 
-    console.warn('Invalid API key attempted');
+    const keyPreview = apiKeyValue.length > 6
+      ? `${apiKeyValue.slice(0, 3)}...${apiKeyValue.slice(-3)}`
+      : '(too short)';
+    console.warn(`Invalid API key attempted | length=${apiKeyValue.length} preview=${keyPreview} | checked against ${apiKeys.length} active key(s): [${apiKeys.map(k => k.name).join(', ')}]`);
     return { success: false, error: 'Invalid API key' };
 
   } catch (error) {

@@ -166,7 +166,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/api-keys/[id] - Delete (disable) API key (SYSTEM_ADMIN only)
+// DELETE /api/api-keys/[id] - Delete API key (SYSTEM_ADMIN only)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -199,22 +199,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'API key not found' }, { status: 404 });
     }
 
-    // Disable the API key (following additive approach - don't actually delete)
-    const updatedApiKey = await prisma.apiKey.update({
-      where: { id },
-      data: {
-        isActive: false
-      },
-      select: {
-        id: true,
-        name: true,
-        isActive: true
-      }
+    await prisma.apiKey.delete({
+      where: { id }
     });
 
     return NextResponse.json({ 
-      message: 'API key disabled successfully',
-      apiKey: updatedApiKey
+      message: 'API key deleted successfully'
     });
 
   } catch (error) {

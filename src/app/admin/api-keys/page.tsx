@@ -49,8 +49,8 @@ export default function ApiKeysListPage() {
     }
   };
 
-  const handleDisable = async (id: string) => {
-    if (!confirm('Are you sure you want to disable this API key?')) {
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to permanently delete this API key? This cannot be undone.')) {
       return;
     }
 
@@ -61,7 +61,7 @@ export default function ApiKeysListPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to disable API key');
+        throw new Error(errorData.error || 'Failed to delete API key');
       }
 
       // Refresh the list
@@ -185,7 +185,7 @@ export default function ApiKeysListPage() {
                                 {apiKey.permissions.map((permission, index) => (
                                   <span
                                     key={index}
-                                    className="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-900"
+                                    className="inline-flex items-center rounded-md bg-gray-700 px-2 py-1 text-xs font-medium text-gray-100"
                                   >
                                     {permission}
                                   </span>
@@ -218,14 +218,12 @@ export default function ApiKeysListPage() {
                                 >
                                   Edit
                                 </Link>
-                                {apiKey.isActive && (
-                                  <button
-                                    onClick={() => handleDisable(apiKey.id)}
-                                    className="text-red-600 hover:text-red-900"
-                                  >
-                                    Disable
-                                  </button>
-                                )}
+                                <button
+                                  onClick={() => handleDelete(apiKey.id)}
+                                  className="text-red-600 hover:text-red-900"
+                                >
+                                  Delete
+                                </button>
                               </div>
                             </td>
                           </tr>

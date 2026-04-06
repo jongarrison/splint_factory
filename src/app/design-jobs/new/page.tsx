@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/navigation/Header';
-import GeometryJobProgressModal from '@/components/GeometryJobProgressModal';
 
 interface Design {
   id: string;
@@ -38,12 +37,10 @@ function CreateGeometryJobPage() {
   const [parameterSchema, setParameterSchema] = useState<InputParameter[]>([]);
   const [parameterValues, setParameterValues] = useState<Record<string, any>>({});
   const [jobNote, setJobNote] = useState('');
-  const [jobID, setJobID] = useState('');
+  const [jobLabel, setJobLabel] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdJobId, setCreatedJobId] = useState<string | null>(null);
-  const [showProgressModal, setShowProgressModal] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -53,8 +50,14 @@ function CreateGeometryJobPage() {
       return;
     }
 
+    // designId or template is required (comes from design-menu); redirect if missing
+    if (!designId && !templateId) {
+      router.push('/design-menu');
+      return;
+    }
+
     fetchGeometries();
-  }, [session, status, router]);
+  }, [session, status, router, designId, templateId]);
 
   // Load template job if template param is present
   useEffect(() => {
@@ -101,12 +104,12 @@ function CreateGeometryJobPage() {
     try {
       const response = await fetch('/api/admin/design-definitions');
       if (!response.ok) {
-        throw new Error('Failed to fetch geometries');
+        throw new Error('Failed to fetch designs');
       }
       const data = await response.json();
       setGeometries(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch geometries');
+      setError(err instanceof Error ? err.message : 'Failed to fetch designs');
     } finally {
       setLoading(false);
     }
@@ -132,7 +135,7 @@ function CreateGeometryJobPage() {
         });
         setParameterValues(initialValues);
       } catch (parseError) {
-        setError('Failed to parse geometry parameter schema');
+        setError('Failed to parse design parameter schema');
         setParameterSchema([]);
         setParameterValues({});
       }
@@ -206,7 +209,7 @@ function CreateGeometryJobPage() {
     e.preventDefault();
     
     if (!selectedDesign) {
-      setError('Please select a geometry');
+      setError('Please select a design');
       return;
     }
     
@@ -227,23 +230,22 @@ function CreateGeometryJobPage() {
           designId: selectedDesign.id,
           inputParameters: JSON.stringify(parameterValues),
           jobNote: jobNote.trim() || null,
-          jobLabel: jobID.trim() || null,
+          jobLabel: jobLabel.trim() || null,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create geometry job');
+        throw new Error(errorData.error || 'Failed to create design job');
       }
 
       const createdJob = await response.json();
       
-      // Store the job ID and show the progress modal
-      setCreatedJobId(createdJob.id);
-      setShowProgressModal(true);
+      // Navigate to job details page to track progress
+      router.push(`/design-jobs/${createdJob.id}`);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create geometry job');
+      setError(err instanceof Error ? err.message : 'Failed to create design job');
     } finally {
       setSubmitting(false);
     }
@@ -256,7 +258,7 @@ function CreateGeometryJobPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading geometries...</p>
+            <p className="mt-4 text-gray-600">Loading designs...</p>
           </div>
         </div>
       </div>
@@ -270,12 +272,14 @@ function CreateGeometryJobPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">Create New Print</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {selectedDesign ? `New ${selectedDesign.name} Job` : 'Create New Print'}
+            </h1>
             <Link
-              href="/design-jobs"
+              href="/design-menu"
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
             >
-              ← Back to Jobs
+              &larr; Back to Designs
             </Link>
           </div>
         </div>
@@ -336,38 +340,28 @@ function CreateGeometryJobPage() {
 
         <div className="bg-white shadow rounded-lg">
           <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6">
-            <div>
-              <label htmlFor="geometry" className="block text-sm font-medium text-gray-700">
-                Design Type *
-              </label>
-              <select
-                id="geometry"
-                value={selectedDesign?.id || ''}
-                onChange={(e) => handleGeometryChange(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Select a design type</option>
-                {geometries.map((design) => (
-                  <option key={design.id} value={design.id}>
-                    {design.name} ({design.algorithmName})
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Design type shown as read-only info (pre-selected via URL) */}
+            {selectedDesign && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Design Type</label>
+                <p className="mt-1 text-sm text-gray-900 font-medium">
+                  {selectedDesign.name} ({selectedDesign.algorithmName})
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="jobID" className="block text-sm font-medium text-gray-700" title="Short message that will show in the print queue. Do not include patient data.">
-                  Job ID
+                <label htmlFor="jobLabel" className="block text-sm font-medium text-gray-700" title="Short label that will show in the print queue. Do not include patient data.">
+                  Job Label
                 </label>
                 <input
                   type="text"
-                  id="jobID"
-                  value={jobID}
-                  onChange={(e) => setJobID(e.target.value)}
+                  id="jobLabel"
+                  value={jobLabel}
+                  onChange={(e) => setJobLabel(e.target.value)}
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Optional job identifier"
+                  placeholder="Optional label for this job"
                 />
               </div>
               
@@ -389,7 +383,7 @@ function CreateGeometryJobPage() {
             {selectedDesign && parameterSchema.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Geometry Parameters for {selectedDesign.name}
+                  Design Parameters for {selectedDesign.name}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {parameterSchema.map((param) => (
@@ -470,7 +464,7 @@ function CreateGeometryJobPage() {
 
             <div className="flex justify-end gap-4 pt-4 border-t">
               <Link
-                href="/design-jobs"
+                href="/design-menu"
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
               >
                 Cancel
@@ -487,13 +481,6 @@ function CreateGeometryJobPage() {
         </div>
       </div>
 
-      {/* Progress Modal */}
-      {showProgressModal && createdJobId && (
-        <GeometryJobProgressModal
-          jobId={createdJobId}
-          onClose={() => setShowProgressModal(false)}
-        />
-      )}
     </div>
   );
 }

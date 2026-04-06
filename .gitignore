@@ -51,3 +51,7 @@ next-env.d.ts
 
 # blob storage (local development)
 /.blob-storage/
+
+# supabase
+/supabase/.temp/
+prod_*_dump*.sql

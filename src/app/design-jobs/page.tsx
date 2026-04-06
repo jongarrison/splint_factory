@@ -124,7 +124,7 @@ export default function GeometryJobsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading geometry jobs...</p>
+            <p className="mt-4 text-gray-600">Loading design jobs...</p>
           </div>
         </div>
       </div>
@@ -195,7 +195,7 @@ export default function GeometryJobsPage() {
                 onClick={refreshGeometryJobs}
                 disabled={isFetching}
                 className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Refresh geometry jobs"
+                title="Refresh design jobs"
               >
                 <svg 
                   className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} 
@@ -218,8 +218,8 @@ export default function GeometryJobsPage() {
           <div className="overflow-x-auto">
             {!geometryJobs || geometryJobs.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-gray-500 text-lg">No geometry jobs found</div>
-                <p className="text-gray-400 mt-2">Create your first geometry processing job to get started.</p>
+                <div className="text-gray-500 text-lg">No design jobs found</div>
+                <p className="text-gray-400 mt-2">Create your first design job to get started.</p>
                 <Link
                   href="/design-jobs/new"
                   className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -65,6 +65,7 @@ export default function GeometryJobDetailPage({
   const [creatingPrint, setCreatingPrint] = useState(false);
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [id, setId] = useState<string>('');
+  const pollingRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => {
     params.then(p => setId(p.id));
@@ -84,23 +85,49 @@ export default function GeometryJobDetailPage({
     }
   }, [session, status, router, id]);
 
+  // Poll while the job is still processing
+  useEffect(() => {
+    const isProcessing = job && !job.processCompletedAt;
+    if (!isProcessing || !id) {
+      clearInterval(pollingRef.current);
+      return;
+    }
+    pollingRef.current = setInterval(() => {
+      fetchJobQuiet();
+    }, 3000);
+    return () => clearInterval(pollingRef.current);
+  }, [job?.processCompletedAt, id]);
+
   const fetchJob = async () => {
     try {
       const response = await fetch(`/api/design-jobs/${id}`);
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('Geometry job not found');
+          throw new Error('Design job not found');
         }
-        throw new Error('Failed to fetch geometry job');
+        throw new Error('Failed to fetch design job');
       }
       const data = await response.json();
       setJob(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch geometry job');
+      setError(err instanceof Error ? err.message : 'Failed to fetch design job');
     } finally {
       setLoading(false);
     }
   };
+
+  // Silent re-fetch for polling (no loading state changes)
+  const fetchJobQuiet = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/design-jobs/${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setJob(data);
+      }
+    } catch {
+      // Silently ignore polling errors
+    }
+  }, [id]);
 
   const fetchPrintJobs = async () => {
     try {
@@ -148,8 +175,9 @@ export default function GeometryJobDetailPage({
   };
 
   const getInspectCommand = () => {
-    const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
-    const script = isProduction ? 'inspect:prod' : 'inspect';
+    const host = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isLocal = host.includes('localhost') || host.endsWith('.local');
+    const script = isLocal ? 'inspect' : 'inspect:prod';
     return `npm run ${script} -- ${job?.objectId || id}`;
   };
 
@@ -248,7 +276,7 @@ export default function GeometryJobDetailPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading geometry job...</p>
+            <p className="mt-4 text-gray-600">Loading design job...</p>
           </div>
         </div>
       </div>
@@ -286,6 +314,9 @@ export default function GeometryJobDetailPage({
 
   const parameterData = parseParameterData(job.inputParameters);
   const parameterSchema = parseParameterSchema(job.design.inputParameterSchema);
+  const isProcessing = !job.processCompletedAt;
+  const isSuccess = job.processCompletedAt && job.isProcessSuccessful;
+  const isFailed = job.processCompletedAt && !job.isProcessSuccessful;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -296,9 +327,6 @@ export default function GeometryJobDetailPage({
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Design Job Details</h1>
-              <p className="mt-2 text-gray-600">
-                {/* View details for design processing job */}
-              </p>
             </div>
             <div className="flex gap-4">
               {session?.user?.role === 'SYSTEM_ADMIN' && (
@@ -315,122 +343,91 @@ export default function GeometryJobDetailPage({
                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium"
                 title="Create new job with same settings"
               >
-                📋 New from Template
+                New from Template
               </Link>
               <Link
                 href="/design-jobs"
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
               >
-                ← Back to Jobs
+                &larr; Back to Jobs
               </Link>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Associated Print Jobs */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-lg font-medium text-gray-900">Associated Print Jobs</h2>
-              {job && !job.isProcessSuccessful ? (
-                <span className="text-sm text-red-600">Processing failed</span>
-              ) : job && !job.printFileName ? (
-                <span className="text-sm text-gray-500">No print file available</span>
-              ) : (
-                <button
-                  onClick={handleCreatePrint}
-                  disabled={creatingPrint}
-                  className={`${
-                    creatingPrint 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-purple-600 hover:bg-purple-700'
-                  } text-white px-4 py-2 rounded text-sm font-medium`}
-                >
-                  {creatingPrint ? 'Creating...' : 'New Print'}
-                </button>
-              )}
-            </div>
-            
-            <div className="px-6 py-4">
-              {loadingPrintJobs ? (
-                <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-sm text-gray-600">Loading print jobs...</p>
-                </div>
-              ) : printJobs.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p className="text-base">No print jobs yet</p>
-                  <p className="text-sm mt-2">Click "New Print" to create a print job for this geometry</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Print Job ID
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Started
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Completed
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {printJobs.map((printJob) => (
-                        <tr key={printJob.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900 font-mono">
-                              {printJob.id.substring(0, 12)}...
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            {getPrintStatusBadge(printJob)}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {printJob.printStartedAt ? formatDate(printJob.printStartedAt) : '—'}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {printJob.printCompletedAt ? formatDate(printJob.printCompletedAt) : '—'}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                            <Link
-                              href={`/print-queue/${printJob.id}`}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
-                            >
-                              Details
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+        {/* Inline Progress Banner - shown while job is processing */}
+        {isProcessing && (
+          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-6 py-4 flex items-center gap-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 flex-shrink-0"></div>
+            <div>
+              <p className="font-semibold text-blue-800">
+                {job.processStartedAt ? 'Processing...' : 'Queued'}
+              </p>
+              <p className="text-sm text-blue-600">
+                {job.processStartedAt
+                  ? `Processing ${job.design.name}. This page will update automatically.`
+                  : `${job.design.name} is waiting to be processed.`}
+              </p>
             </div>
           </div>
+        )}
 
+        {/* Success Banner */}
+        {isSuccess && (
+          <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-6 py-4 flex items-center gap-4">
+            <div className="text-2xl flex-shrink-0">&#10003;</div>
+            <div className="flex-1">
+              <p className="font-semibold text-green-800">Processing Complete - Ready to Print!</p>
+              <p className="text-sm text-green-600">
+                {job.design.name} processed successfully.
+                {job.objectId && <> Object ID: <span className="font-mono font-bold">{job.objectId}</span></>}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Failure Banner */}
+        {isFailed && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-6 py-4 flex items-center gap-4">
+            <div className="text-2xl flex-shrink-0">&#10007;</div>
+            <div>
+              <p className="font-semibold text-red-800">Processing Failed</p>
+              <p className="text-sm text-red-600">
+                {job.design.name} encountered an error. See the processing log below.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-6">
+          {/* 3D Model Viewer - at top when available */}
+          {job.meshFileName && (
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">3D Model Preview</h2>
+              </div>
+              <div className="px-6 py-4">
+                <StlViewer 
+                  url={`/api/design-jobs/${job.id}/mesh-file`}
+                  height={500}
+                  modelColor="#3b82f6"
+                />
+              </div>
+            </div>
+          )}
           {/* Status and Basic Info */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Job Information</h2>
+              <h2 className="text-lg font-medium text-gray-900">Design Job Info</h2>
             </div>
             <div className="px-6 py-4">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">IDs</dt>
                   <dd className="mt-1">
-                    <div className="text-xs text-gray-500">Object:</div>
+                    <div className="text-xs text-gray-500">Object ID:</div>
                     <div className="text-sm font-mono font-semibold text-blue-600">{job.objectId || 'N/A'}</div>
-                    <div className="text-xs text-gray-500 mt-2">Job:</div>
+                    <div className="text-xs text-gray-500 mt-2">Job Label:</div>
                     <div className="text-sm text-gray-900">{job.jobLabel || 'N/A'}</div>
                   </dd>
                 </div>
@@ -439,7 +436,7 @@ export default function GeometryJobDetailPage({
                   <dd className="mt-1">{getStatusBadge(job)}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Job ID</dt>
+                  <dt className="text-sm font-medium text-gray-500">Design Job ID</dt>
                   <dd className="mt-1 text-sm text-gray-900 font-mono">{job.id}</dd>
                 </div>
                 <div>
@@ -487,66 +484,11 @@ export default function GeometryJobDetailPage({
             </div>
           </div>
 
-          {/* Geometry Information */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Geometry Configuration</h2>
-            </div>
-            <div className="px-6 py-4">
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {job.meshFileName && (
-                  <div className="md:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500">Geometry File</dt>
-                    <dd className="mt-1 text-sm text-gray-900 flex items-center gap-3">
-                      <span className="font-mono truncate" title={job.meshFileName}>{job.meshFileName}</span>
-                      <a
-                        href={`/api/design-jobs/${job.id}/mesh-file`}
-                        className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium"
-                      >
-                        Download
-                      </a>
-                    </dd>
-                  </div>
-                )}
-                {job.printFileName && (
-                  <div className="md:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500">Print File</dt>
-                    <dd className="mt-1 text-sm text-gray-900 flex items-center gap-3">
-                      <span className="font-mono truncate" title={job.printFileName}>{job.printFileName}</span>
-                      <a
-                        href={`/api/design-jobs/${job.id}/print-file`}
-                        className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium"
-                      >
-                        Download
-                      </a>
-                    </dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          </div>
-
-          {/* 3D Model Viewer */}
-          {job.meshFileName && (
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">3D Model Preview</h2>
-              </div>
-              <div className="px-6 py-4">
-                <StlViewer 
-                  url={`/api/design-jobs/${job.id}/mesh-file`}
-                  height={500}
-                  modelColor="#3b82f6"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Parameter Values */}
+          {/* Input Values */}
           {parameterSchema.length > 0 && (
             <div className="bg-white shadow rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Parameter Values</h2>
+                <h2 className="text-lg font-medium text-gray-900">Input Values</h2>
               </div>
               <div className="px-6 py-4">
                 <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -571,10 +513,142 @@ export default function GeometryJobDetailPage({
             </div>
           )}
 
-          {/* Processing Log */}
+          {/* Output Files */}
+          {(job.meshFileName || job.printFileName) && (
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Output Files</h2>
+              </div>
+              <div className="px-6 py-4">
+                <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {job.meshFileName && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Mesh File</dt>
+                      <dd className="mt-1 text-sm text-gray-900 flex items-center gap-3">
+                        <span className="font-mono truncate" title={job.meshFileName}>{job.meshFileName}</span>
+                        <a
+                          href={`/api/design-jobs/${job.id}/mesh-file`}
+                          className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium"
+                        >
+                          Download
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                  {job.printFileName && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Printer Gcode File</dt>
+                      <dd className="mt-1 text-sm text-gray-900 flex items-center gap-3">
+                        <span className="font-mono truncate" title={job.printFileName}>{job.printFileName}</span>
+                        <a
+                          href={`/api/design-jobs/${job.id}/print-file`}
+                          className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium"
+                        >
+                          Download
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            </div>
+          )}
+
+          {/* Developer Info - collapsible */}
+          <details className="group">
+            <summary className="flex items-center cursor-pointer px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700">
+              <span className="mr-2 transition-transform group-open:rotate-90">&#9654;</span>
+              Developer Info
+            </summary>
+            <div className="space-y-6">
+
+          {/* Associated Print Jobs */}
           <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-lg font-medium text-gray-900">Associated Print Jobs</h2>
+              {job && !job.isProcessSuccessful ? (
+                <span className="text-sm text-red-600">Processing failed</span>
+              ) : job && !job.printFileName ? (
+                <span className="text-sm text-gray-500">No print file available</span>
+              ) : (
+                <button
+                  onClick={handleCreatePrint}
+                  disabled={creatingPrint}
+                  className={`${
+                    creatingPrint 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-purple-600 hover:bg-purple-700'
+                  } text-white px-4 py-2 rounded text-sm font-medium`}
+                >
+                  {creatingPrint ? 'Creating...' : 'New Print'}
+                </button>
+              )}
+            </div>
+            
             <div className="px-6 py-4">
-              <ProcessingLogViewer log={job.processingLog} />
+              {loadingPrintJobs ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-sm text-gray-600">Loading print jobs...</p>
+                </div>
+              ) : printJobs.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="text-base">No print jobs yet</p>
+                  <p className="text-sm mt-2">Click &quot;New Print&quot; to create a print job for this design</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Print Job ID
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Started
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Completed
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {printJobs.map((printJob) => (
+                        <tr key={printJob.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900 font-mono">
+                              {printJob.id.substring(0, 12)}...
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            {getPrintStatusBadge(printJob)}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {printJob.printStartedAt ? formatDate(printJob.printStartedAt) : '\u2014'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {printJob.printCompletedAt ? formatDate(printJob.printCompletedAt) : '\u2014'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                            <Link
+                              href={`/print-queue/${printJob.id}`}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
+                            >
+                              Details
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 
@@ -599,7 +673,7 @@ export default function GeometryJobDetailPage({
             )}
           </div>
 
-          {/* Raw Data (for debugging) */}
+          {/* Raw Parameter Data */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-medium text-gray-900">Raw Parameter Data</h2>
@@ -610,6 +684,16 @@ export default function GeometryJobDetailPage({
               </pre>
             </div>
           </div>
+
+          {/* Processing Log */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4">
+              <ProcessingLogViewer log={job.processingLog} />
+            </div>
+          </div>
+
+            </div>
+          </details>
         </div>
       </div>
 

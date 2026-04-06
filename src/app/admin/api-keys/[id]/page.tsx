@@ -39,8 +39,8 @@ export default function ApiKeyFormPage({ params }: Props) {
 
   // Available permissions
   const availablePermissions = [
-    { id: 'geometry-queue:read', label: 'Geometry Queue - Read', category: 'Geometry Queue' },
-    { id: 'geometry-queue:write', label: 'Geometry Queue - Write', category: 'Geometry Queue' },
+    { id: 'geometry-queue:read', label: 'Design Processing - Read', category: 'Design Processing' },
+    { id: 'geometry-queue:write', label: 'Design Processing - Write', category: 'Design Processing' },
     { id: 'print-queue:read', label: 'Print Queue - Read', category: 'Print Queue' },
     { id: 'print-queue:write', label: 'Print Queue - Write', category: 'Print Queue' },
     { id: 'print-queue:create', label: 'Print Queue - Create', category: 'Print Queue' }
@@ -170,7 +170,19 @@ export default function ApiKeyFormPage({ params }: Props) {
 
   const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for non-HTTPS contexts (local dev over HTTP)
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
       setSuccess('API key copied to clipboard!');
     } catch (err) {
       console.error('Failed to copy:', err);
@@ -244,15 +256,15 @@ export default function ApiKeyFormPage({ params }: Props) {
                       <label className="block text-sm font-bold text-gray-900 mb-2">
                         Your New API Key:
                       </label>
-                      <div className="relative">
+                      <div>
                         <div className="bg-gray-900 border-4 border-gray-800 rounded-lg p-4 font-mono text-sm text-white break-all shadow-inner min-h-[3rem] flex items-center">
                           {generatedApiKey}
                         </div>
                         <button
                           onClick={() => copyToClipboard(generatedApiKey)}
-                          className="absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium shadow-sm transition-colors"
+                          className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium shadow-sm transition-colors"
                         >
-                          Copy
+                          Copy to Clipboard
                         </button>
                       </div>
                     </div>
@@ -281,7 +293,7 @@ export default function ApiKeyFormPage({ params }: Props) {
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      placeholder="e.g., Geometry Processor v1.2"
+                      placeholder="e.g., Design Processor v1.2"
                       maxLength={250}
                       required
                     />

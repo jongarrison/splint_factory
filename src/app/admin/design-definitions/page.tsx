@@ -75,12 +75,12 @@ export default function DesignListPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete geometry');
+        throw new Error('Failed to delete design');
       }
 
       fetchGeometries();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete geometry');
+      setError(err instanceof Error ? err.message : 'Failed to delete design');
     }
   };
 
@@ -163,12 +163,12 @@ export default function DesignListPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Named Geometry Designs</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Design Definitions</h1>
         <Link
           href="/admin/design-definitions/new"
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
         >
-          Create New Geometry
+          Create New Design
         </Link>
       </div>
 

@@ -755,7 +755,7 @@ export default function PrintQueueDetailPage({
                   <dd className="print-queue-id mt-1 text-sm text-gray-900 font-mono">{entry.id}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Geometry Job ID</dt>
+                  <dt className="text-sm font-medium text-gray-500">Design Job ID</dt>
                   <dd className="geometry-job-id mt-1 text-sm text-gray-900 font-mono">
                     <Link 
                       href={`/design-jobs/${entry.designJob.id}`}
@@ -766,7 +766,7 @@ export default function PrintQueueDetailPage({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Geometry Created</dt>
+                  <dt className="text-sm font-medium text-gray-500">Design Created</dt>
                   <dd className="geometry-creation-time mt-1 text-sm text-gray-900">{formatDate(entry.designJob.createdAt)}</dd>
                 </div>
                 <div>
@@ -908,11 +908,11 @@ export default function PrintQueueDetailPage({
             <div className="px-6 py-4">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Geometry File (3MF)</dt>
+                  <dt className="text-sm font-medium text-gray-500">Design File (3MF)</dt>
                   <dd className="mt-1 text-sm text-gray-900">
                     {entry.hasGeometryFile ? (
                       <span className="mesh-filename file-status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {entry.meshFileName || 'geometry.3mf'}
+                        {entry.meshFileName || 'design.3mf'}
                       </span>
                     ) : (
                       <span className="text-gray-500">Not available</span>
@@ -957,12 +957,12 @@ export default function PrintQueueDetailPage({
           {/* Geometry Configuration */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Geometry Configuration</h2>
+              <h2 className="text-lg font-medium text-gray-900">Design Configuration</h2>
             </div>
             <div className="px-6 py-4">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Geometry Name</dt>
+                  <dt className="text-sm font-medium text-gray-500">Design Name</dt>
                   <dd className="geometry-name mt-1 text-sm text-gray-900">{entry.designJob.design.name}</dd>
                 </div>
                 <div>

@@ -37,12 +37,12 @@ export default function GeoJobMenuPage() {
     try {
       const response = await fetch('/api/designs?activeOnly=true');
       if (!response.ok) {
-        throw new Error('Failed to fetch geometries');
+        throw new Error('Failed to fetch designs');
       }
       const data = await response.json();
       setGeometries(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load geometries');
+      setError(err instanceof Error ? err.message : 'Failed to load designs');
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export default function GeoJobMenuPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading geometries...</p>
+            <p className="mt-4 text-gray-600">Loading designs...</p>
           </div>
         </div>
       </div>

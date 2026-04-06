@@ -77,7 +77,7 @@ export default function EditDesignPage({ params }: { params: Promise<{ id: strin
       setLoading(true);
       const response = await fetch(`/api/admin/design-definitions/${resolvedParams.id}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch geometry');
+        throw new Error('Failed to fetch design');
       }
       const data = await response.json();
       
@@ -107,7 +107,7 @@ export default function EditDesignPage({ params }: { params: Promise<{ id: strin
       setLoading(true);
       const response = await fetch(`/api/admin/design-definitions/${sourceId}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch geometry for copy');
+        throw new Error('Failed to fetch design for copy');
       }
       const data = await response.json();
       
@@ -236,17 +236,17 @@ export default function EditDesignPage({ params }: { params: Promise<{ id: strin
 
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
-      setError('Geometry Name is required');
+      setError('Design Name is required');
       return false;
     }
     
     if (!formData.algorithmName.trim()) {
-      setError('Geometry Algorithm Name is required');
+      setError('Algorithm Name is required');
       return false;
     }
     
     if (formData.algorithmName.includes(' ')) {
-      setError('Geometry Algorithm Name cannot contain spaces');
+      setError('Algorithm Name cannot contain spaces');
       return false;
     }
     
@@ -325,10 +325,10 @@ export default function EditDesignPage({ params }: { params: Promise<{ id: strin
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save geometry');
+        throw new Error(errorData.error || 'Failed to save design');
       }
       
-      setSuccess(isNew ? 'Geometry created successfully!' : 'Geometry updated successfully!');
+      setSuccess(isNew ? 'Design created successfully!' : 'Design updated successfully!');
       
       if (isNew) {
         // Redirect to list after creating
@@ -369,7 +369,7 @@ export default function EditDesignPage({ params }: { params: Promise<{ id: strin
         <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-          {isNew ? (copyFromId ? 'Copy Named Geometry' : 'Create New Named Geometry') : 'Edit Named Geometry'}
+          {isNew ? (copyFromId ? 'Copy Design Definition' : 'Create New Design Definition') : 'Edit Design Definition'}
         </h1>
         
         {error && (
@@ -429,7 +429,7 @@ export default function EditDesignPage({ params }: { params: Promise<{ id: strin
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 maxLength={250}
                 rows={2}
-                placeholder="Brief description shown on geometry selection page"
+                placeholder="Brief description shown on design selection page"
               />
             </div>
             
@@ -698,7 +698,7 @@ export default function EditDesignPage({ params }: { params: Promise<{ id: strin
               disabled={loading}
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 text-white px-4 py-2 rounded-md"
             >
-              {loading ? 'Saving...' : (isNew ? 'Create Geometry' : 'Update Geometry')}
+              {loading ? 'Saving...' : (isNew ? 'Create Design' : 'Update Design')}
             </button>
           </div>
         </form>

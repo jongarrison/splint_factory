@@ -1,6 +1,6 @@
 # Naming Refactor + UX Streamlining Tracker
 **Date:** 2026-04-02
-**Status:** In Progress
+**Status:** Complete (as of 2026-04-03)
 
 ## Goals
 1. Rename user-facing and code-level nomenclature for consistency ("Design" + "DesignJob" + "PrintJob")
@@ -14,21 +14,32 @@ PostgreSQL rename migration (data-preserving):
 2. Create empty migration with `prisma migrate dev --create-only`
 3. Write ALTER TABLE RENAME TO / ALTER TABLE RENAME COLUMN SQL
 4. Run migration
-5. Remove @@map/@map annotations (DB names now match Prisma names)
+5. ~~Remove @@map/@map annotations~~ SKIPPED: tables kept with old DB names, @@map is correct
 
 All renames are metadata-only operations in PostgreSQL -- instant, no data rewrite.
 
 ## Execution Order
 - [x] Step 0: Create this tracking document
-- [ ] Step 1: Prisma schema rename + fresh migration
-- [ ] Step 2: API route renames (file/folder moves in Next.js app router)
-- [ ] Step 3: Page route renames (file/folder moves)
-- [ ] Step 4: Component updates (UI changes, kill modal, update job details page)
-- [ ] Step 5: Nav/label updates (menu text, page headers)
-- [ ] Step 6: splint_geo_processor updates (API URLs, field names in payloads)
-- [ ] Step 7: splint_client updates (hardcoded URLs, variable names)
-- [ ] Step 8: Dead code cleanup
-- [ ] Step 9: Build/type-check all projects
+- [x] Step 1: Prisma schema rename + migration (columns only; tables use @@map)
+- [x] Step 2: API route renames (file/folder moves in Next.js app router)
+- [x] Step 3: Page route renames (file/folder moves)
+- [x] Step 4: Component updates (UI changes, kill modal, update job details page)
+- [x] Step 5: Nav/label updates (menu text, page headers, all user-visible strings)
+- [x] Step 6: splint_geo_processor updates (API URLs, field names in payloads)
+- [x] Step 7: splint_client updates (hardcoded URLs, variable names)
+- [x] Step 8: Dead code cleanup (GeometryJobProgressModal deleted, old routes removed)
+- [x] Step 9: Build/type-check all projects
+
+## Remaining Intentional Decisions
+- @@map annotations in schema.prisma: DB table names stay as NamedGeometry, GeometryProcessingQueue, etc.
+  Only columns were renamed. Removing @@map would require a table-rename migration (optional future work).
+- Permission IDs (geometry-queue:read, geometry-queue:write): Stored in DB on existing API keys.
+  Labels updated to "Design Processing - Read/Write" but IDs kept to avoid data migration.
+- Internal variable names (geometryName, geometryJobs, handleGeometryChange, etc.): Left as-is.
+  Renaming code-only variables is pure churn with no user benefit.
+- CSS class names (geometry-name, geometry-job-id, etc.): Left as-is. Not user-visible.
+- Three.js geometry references in StlViewer.tsx: Correct domain term, not our naming.
+
 
 ---
 

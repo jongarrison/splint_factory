@@ -47,7 +47,7 @@ export default function PrintAcceptanceModal({
     {
       value: 'REJECT_DESIGN',
       label: 'Reject Design',
-      description: 'Geometry or design is incorrect',
+      description: 'Design is incorrect or unacceptable',
       color: 'border-gray-200 hover:border-orange-300 hover:bg-orange-50',
       selectedColor: 'border-orange-500 bg-orange-50 ring-2 ring-orange-200',
       ring: 'bg-orange-600 hover:bg-orange-700',

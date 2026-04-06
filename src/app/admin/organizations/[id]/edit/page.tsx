@@ -66,7 +66,7 @@ export default function OrganizationDetailPage({
       ]);
 
       if (!orgRes.ok) throw new Error('Failed to fetch organization');
-      if (!geoRes.ok) throw new Error('Failed to fetch geometries');
+      if (!geoRes.ok) throw new Error('Failed to fetch designs');
       if (!visRes.ok) throw new Error('Failed to fetch visibility settings');
 
       const orgData: OrgDetail = await orgRes.json();
@@ -166,7 +166,7 @@ export default function OrganizationDetailPage({
         throw new Error(data.error || 'Failed to save');
       }
       setSavedIds(new Set(selectedIds));
-      setSuccess('Geometry visibility saved successfully.');
+      setSuccess('Design visibility saved successfully.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
