@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { validateApiKey, checkApiPermission } from '@/lib/api-auth';
 import { getBlobStorageInstance } from '@/lib/blob-storage';
+import { sendEmail } from '@/lib/email';
+import DesignJobFailedEmail from '@/emails/design-job-failed';
 
 // POST /api/design-processing/result - Report geometry processing result from external software
 export async function POST(request: NextRequest) {
@@ -256,6 +258,12 @@ export async function POST(request: NextRequest) {
               name: true,
               algorithmName: true
             }
+          },
+          creator: {
+            select: {
+              name: true,
+              email: true
+            }
           }
         }
       });
@@ -283,6 +291,46 @@ export async function POST(request: NextRequest) {
     // Log error message if processing failed
     if (!isSuccess && errorMessage) {
       console.error(`Geometry processing error for job ${designJobId}: ${errorMessage}`);
+    }
+
+    // Send failure notification email to all SYSTEM_ADMINs (fire-and-forget)
+    if (!isSuccess) {
+      const job = result.updatedGeometryJob;
+      const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
+      const jobUrl = `${baseUrl}/design-jobs/${job.id}`;
+
+      // Format input parameters for readability
+      let formattedParams = job.inputParameters;
+      try {
+        formattedParams = JSON.stringify(JSON.parse(job.inputParameters), null, 2);
+      } catch { /* use raw string */ }
+
+      prisma.user
+        .findMany({
+          where: { role: 'SYSTEM_ADMIN' },
+          select: { email: true },
+        })
+        .then((admins) => {
+          const adminEmails = admins.map((a) => a.email);
+          if (adminEmails.length === 0) return;
+
+          return sendEmail({
+            to: adminEmails,
+            subject: `Design job failed: ${job.jobLabel || job.objectId || job.id}`,
+            react: DesignJobFailedEmail({
+              userName: job.creator.name || 'Unknown',
+              userEmail: job.creator.email,
+              objectId: job.objectId,
+              jobLabel: job.jobLabel,
+              designName: job.design.name,
+              algorithmName: job.design.algorithmName,
+              inputParameters: formattedParams,
+              errorMessage: errorMessage || null,
+              jobUrl,
+            }),
+          });
+        })
+        .catch((err) => console.error('[Email] Failed to send job failure notification:', err));
     }
 
     const response: any = {
