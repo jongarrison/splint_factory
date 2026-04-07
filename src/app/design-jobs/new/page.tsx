@@ -124,14 +124,10 @@ function CreateGeometryJobPage() {
         const schema: InputParameter[] = JSON.parse(design.inputParameterSchema);
         setParameterSchema(schema);
         
-        // Initialize parameter values with defaults
+        // Initialize parameter values as empty (no defaults)
         const initialValues: Record<string, any> = {};
         schema.forEach(param => {
-          if (param.InputType === 'Float' || param.InputType === 'Integer') {
-            initialValues[param.InputName] = param.NumberMin || 0;
-          } else if (param.InputType === 'Text') {
-            initialValues[param.InputName] = '';
-          }
+          initialValues[param.InputName] = '';
         });
         setParameterValues(initialValues);
       } catch (parseError) {
