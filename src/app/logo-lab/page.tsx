@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 // Widely supported web-safe and system fonts
 const FONTS = [
@@ -30,6 +30,23 @@ const FONTS = [
   'sans-serif',
   'serif',
 ];
+
+// Convert RGB to HSV
+function rgbToHsv(r: number, g: number, b: number): HSV {
+  const rN = r / 255, gN = g / 255, bN = b / 255;
+  const max = Math.max(rN, gN, bN), min = Math.min(rN, gN, bN);
+  const d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    if (max === rN) h = 60 * (((gN - bN) / d) % 6);
+    else if (max === gN) h = 60 * ((bN - rN) / d + 2);
+    else h = 60 * ((rN - gN) / d + 4);
+  }
+  if (h < 0) h += 360;
+  const s = max === 0 ? 0 : (d / max) * 100;
+  const v = max * 100;
+  return { h: Math.round(h), s: Math.round(s), v: Math.round(v) };
+}
 
 // Convert HSV to RGB then to hex
 function hsvToHex(h: number, s: number, v: number): string {
@@ -152,6 +169,82 @@ export default function LogoLabPage() {
   const [secondary, setSecondary] = useState<HSV>({ h: 30, s: 85, v: 95 });
   const [font, setFont] = useState('Arial');
 
+  // Image sampler state
+  const [imageUrl, setImageUrl] = useState('/images/splint_factory_sample_logo.png');
+  const [samplerTarget, setSamplerTarget] = useState<'primary' | 'secondary'>('primary');
+  const [samplerError, setSamplerError] = useState('');
+  const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  // Load image onto canvas
+  const loadImage = useCallback((url: string) => {
+    setSamplerError('');
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      imgRef.current = img;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      // Scale to fit within the canvas area while preserving aspect ratio
+      const maxW = canvas.parentElement?.clientWidth || 400;
+      const maxH = 300;
+      const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
+    };
+    img.onerror = () => {
+      setSamplerError('Failed to load image. Check URL or CORS restrictions.');
+    };
+    img.src = url;
+  }, []);
+
+  // Load default image on mount
+  useEffect(() => {
+    if (session?.user) {
+      loadImage(imageUrl);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+    const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+    try {
+      const pixel = ctx.getImageData(x, y, 1, 1).data;
+      const hsv = rgbToHsv(pixel[0], pixel[1], pixel[2]);
+      if (samplerTarget === 'primary') setPrimary(hsv);
+      else setSecondary(hsv);
+    } catch {
+      setSamplerError('Cannot sample: image is cross-origin restricted.');
+    }
+  }, [samplerTarget]);
+
+  const handleCanvasHover = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+    const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+    try {
+      const pixel = ctx.getImageData(x, y, 1, 1).data;
+      setHoveredColor(`rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`);
+    } catch {
+      setHoveredColor(null);
+    }
+  }, []);
+
   useEffect(() => {
     if (status === 'loading') return;
     if (!session?.user) {
@@ -213,6 +306,78 @@ export default function LogoLabPage() {
                 Font: {font}
               </button>
             </div>
+          </div>
+
+          {/* Image Sampler */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 14, color: '#ccc' }}>Color Sampler</div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <input
+                type="text"
+                value={imageUrl}
+                onChange={e => setImageUrl(e.target.value)}
+                placeholder="Image URL..."
+                style={{
+                  flex: 1, padding: '6px 10px', fontSize: 13, borderRadius: 6,
+                  backgroundColor: '#2a2a2a', color: '#ddd', border: '1px solid #555',
+                }}
+              />
+              <button
+                onClick={() => loadImage(imageUrl)}
+                style={{
+                  padding: '6px 12px', fontSize: 13, borderRadius: 6,
+                  backgroundColor: '#444', color: '#ddd', border: '1px solid #555',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >Load</button>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <button
+                onClick={() => setSamplerTarget('primary')}
+                style={{
+                  flex: 1, padding: '6px 0', fontSize: 12, borderRadius: 6, cursor: 'pointer',
+                  backgroundColor: samplerTarget === 'primary' ? '#335' : '#2a2a2a',
+                  color: samplerTarget === 'primary' ? '#8af' : '#888',
+                  border: samplerTarget === 'primary' ? '2px solid #68f' : '1px solid #555',
+                  fontWeight: samplerTarget === 'primary' ? 600 : 400,
+                }}
+              >Sampling Primary</button>
+              <button
+                onClick={() => setSamplerTarget('secondary')}
+                style={{
+                  flex: 1, padding: '6px 0', fontSize: 12, borderRadius: 6, cursor: 'pointer',
+                  backgroundColor: samplerTarget === 'secondary' ? '#432' : '#2a2a2a',
+                  color: samplerTarget === 'secondary' ? '#fa8' : '#888',
+                  border: samplerTarget === 'secondary' ? '2px solid #f86' : '1px solid #555',
+                  fontWeight: samplerTarget === 'secondary' ? 600 : 400,
+                }}
+              >Sampling Secondary</button>
+            </div>
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <canvas
+                ref={canvasRef}
+                onClick={handleCanvasClick}
+                onMouseMove={handleCanvasHover}
+                onMouseLeave={() => setHoveredColor(null)}
+                style={{
+                  borderRadius: 8, border: '1px solid #555', cursor: 'crosshair',
+                  maxWidth: '100%', display: 'block',
+                  backgroundColor: '#1a1a1a',
+                }}
+              />
+              {hoveredColor && (
+                <div style={{
+                  position: 'absolute', top: 8, right: 8,
+                  width: 24, height: 24, borderRadius: 4,
+                  backgroundColor: hoveredColor, border: '2px solid #fff',
+                  boxShadow: '0 0 4px rgba(0,0,0,0.5)',
+                  pointerEvents: 'none',
+                }} />
+              )}
+            </div>
+            {samplerError && (
+              <div style={{ marginTop: 6, fontSize: 12, color: '#f88' }}>{samplerError}</div>
+            )}
           </div>
         </div>
 

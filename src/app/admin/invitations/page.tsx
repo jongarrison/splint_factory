@@ -39,6 +39,7 @@ export default function InvitationsPage() {
   const [error, setError] = useState<string>('');
   const [creating, setCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   
     // Form state
   const [selectedOrgId, setSelectedOrgId] = useState('');
@@ -296,10 +297,16 @@ export default function InvitationsPage() {
 
         {/* Invitations List */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Invitation Links ({invitations.length})
+              {showAll ? 'All' : 'Active'} Invitations ({(showAll ? invitations : invitations.filter(i => !i.usedAt && new Date(i.expiresAt) >= new Date())).length})
             </h2>
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {showAll ? 'Show active only' : 'Show all'}
+            </button>
           </div>
 
           {invitations.length === 0 ? (
@@ -314,7 +321,7 @@ export default function InvitationsPage() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {invitations.map((invitation) => {
+              {invitations.filter(inv => showAll || (!inv.usedAt && new Date(inv.expiresAt) >= new Date())).map((invitation) => {
                 const invitationUrl = getInvitationUrl(invitation.token);
                 const isExpired = new Date(invitation.expiresAt) < new Date();
                 const isUsed = !!invitation.usedAt;
@@ -349,14 +356,8 @@ export default function InvitationsPage() {
                         </div>
                         
                         {invitation.email ? (
-                          <div className="mt-3 text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                            <span>Invitation sent by email</span>
-                            <button
-                              onClick={() => copyToClipboard(invitationUrl)}
-                              className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                            >
-                              Copy link
-                            </button>
+                          <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                            Invitation sent by email
                           </div>
                         ) : (
                           <div className="mt-3 flex items-center gap-2">
