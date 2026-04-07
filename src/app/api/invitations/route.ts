@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { randomBytes } from 'crypto'
+import { sendEmail } from '@/lib/email'
+import InvitationEmail from '@/emails/invitation-email'
 
 // GET /api/invitations - List invitations for current user's organization
 export async function GET() {
@@ -53,7 +55,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { organizationId, expiresInDays = 7 } = body
+    const { organizationId, expiresInDays = 7, email } = body
+
+    // Basic email format validation if provided
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
+    }
 
     // Get user with organization and role
     const user = await prisma.user.findUnique({
@@ -97,6 +104,7 @@ export async function POST(request: NextRequest) {
     const invitation = await prisma.invitationLink.create({
       data: {
         token,
+        email: email || null,
         expiresAt,
         organizationId,
         createdByUserId: user.id,
@@ -106,6 +114,21 @@ export async function POST(request: NextRequest) {
         organization: { select: { id: true, name: true } }
       }
     })
+
+    // Send invitation email if email was provided
+    if (email) {
+      const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
+      const registerUrl = `${baseUrl}/register?invitation=${token}`;
+      sendEmail({
+        to: email,
+        subject: `You're invited to join ${organization.name} on Splint Factory`,
+        react: InvitationEmail({
+          registerUrl,
+          organizationName: organization.name,
+          invitedByName: user.name || user.email,
+        }),
+      });
+    }
 
     return NextResponse.json(invitation, { status: 201 })
   } catch (error) {

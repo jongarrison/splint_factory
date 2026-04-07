@@ -76,6 +76,10 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
+    // If invitation had a specific email, the user proved inbox access by clicking
+    // the emailed link, so pre-verify their email. Otherwise send verification email.
+    const emailPreVerified = invitationData.email && invitationData.email === email;
+
     // Create user with organization association from invitation
     const user = await prisma.user.create({
       data: {
@@ -85,7 +89,8 @@ export async function POST(request: NextRequest) {
         organizationId: invitationData.organizationId,
         role: UserRole.MEMBER,
         invitedByUserId: invitationData.createdByUserId,
-        invitationAcceptedAt: new Date()
+        invitationAcceptedAt: new Date(),
+        ...(emailPreVerified ? { emailVerified: new Date() } : {}),
       },
     })
 
@@ -118,23 +123,25 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send email verification (fire-and-forget, don't block registration)
-    try {
-      const verificationToken = await prisma.emailVerificationToken.create({
-        data: {
-          userId: user.id,
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        },
-      });
-      const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
-      const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken.token}`;
-      sendEmail({
-        to: user.email,
-        subject: 'Verify your Splint Factory email',
-        react: EmailVerificationEmail({ verifyUrl }),
-      });
-    } catch (emailErr) {
-      console.error('Failed to send verification email:', emailErr);
+    // Only send verification email if not pre-verified via invitation email
+    if (!emailPreVerified) {
+      try {
+        const verificationToken = await prisma.emailVerificationToken.create({
+          data: {
+            userId: user.id,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        });
+        const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
+        const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken.token}`;
+        sendEmail({
+          to: user.email,
+          subject: 'Verify your Splint Factory email',
+          react: EmailVerificationEmail({ verifyUrl }),
+        });
+      } catch (emailErr) {
+        console.error('Failed to send verification email:', emailErr);
+      }
     }
 
     return NextResponse.json(
