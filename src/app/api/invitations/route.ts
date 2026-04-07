@@ -8,13 +8,13 @@ export async function GET() {
   try {
     const session = await auth()
     
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get user with organization
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
       include: { organization: true }
     })
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth()
     
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     // Get user with organization and role
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
       include: { organization: true }
     })
 

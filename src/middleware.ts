@@ -121,6 +121,6 @@ export const config = {
     /*
      * Match all request paths except static files and NextAuth routes
      */
-    '/((?!_next/static|_next/image|images|favicon.ico|api/auth).*)',
+    '/((?!_next/static|_next/image|images|favicon.ico|icon.svg|api/auth).*)',
   ],
 }

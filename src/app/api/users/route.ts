@@ -82,7 +82,7 @@ export async function PATCH(request: NextRequest) {
 
     // Get current user with permissions
     const currentUser = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { id: session.user.id }
     })
 
     if (!currentUser) {
