@@ -62,7 +62,7 @@ export default function OrganizationDetailPage({
       const [orgRes, geoRes, visRes] = await Promise.all([
         fetch(`/api/organizations/${orgId}`),
         fetch('/api/admin/design-definitions?all=true'),
-        fetch(`/api/organizations/${orgId}/geometries`),
+        fetch(`/api/organizations/${orgId}/designs`),
       ]);
 
       if (!orgRes.ok) throw new Error('Failed to fetch organization');
@@ -156,7 +156,7 @@ export default function OrganizationDetailPage({
     setError(null);
     setSuccess(null);
     try {
-      const res = await fetch(`/api/organizations/${orgId}/geometries`, {
+      const res = await fetch(`/api/organizations/${orgId}/designs`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ geometryIds: [...selectedIds] }),
