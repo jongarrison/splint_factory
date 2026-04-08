@@ -8,6 +8,7 @@ import Header from '@/components/navigation/Header';
 import PrinterStatusBanner from '@/components/printer/PrinterStatusBanner';
 import PrintAcceptanceModal from '@/components/PrintAcceptanceModal';
 import DeletePrintModal from '@/components/DeletePrintModal';
+import PrintConfirmModal from '@/components/PrintConfirmModal';
 import DeviceAuthOverlay from '@/components/DeviceAuthOverlay';
 import { useSmartPolling } from '@/hooks/useSmartPolling';
 
@@ -59,6 +60,9 @@ export default function PrintQueuePage() {
     printId: string;
     geometryName: string;
     printStarted: boolean;
+  } | null>(null);
+  const [printConfirmModal, setPrintConfirmModal] = useState<{
+    entry: PrintQueueEntry;
   } | null>(null);
 
   // MQTT-based printer status (Electron only)
@@ -366,7 +370,7 @@ export default function PrintQueuePage() {
     }
   };
 
-  const handlePrint = async (entry: PrintQueueEntry) => {
+  const handlePrint = async (entry: PrintQueueEntry, runCalibration: boolean) => {
     if (!isElectronClient) {
       showNotification('Printing is only available in the Electron client', 'error');
       return;
@@ -397,7 +401,8 @@ export default function PrintQueuePage() {
         printQueueId,
         geometryJobId,
         sessionCookie,
-        jobName
+        jobName,
+        { runCalibration }
       );
 
       if (!result.success) {
@@ -722,7 +727,7 @@ export default function PrintQueuePage() {
                             {/* Print button - shows for all users but only enabled in Electron client */}
                             {!entry.printStartedAt && entry.hasPrintFile && (
                               <button
-                                onClick={() => isElectronClient && !printerBusy ? handlePrint(entry) : null}
+                                onClick={() => isElectronClient && !printerBusy ? setPrintConfirmModal({ entry }) : null}
                                 disabled={!isElectronClient || printingJobId === entry.id || printerBusy}
                                 className={`${
                                   !isElectronClient || printingJobId === entry.id || printerBusy
@@ -873,6 +878,19 @@ export default function PrintQueuePage() {
           geometryName={acceptanceModal.geometryName}
           onClose={() => setAcceptanceModal(null)}
           onSubmit={handleAcceptanceSubmit}
+        />
+      )}
+
+      {/* Print Confirm Modal */}
+      {printConfirmModal && (
+        <PrintConfirmModal
+          geometryName={printConfirmModal.entry.designJob.design.name}
+          onClose={() => setPrintConfirmModal(null)}
+          onConfirm={(runCalibration) => {
+            const entry = printConfirmModal.entry;
+            setPrintConfirmModal(null);
+            handlePrint(entry, runCalibration);
+          }}
         />
       )}
 
