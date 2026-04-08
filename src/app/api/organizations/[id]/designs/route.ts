@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-// GET /api/organizations/[id]/geometries - List geometry IDs visible to this org
+// GET /api/organizations/[id]/designs - List design IDs visible to this org
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -41,7 +41,7 @@ export async function GET(
   }
 }
 
-// PUT /api/organizations/[id]/geometries - Replace geometry visibility set
+// PUT /api/organizations/[id]/designs - Replace design visibility set
 // Body: { geometryIds: string[] }
 export async function PUT(
   request: NextRequest,
