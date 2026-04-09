@@ -20,6 +20,7 @@ interface DesignJobFailedEmailProps {
   inputParameters: string;
   errorMessage: string | null;
   jobUrl: string;
+  debugCommand: string;
 }
 
 export default function DesignJobFailedEmail({
@@ -32,6 +33,7 @@ export default function DesignJobFailedEmail({
   inputParameters,
   errorMessage,
   jobUrl,
+  debugCommand,
 }: DesignJobFailedEmailProps) {
   return (
     <Html>
@@ -59,6 +61,11 @@ export default function DesignJobFailedEmail({
           <Section style={detailsSection}>
             <Text style={paramLabel}>Input Parameters</Text>
             <Text style={paramText}>{inputParameters}</Text>
+          </Section>
+
+          <Section style={detailsSection}>
+            <Text style={paramLabel}>Debug Locally</Text>
+            <Text style={paramText}>{debugCommand}</Text>
           </Section>
 
           <Section style={buttonSection}>

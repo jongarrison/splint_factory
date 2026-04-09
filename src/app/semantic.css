@@ -1,0 +1,308 @@
+/* ============================================================================
+   SEMANTIC CSS — splint_factory
+   ============================================================================
+   This file defines functional/semantic classes for new and migrated pages.
+   globals.css (with its legacy override shim) remains active for unmigrated
+   pages. Once all pages are migrated the shim in globals.css will be removed
+   and this file will become the sole source of theme styles.
+
+   Naming convention: describe FUNCTION, not appearance.
+   See dev-notes/css-standardization-plan.md for the full migration guide.
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   STATUS COLOR TOKENS
+   Additions to the root token set — these are not in globals.css yet.
+   Used exclusively by .status-badge + .status-* classes below.
+   ---------------------------------------------------------------------------- */
+:root {
+  --status-success-bg:  #064e3b;    /* deep green surface */
+  --status-success-text: #6ee7b7;   /* light green text */
+
+  --status-error-bg:   #7f1d1d;     /* deep red surface */
+  --status-error-text: #fca5a5;     /* light red text */
+
+  --status-warning-bg:  #78350f;    /* deep amber surface */
+  --status-warning-text: #fcd34d;   /* amber text */
+
+  --status-pending-bg:  #1e3a5f;    /* deep blue surface */
+  --status-pending-text: #93c5fd;   /* light blue text */
+
+  --status-neutral-bg:  #1f2937;    /* surface-level gray */
+  --status-neutral-text: #9ca3af;   /* muted text */
+
+  --status-disabled-bg:  #1f2937;
+  --status-disabled-text: #6b7280;
+
+  --accent-purple-hover: #c4b5fd;   /* lighter purple for hover */
+}
+
+/* ----------------------------------------------------------------------------
+   STATUS BADGE
+   Base shape + each semantic state. Always use both classes together:
+     <span class="status-badge status-success">Completed</span>
+   ---------------------------------------------------------------------------- */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;   /* py-0.5 px-2.5 */
+  font-size: 0.75rem;           /* text-xs */
+  font-weight: 600;             /* font-semibold */
+  border-radius: 9999px;        /* rounded-full */
+  white-space: nowrap;
+}
+
+.status-success {
+  background-color: var(--status-success-bg);
+  color: var(--status-success-text);
+}
+
+.status-error {
+  background-color: var(--status-error-bg);
+  color: var(--status-error-text);
+}
+
+.status-warning {
+  background-color: var(--status-warning-bg);
+  color: var(--status-warning-text);
+}
+
+.status-pending {
+  background-color: var(--status-pending-bg);
+  color: var(--status-pending-text);
+}
+
+.status-neutral {
+  background-color: var(--status-neutral-bg);
+  color: var(--status-neutral-text);
+}
+
+.status-disabled {
+  background-color: var(--status-disabled-bg);
+  color: var(--status-disabled-text);
+}
+
+/* ----------------------------------------------------------------------------
+   PAGE STRUCTURE
+   Standard layout containers. Replace bg-gray-50/bg-white on page shells.
+   ---------------------------------------------------------------------------- */
+.page-shell {
+  min-height: 100vh;
+  background-color: var(--background);
+}
+
+.page-content {
+  max-width: 80rem;             /* max-w-7xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding: 2rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .page-content { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+  .page-content { padding-left: 2rem; padding-right: 2rem; }
+}
+
+.page-title {
+  font-size: 1.875rem;          /* text-3xl */
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* ----------------------------------------------------------------------------
+   CARD / PANEL
+   Replace bg-white + border-gray-200 card patterns.
+   ---------------------------------------------------------------------------- */
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;        /* rounded-lg */
+}
+
+.card-header {
+  padding: 1rem 1.5rem;         /* px-6 py-4 */
+  border-bottom: 1px solid var(--border);
+}
+
+.card-body {
+  padding: 1rem 1.5rem;
+}
+
+/* ----------------------------------------------------------------------------
+   INLINE ALERT / ERROR NOTICE
+   Replace bg-red-50 border-red-200 text-red-700 error patterns.
+   ---------------------------------------------------------------------------- */
+.alert-error {
+  background-color: var(--status-error-bg);
+  border: 1px solid var(--status-error-text);
+  color: var(--status-error-text);
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+}
+
+.alert-warning {
+  background-color: var(--status-warning-bg);
+  border: 1px solid var(--status-warning-text);
+  color: var(--status-warning-text);
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+}
+
+.alert-info {
+  background-color: var(--status-pending-bg);
+  border: 1px solid var(--status-pending-text);
+  color: var(--status-pending-text);
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+}
+
+/* ----------------------------------------------------------------------------
+   TABLE
+   Replace ad-hoc divide-gray-200 / bg-white table patterns.
+   ---------------------------------------------------------------------------- */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 0.75rem 1.5rem;       /* py-3 px-6 */
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: 1rem 1.5rem;          /* py-4 px-6 */
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table tbody tr:hover {
+  background-color: var(--hover-bg);
+}
+
+/* ----------------------------------------------------------------------------
+   BUTTONS
+   Color/style only. Padding and width are left to Tailwind in JSX since
+   buttons appear at different sizes in different contexts.
+   ---------------------------------------------------------------------------- */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--accent-blue);
+  color: #ffffff;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: background-color 0.15s;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-blue-hover);
+}
+
+.btn-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--accent-blue);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: var(--surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--hover-bg);
+}
+
+.btn-secondary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--accent-blue);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----------------------------------------------------------------------------
+   INLINE TEXT STATES
+   ---------------------------------------------------------------------------- */
+.text-error {
+  color: var(--accent-red);
+}
+
+/* Alternate link color (purple) for secondary actions like copy/clone */
+.text-link-alt {
+  color: var(--accent-purple);
+}
+
+.text-link-alt:hover {
+  color: var(--accent-purple-hover);
+}
+
+/* ----------------------------------------------------------------------------
+   INTERACTIVE CARD (link card with hover behavior)
+   For cards that are clickable links. Hover states handled via CSS
+   parent-child rules rather than Tailwind group/group-hover: variants
+   (which don't support theme color remapping).
+   Tailwind handles layout, shadow, and transition; this class owns colors.
+   ---------------------------------------------------------------------------- */
+.design-card {
+  display: block;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  transition: border-color 0.15s;
+}
+
+.design-card:hover {
+  border-color: var(--accent-blue);
+}
+
+.design-card-title {
+  font-size: 1.125rem;          /* text-lg */
+  font-weight: 600;             /* font-semibold */
+  color: var(--text-primary);
+}
+
+.design-card:hover .design-card-title {
+  color: var(--accent-blue);
+}
+
+/* ----------------------------------------------------------------------------
+   TEXT LINK
+   Accent-colored anchor text within body copy.
+   ---------------------------------------------------------------------------- */
+.text-link {
+  color: var(--accent-blue);
+}
+
+.text-link:hover {
+  color: var(--accent-blue-hover);
+}

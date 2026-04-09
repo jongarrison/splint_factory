@@ -314,6 +314,8 @@ export async function POST(request: NextRequest) {
           const adminEmails = admins.map((a) => a.email);
           if (adminEmails.length === 0) return;
 
+          const debugCommand = `npm run inspect:prod -- ${job.objectId || job.id}`;
+
           return sendEmail({
             to: adminEmails,
             subject: `Design job failed: ${job.jobLabel || job.objectId || job.id}`,
@@ -327,6 +329,7 @@ export async function POST(request: NextRequest) {
               inputParameters: formattedParams,
               errorMessage: errorMessage || null,
               jobUrl,
+              debugCommand,
             }),
           });
         })

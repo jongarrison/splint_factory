@@ -5,6 +5,7 @@ import VirtualKeyboard from "@/components/VirtualKeyboard";
 import SettingsButton from "@/components/ReloadButton";
 import KeyboardToggleButton from "@/components/KeyboardToggleButton";
 import "./globals.css";
+import "./semantic.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

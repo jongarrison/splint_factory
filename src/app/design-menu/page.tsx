@@ -55,12 +55,12 @@ export default function GeoJobMenuPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell">
         <Header variant="browser" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-content">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading designs...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+            <p className="mt-4 text-secondary">Loading designs...</p>
           </div>
         </div>
       </div>
@@ -69,48 +69,45 @@ export default function GeoJobMenuPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell">
         <Header variant="browser" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
+        <div className="page-content" data-testid="design-menu-page">
+          <div className="alert-error" role="alert">{error}</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-shell" data-testid="design-menu-page">
       <Header variant="browser" />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      <div className="page-content">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Create New 3D Print</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="page-title">Create New 3D Print</h1>
+          <p className="mt-2 text-secondary">
             Select a splint design to get started{' '}
-            <Link 
-              href="/design-jobs" 
-              className="text-blue-600 hover:text-blue-700 underline"
-            >
+            <Link href="/design-jobs" className="text-link underline">
               or start from a previous job
             </Link>
           </p>
         </div>
 
         {geometries.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No splint designs available</p>
+          <div className="text-center py-12" data-testid="design-menu-empty">
+            <p className="text-muted">No splint designs available</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="design-menu-grid">
             {geometries.map((design) => (
               <Link
                 key={design.id}
                 href={`/design-jobs/new?designId=${design.id}`}
-                className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 hover:border-blue-300"
+                className="design-card rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+                data-testid="design-menu-card"
+                data-design-id={design.id}
               >
-                <div className="aspect-[4/3] relative bg-gray-100">
+                <div className="aspect-[4/3] relative bg-surface-secondary">
                   {design.previewImageUpdatedAt ? (
                     <Image
                       src={getImageUrl(design.id, design.previewImageUpdatedAt)}
@@ -124,11 +121,11 @@ export default function GeoJobMenuPage() {
                   )}
                 </div>
                 <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  <h3 className="design-card-title transition-colors">
                     {design.name}
                   </h3>
                   {design.shortDescription && (
-                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                    <p className="mt-2 text-sm text-secondary line-clamp-2">
                       {design.shortDescription}
                     </p>
                   )}

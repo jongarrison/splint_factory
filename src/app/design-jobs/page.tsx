@@ -78,18 +78,18 @@ export default function GeometryJobsPage() {
   const getStatusBadge = (job: GeometryJob) => {
     const processingBadge = (() => {
       if (!job.isEnabled) {
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Disabled</span>;
+        return <span className="status-badge status-neutral">Disabled</span>;
       }
       if (job.processCompletedAt && job.isProcessSuccessful) {
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>;
+        return <span className="status-badge status-success">Completed</span>;
       }
       if (job.processCompletedAt && !job.isProcessSuccessful) {
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failed</span>;
+        return <span className="status-badge status-error">Failed</span>;
       }
       if (job.processStartedAt) {
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Processing</span>;
+        return <span className="status-badge status-warning">Processing</span>;
       }
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Pending</span>;
+      return <span className="status-badge status-pending">Pending</span>;
     })();
 
     // Count print acceptances
@@ -100,12 +100,12 @@ export default function GeometryJobsPage() {
       <div className="flex flex-col gap-1">
         {processingBadge}
         {acceptedPrints > 0 && (
-          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
+          <span className="status-badge status-success">
             {acceptedPrints} Accepted
           </span>
         )}
         {rejectedPrints > 0 && (
-          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800">
+          <span className="status-badge status-error">
             {rejectedPrints} Rejected
           </span>
         )}
@@ -119,12 +119,12 @@ export default function GeometryJobsPage() {
 
   if (status === 'loading' || (loading && !geometryJobs)) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-content">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading design jobs...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+            <p className="mt-4 text-secondary">Loading design jobs...</p>
           </div>
         </div>
       </div>
@@ -132,15 +132,15 @@ export default function GeometryJobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-shell" data-testid="design-jobs-page">
       <Header />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      <div className="page-content">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Design Generation Jobs</h1>
-          
+          <h1 className="page-title">Design Generation Jobs</h1>
+
           {/* ObjectID Search */}
-          <form onSubmit={handleSearchByObjectId} className="mt-4 flex gap-2 max-w-md">
+          <form onSubmit={handleSearchByObjectId} className="mt-4 flex gap-2 max-w-md" data-testid="object-id-search-form">
             <div className="flex-1">
               <input
                 type="text"
@@ -150,12 +150,14 @@ export default function GeometryJobsPage() {
                   setSearchError('');
                 }}
                 placeholder="Search by Object ID..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                className="form-input-base uppercase shadow-sm"
+                data-testid="object-id-search-input"
               />
             </div>
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+              className="btn-primary px-4 py-2 text-sm"
+              data-testid="object-id-search-btn"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -163,153 +165,150 @@ export default function GeometryJobsPage() {
               Search
             </button>
           </form>
-          
+
           {searchError && (
-            <div className="mt-2 text-sm text-red-600">
+            <div className="mt-2 text-sm text-error" data-testid="object-id-search-error">
               {searchError}
             </div>
           )}
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mb-6 alert-error" role="alert" data-testid="design-jobs-error">
             {error}
           </div>
         )}
 
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <div className="card" data-testid="design-jobs-card">
+          <div className="card-header flex justify-between items-center">
             <Link
               href="/design-jobs/new"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded text-sm font-medium"
+              className="btn-primary px-6 py-2 text-sm"
+              data-testid="create-job-btn"
             >
               Create New Job
             </Link>
             <div className="flex items-center gap-2">
               {lastUpdate && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted">
                   Updated {lastUpdate.toLocaleTimeString()}
                 </span>
               )}
               <button
                 onClick={refreshGeometryJobs}
                 disabled={isFetching}
-                className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-secondary px-3 py-1 text-sm"
                 title="Refresh design jobs"
+                data-testid="refresh-jobs-btn"
               >
-                <svg 
-                  className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
+                <svg
+                  className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                   />
                 </svg>
                 <span className="hidden sm:inline">Refresh</span>
               </button>
             </div>
           </div>
-          
+
           <div className="overflow-x-auto">
             {!geometryJobs || geometryJobs.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-gray-500 text-lg">No design jobs found</div>
-                <p className="text-gray-400 mt-2">Create your first design job to get started.</p>
+              <div className="text-center py-12" data-testid="design-jobs-empty">
+                <div className="text-muted text-lg">No design jobs found</div>
+                <p className="text-muted mt-2">Create your first design job to get started.</p>
                 <Link
                   href="/design-jobs/new"
-                  className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  className="btn-primary inline-flex mt-4 py-2 px-4"
+                  data-testid="create-first-job-btn"
                 >
                   Create New Job
                 </Link>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        IDs
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {geometryJobs.map((job) => (
-                      <tr 
-                        key={job.id} 
-                        className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => router.push(`/design-jobs/${job.id}`)}
-                      >
-                        <td className="px-6 py-4">
-                          <div className="text-xs text-gray-500">Object:</div>
-                          <div className="text-sm font-mono font-semibold text-blue-600">
-                            {job.objectId || 'N/A'}
-                            {job.isDebugRequest && <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-100 text-cyan-700 font-sans font-normal">Test</span>}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">Job:</div>
-                          <div className="text-sm text-gray-900">
-                            {job.jobLabel || 'N/A'}
-                          </div>
-                          {job.jobNote && (
-                            <div className="text-xs text-gray-500 truncate max-w-xs mt-1">
-                              {job.jobNote}
-                            </div>
+              <table className="data-table min-w-full" data-testid="design-jobs-table">
+                <thead>
+                  <tr>
+                    <th>IDs</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {geometryJobs.map((job) => (
+                    <tr
+                      key={job.id}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/design-jobs/${job.id}`)}
+                      data-testid="design-job-row"
+                      data-job-id={job.id}
+                    >
+                      <td>
+                        <div className="text-xs text-muted">Object:</div>
+                        <div className="text-sm font-mono font-semibold text-[var(--accent-blue)]">
+                          {job.objectId || 'N/A'}
+                          {job.isDebugRequest && (
+                            <span className="ml-1 status-badge status-neutral font-sans font-normal">Test</span>
                           )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {job.design.name}
+                        </div>
+                        <div className="text-xs text-muted mt-1">Job:</div>
+                        <div className="text-sm text-primary">
+                          {job.jobLabel || 'N/A'}
+                        </div>
+                        {job.jobNote && (
+                          <div className="text-xs text-muted truncate max-w-xs mt-1">
+                            {job.jobNote}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {job.design.algorithmName}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(job)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div>{formatDate(job.createdAt)}</div>
-                          <div className="text-xs">by {job.creator.name}</div>
-                        </td>
-                        <td 
-                          className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                          onClick={(e) => e.stopPropagation()}
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap">
+                        <div className="text-sm font-medium text-primary">
+                          {job.design.name}
+                        </div>
+                        <div className="text-sm text-muted">
+                          {job.design.algorithmName}
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap" data-testid="job-status-cell">
+                        {getStatusBadge(job)}
+                      </td>
+                      <td className="whitespace-nowrap text-muted">
+                        <div>{formatDate(job.createdAt)}</div>
+                        <div className="text-xs">by {job.creator.name}</div>
+                      </td>
+                      <td
+                        className="whitespace-nowrap text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Link
+                          href={`/design-jobs/${job.id}`}
+                          className="text-link mr-4"
+                          data-testid="view-job-link"
                         >
-                          <Link
-                            href={`/design-jobs/${job.id}`}
-                            className="text-blue-600 hover:text-blue-900 mr-4"
-                          >
-                            View
-                          </Link>
-                          <Link
-                            href={`/design-jobs/new?template=${job.id}`}
-                            className="text-purple-600 hover:text-purple-900"
-                            title="Create new job with same settings"
-                          >
-                            New
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          View
+                        </Link>
+                        <Link
+                          href={`/design-jobs/new?template=${job.id}`}
+                          className="text-link-alt"
+                          title="Create new job with same settings"
+                          data-testid="copy-job-link"
+                        >
+                          New
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
