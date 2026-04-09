@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import PublicLanding from '@/components/landing/PublicLanding';
+import AboutContent from '@/components/landing/AboutContent';
 import ElectronLanding from '@/components/landing/ElectronLanding';
 
 const splintFactoryIndicator = 'splintFactoryElectron';
@@ -31,6 +31,6 @@ export default async function Home() {
     return <ElectronLanding />;
   } else {
     console.log('🌐 Detected web client');
-    return <PublicLanding />;
+    return <AboutContent />;
   }
 }

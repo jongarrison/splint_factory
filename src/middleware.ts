@@ -57,14 +57,9 @@ export default async function middleware(request: NextRequest) {
       console.log(`🌐 AUTH: ${authState} | ${userInfo} | ${routeType} route`)
     }
 
-    // If user is not authenticated and at root, redirect to about page
-    if (!session && pathname === '/') {
-      const aboutUrl = new URL('/about', request.url)
-      return NextResponse.redirect(aboutUrl)
-    }
-
     // If user is not authenticated and trying to access a protected route
-    if (!session && !isPublicRoute) {
+    // (root '/' is public - shows about/landing content)
+    if (!session && !isPublicRoute && pathname !== '/') {
       console.log(`🚫 REDIRECT: Unauthenticated user trying to access protected route ${pathname}`)
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('callbackUrl', pathname)
