@@ -116,7 +116,7 @@ export async function POST(
     // Verify user belongs to the same organization as the device
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { organizationId: true, name: true }
+      select: { organizationId: true, name: true, role: true }
     });
 
     if (!user?.organizationId) {
@@ -126,8 +126,12 @@ export async function POST(
       );
     }
 
-    // If device already has an org, verify same-org. If no org yet (first-run), allow and assign.
-    if (challenge.device.organizationId && user.organizationId !== challenge.device.organizationId) {
+    const isSystemAdmin = user.role === 'SYSTEM_ADMIN';
+    const deviceHasOrg = !!challenge.device.organizationId;
+    const sameOrg = user.organizationId === challenge.device.organizationId;
+
+    // If device already has an org, verify same-org (SYSTEM_ADMINs can reassign)
+    if (deviceHasOrg && !sameOrg && !isSystemAdmin) {
       return NextResponse.json(
         { error: 'You must be in the same organization as this device' },
         { status: 403 }
@@ -139,7 +143,8 @@ export async function POST(
     const exchangeToken = crypto.randomUUID();
 
     // Authorize the challenge and set the user as current operator on the device
-    // Also assign the device to the user's org if it has none yet (first-run)
+    // Reassign device org if: first-run (no org), or SYSTEM_ADMIN switching orgs
+    const shouldUpdateOrg = !deviceHasOrg || (isSystemAdmin && !sameOrg);
     await prisma.$transaction([
       prisma.clientAuthChallenge.update({
         where: { id },
@@ -154,8 +159,7 @@ export async function POST(
         data: {
           currentOperatorId: session.user.id,
           operatorValidatedAt: new Date(),
-          // Assign org on first approval if device has none
-          ...(!challenge.device.organizationId ? { organizationId: user.organizationId } : {}),
+          ...(shouldUpdateOrg ? { organizationId: user.organizationId } : {}),
         },
       }),
     ]);
