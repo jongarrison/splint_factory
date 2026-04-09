@@ -181,6 +181,20 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                 </svg>
               </Link>
             )}
+
+            {/* Printer Test Icon - Electron + SYSTEM_ADMIN only */}
+            {variant === 'electron' && session?.user?.role === 'SYSTEM_ADMIN' && (
+              <Link
+                href="/printer/test"
+                className={`ml-2 ${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} transition-colors`}
+                title="Printer Test"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.66-5.66a2 2 0 010-2.83l.71-.71a2 2 0 012.83 0l2.12 2.12 2.12-2.12a2 2 0 012.83 0l.71.71a2 2 0 010 2.83l-5.66 5.66z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0 4.14-3.36 7.5-7.5 7.5S4.5 16.14 4.5 12 7.86 4.5 12 4.5s7.5 3.36 7.5 7.5z" />
+                </svg>
+              </Link>
+            )}
             
             {/* Navigation Links */}
             {session && (

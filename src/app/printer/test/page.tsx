@@ -36,6 +36,21 @@ export default function PrinterTestPage() {
     }
   };
 
+  const sendLedCommand = async (node: string, mode: string) => {
+    addLog(`LED: ${node} -> ${mode}`);
+    try {
+      const electronAPI = (window as any).electronAPI;
+      const result = await electronAPI.printing.setLed(node, mode);
+      if (result.success) {
+        addLog('OK');
+      } else {
+        addLog(`Error: ${result.error}`);
+      }
+    } catch (err: any) {
+      addLog(`Exception: ${err.message}`);
+    }
+  };
+
   // Preset beep patterns
   const presets = [
     { label: 'Beep 440Hz', gcode: 'M300 S440 P200' },
@@ -67,7 +82,7 @@ export default function PrinterTestPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             G-code Command
           </label>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-2">
             <input
               type="text"
               value={gcode}
@@ -76,14 +91,14 @@ export default function PrinterTestPage() {
               className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm font-mono text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               placeholder="M300 S440 P200"
             />
-            <button
+          </div>
+          <button
               onClick={sendGcode}
               disabled={sending || !gcode.trim()}
               className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold px-4 py-2 rounded-md text-sm transition-colors"
             >
               {sending ? 'Sending...' : 'Send'}
             </button>
-          </div>
         </div>
 
         {/* Presets */}
@@ -94,11 +109,42 @@ export default function PrinterTestPage() {
               <button
                 key={p.gcode}
                 onClick={() => { setGcode(p.gcode); }}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm px-3 py-1.5 rounded-md transition-colors"
+                className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 py-1.5 rounded-md transition-colors"
               >
                 {p.label}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* LED Controls */}
+        <div className="bg-white rounded-lg shadow p-4 mb-4">
+          <h2 className="text-sm font-medium text-gray-700 mb-2">LED Controls</h2>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => sendLedCommand('work_light', 'on')}
+              className="bg-yellow-500 hover:bg-yellow-400 text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors"
+            >
+              Work Light ON
+            </button>
+            <button
+              onClick={() => sendLedCommand('work_light', 'off')}
+              className="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors"
+            >
+              Work Light OFF
+            </button>
+            <button
+              onClick={() => sendLedCommand('chamber_light', 'on')}
+              className="bg-yellow-500 hover:bg-yellow-400 text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors"
+            >
+              Chamber Light ON
+            </button>
+            <button
+              onClick={() => sendLedCommand('chamber_light', 'off')}
+              className="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors"
+            >
+              Chamber Light OFF
+            </button>
           </div>
         </div>
 
