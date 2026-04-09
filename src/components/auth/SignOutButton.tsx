@@ -1,7 +1,6 @@
 "use client"
 
 import { signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 interface SignOutButtonProps {
@@ -10,7 +9,6 @@ interface SignOutButtonProps {
 }
 
 export default function SignOutButton({ variant = 'browser', inline = false }: SignOutButtonProps) {
-  const router = useRouter()
   const [isElectron, setIsElectron] = useState(false);
 
   useEffect(() => {
@@ -22,11 +20,11 @@ export default function SignOutButton({ variant = 'browser', inline = false }: S
   const handleSignOut = async () => {
     await signOut({ redirect: false });
     
+    // Full page load ensures the cleared session cookie is sent with the request,
+    // avoiding race conditions with middleware auth checks
     if (isElectron) {
-      // In Electron, use client-side navigation to avoid opening external browser
-      router.push('/login');
+      window.location.href = '/login';
     } else {
-      // In browser, force a full page reload to clear all state and show landing page
       window.location.href = '/';
     }
   };
