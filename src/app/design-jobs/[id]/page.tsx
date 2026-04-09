@@ -64,6 +64,7 @@ export default function GeometryJobDetailPage({
   const [error, setError] = useState<string | null>(null);
   const [creatingPrint, setCreatingPrint] = useState(false);
   const [showDebugModal, setShowDebugModal] = useState(false);
+  const [reprocessing, setReprocessing] = useState(false);
   const [id, setId] = useState<string>('');
   const pollingRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -171,6 +172,22 @@ export default function GeometryJobDetailPage({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create print job');
       setCreatingPrint(false);
+    }
+  };
+
+  const handleReprocess = async () => {
+    if (!confirm('Reset this job so it will be reprocessed by the geo processor?')) return;
+    try {
+      setReprocessing(true);
+      const response = await fetch(`/api/design-jobs/${id}/reprocess`, { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('Failed to reprocess job');
+      }
+      await fetchJob();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reprocess job');
+    } finally {
+      setReprocessing(false);
     }
   };
 
@@ -329,6 +346,16 @@ export default function GeometryJobDetailPage({
               <h1 className="text-3xl font-bold text-gray-900">Design Job Details</h1>
             </div>
             <div className="flex gap-4">
+              {session?.user?.role === 'SYSTEM_ADMIN' && (
+                <button
+                  onClick={handleReprocess}
+                  disabled={reprocessing || (!job.processCompletedAt && !job.processStartedAt)}
+                  className="bg-amber-600 hover:bg-amber-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                  title="Reset job state so geo processor picks it up again"
+                >
+                  {reprocessing ? 'Reprocessing...' : 'Reprocess Job'}
+                </button>
+              )}
               {session?.user?.role === 'SYSTEM_ADMIN' && (
                 <button
                   onClick={() => setShowDebugModal(true)}
