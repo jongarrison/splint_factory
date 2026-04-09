@@ -343,7 +343,7 @@ export default function GeometryJobDetailPage({
                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium"
                 title="Create new job with same settings"
               >
-                New from Template
+                New Copy
               </Link>
               <Link
                 href="/design-jobs"
