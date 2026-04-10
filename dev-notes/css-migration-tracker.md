@@ -61,9 +61,9 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | # | Page | A | B | C | D | V | Date | Notes |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `app/design-menu/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-09 | First migration. Revealed two plan amendments (see below) |
-| 2 | `app/design-jobs/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-09 | First status badge migration. Added btn-primary, btn-secondary, text-error, text-link-alt to semantic.css |
+| 2 | `app/design-jobs/page.tsx` | [x] | [x] | [x] | [x] | [x] | 2026-04-09 | First status badge migration. Added btn-primary, btn-secondary, text-error, text-link-alt to semantic.css |
 | 3 | `app/print-queue/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | Complex; depends on Header + PrinterStatusBanner being migrated |
-| 4 | `app/design-jobs/[id]/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | Detail page; uses `.display-field` |
+| 4 | `app/design-jobs/[id]/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-10 | Detail page. Added banner-*/btn-neutral/btn-warning/btn-alt/code-inline. Developer details section + debug modal. |
 | 5 | `app/print-queue/[id]/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | Detail page |
 | 6 | `app/design-jobs/new/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Form page |
 | 7 | `app/admin/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | System status dashboard |

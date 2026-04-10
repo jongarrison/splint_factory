@@ -204,18 +204,18 @@ export default function GeometryJobDetailPage({
 
   const getStatusBadge = (job: GeometryJob) => {
     if (!job.isEnabled) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Disabled</span>;
+      return <span className="status-badge status-neutral">Disabled</span>;
     }
     if (job.processCompletedAt && job.isProcessSuccessful) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>;
+      return <span className="status-badge status-success">Completed</span>;
     }
     if (job.processCompletedAt && !job.isProcessSuccessful) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failed</span>;
+      return <span className="status-badge status-error">Failed</span>;
     }
     if (job.processStartedAt) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Processing</span>;
+      return <span className="status-badge status-warning">Processing</span>;
     }
-    return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Pending</span>;
+    return <span className="status-badge status-pending">Pending</span>;
   };
 
   const parseParameterData = (data: string) => {
@@ -237,41 +237,41 @@ export default function GeometryJobDetailPage({
   const getPrintStatusBadge = (printJob: PrintJob) => {
     const printStatusBadge = (() => {
       if (printJob.printCompletedAt && printJob.isPrintSuccessful) {
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Print Completed</span>;
+        return <span className="status-badge status-success">Print Completed</span>;
       }
       if (printJob.printCompletedAt && !printJob.isPrintSuccessful) {
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Print Failed</span>;
+        return <span className="status-badge status-error">Print Failed</span>;
       }
       if (printJob.printStartedAt) {
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Printing</span>;
+        return <span className="status-badge status-warning">Printing</span>;
       }
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Ready to Print</span>;
+      return <span className="status-badge status-pending">Ready to Print</span>;
     })();
 
     const acceptanceBadge = printJob.printAcceptance === 'ACCEPTED' ? (
-      <span 
-        className="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 cursor-help"
+      <span
+        className="status-badge status-success cursor-help"
         title={printJob.printNote || 'Accepted'}
       >
         Accepted
       </span>
     ) : printJob.printAcceptance === 'REJECT_DESIGN' ? (
-      <span 
-        className="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 cursor-help"
+      <span
+        className="status-badge status-warning cursor-help"
         title={printJob.printNote || 'Rejected - Design'}
       >
         Rejected - Design
       </span>
     ) : printJob.printAcceptance === 'REJECT_PRINT' ? (
-      <span 
-        className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 cursor-help"
+      <span
+        className="status-badge status-error cursor-help"
         title={printJob.printNote || 'Rejected - Print'}
       >
         Rejected - Print
       </span>
     ) : printJob.printAcceptance === 'REJECTED' ? (
-      <span 
-        className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 cursor-help"
+      <span
+        className="status-badge status-error cursor-help"
         title={printJob.printNote || 'Rejected'}
       >
         Rejected
@@ -288,12 +288,12 @@ export default function GeometryJobDetailPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-content">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading design job...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+            <p className="mt-4 text-secondary">Loading design job...</p>
           </div>
         </div>
       </div>
@@ -302,24 +302,16 @@ export default function GeometryJobDetailPage({
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold text-gray-900">Design Job Details</h1>
-              <Link
-                href="/design-jobs"
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
-              >
-                ← Back to Jobs
-              </Link>
-            </div>
+        <div className="page-content">
+          <div className="mb-8 flex justify-between items-center">
+            <h1 className="page-title">Design Job Details</h1>
+            <Link href="/design-jobs" className="btn-neutral px-4 py-2 text-sm">
+              &larr; Back to Jobs
+            </Link>
           </div>
-          
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
+          <div className="alert-error" role="alert">{error}</div>
         </div>
       </div>
     );
@@ -336,22 +328,21 @@ export default function GeometryJobDetailPage({
   const isFailed = job.processCompletedAt && !job.isProcessSuccessful;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-shell" data-testid="design-job-detail-page">
       <Header />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      <div className="page-content">
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Design Job Details</h1>
-            </div>
+            <h1 className="page-title">Design Job Details</h1>
             <div className="flex gap-4">
               {session?.user?.role === 'SYSTEM_ADMIN' && (
                 <button
                   onClick={handleReprocess}
                   disabled={reprocessing || (!job.processCompletedAt && !job.processStartedAt)}
-                  className="bg-amber-600 hover:bg-amber-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                  className="btn-warning px-4 py-2 text-sm"
                   title="Reset job state so geo processor picks it up again"
+                  data-testid="reprocess-job-btn"
                 >
                   {reprocessing ? 'Reprocessing...' : 'Reprocess Job'}
                 </button>
@@ -359,22 +350,25 @@ export default function GeometryJobDetailPage({
               {session?.user?.role === 'SYSTEM_ADMIN' && (
                 <button
                   onClick={() => setShowDebugModal(true)}
-                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-sm font-medium"
+                  className="btn-warning px-4 py-2 text-sm"
                   title="Show command to launch local Grasshopper inspect session"
+                  data-testid="debug-locally-btn"
                 >
                   Debug Locally
                 </button>
               )}
               <Link
                 href={`/design-jobs/new?template=${job.id}`}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium"
+                className="btn-alt px-4 py-2 text-sm"
                 title="Create new job with same settings"
+                data-testid="copy-job-btn"
               >
                 New Copy
               </Link>
               <Link
                 href="/design-jobs"
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+                className="btn-neutral px-4 py-2 text-sm"
+                data-testid="back-to-jobs-link"
               >
                 &larr; Back to Jobs
               </Link>
@@ -384,13 +378,13 @@ export default function GeometryJobDetailPage({
 
         {/* Inline Progress Banner - shown while job is processing */}
         {isProcessing && (
-          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-6 py-4 flex items-center gap-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 flex-shrink-0"></div>
+          <div className="banner-info mb-6 rounded-lg px-6 py-4 flex items-center gap-4" role="status" data-testid="design-job-processing-banner">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-blue)] flex-shrink-0"></div>
             <div>
-              <p className="font-semibold text-blue-800">
+              <p className="font-semibold">
                 {job.processStartedAt ? 'Processing...' : 'Queued'}
               </p>
-              <p className="text-sm text-blue-600">
+              <p className="text-sm opacity-80">
                 {job.processStartedAt
                   ? `Processing ${job.design.name}. This page will update automatically.`
                   : `${job.design.name} is waiting to be processed.`}
@@ -401,11 +395,11 @@ export default function GeometryJobDetailPage({
 
         {/* Success Banner */}
         {isSuccess && (
-          <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-6 py-4 flex items-center gap-4">
+          <div className="banner-success mb-6 rounded-lg px-6 py-4 flex items-center gap-4" role="status" data-testid="design-job-success-banner">
             <div className="text-2xl flex-shrink-0">&#10003;</div>
             <div className="flex-1">
-              <p className="font-semibold text-green-800">Processing Complete - Ready to Print!</p>
-              <p className="text-sm text-green-600">
+              <p className="font-semibold">Processing Complete - Ready to Print!</p>
+              <p className="text-sm opacity-80">
                 {job.design.name} processed successfully.
                 {job.objectId && <> Object ID: <span className="font-mono font-bold">{job.objectId}</span></>}
               </p>
@@ -415,11 +409,11 @@ export default function GeometryJobDetailPage({
 
         {/* Failure Banner */}
         {isFailed && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-6 py-4 flex items-center gap-4">
+          <div className="banner-error mb-6 rounded-lg px-6 py-4 flex items-center gap-4" role="alert" data-testid="design-job-failure-banner">
             <div className="text-2xl flex-shrink-0">&#10007;</div>
             <div>
-              <p className="font-semibold text-red-800">Processing Failed</p>
-              <p className="text-sm text-red-600">
+              <p className="font-semibold">Processing Failed</p>
+              <p className="text-sm opacity-80">
                 {job.design.name} encountered an error. See the processing log below.
               </p>
             </div>
@@ -429,12 +423,12 @@ export default function GeometryJobDetailPage({
         <div className="space-y-6">
           {/* 3D Model Viewer - at top when available */}
           {job.meshFileName && (
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">3D Model Preview</h2>
+            <div className="card shadow" data-testid="design-job-model-card">
+              <div className="card-header">
+                <h2 className="text-lg font-medium text-primary">3D Model Preview</h2>
               </div>
-              <div className="px-6 py-4">
-                <StlViewer 
+              <div className="card-body">
+                <StlViewer
                   url={`/api/design-jobs/${job.id}/mesh-file`}
                   height={500}
                   modelColor="#3b82f6"
@@ -442,69 +436,70 @@ export default function GeometryJobDetailPage({
               </div>
             </div>
           )}
+
           {/* Status and Basic Info */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Design Job Info</h2>
+          <div className="card shadow" data-testid="design-job-info-card">
+            <div className="card-header">
+              <h2 className="text-lg font-medium text-primary">Design Job Info</h2>
             </div>
-            <div className="px-6 py-4">
+            <div className="card-body">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">IDs</dt>
+                  <dt className="text-sm font-medium text-muted">IDs</dt>
                   <dd className="mt-1">
-                    <div className="text-xs text-gray-500">Object ID:</div>
-                    <div className="text-sm font-mono font-semibold text-blue-600">{job.objectId || 'N/A'}</div>
-                    <div className="text-xs text-gray-500 mt-2">Job Label:</div>
-                    <div className="text-sm text-gray-900">{job.jobLabel || 'N/A'}</div>
+                    <div className="text-xs text-muted">Object ID:</div>
+                    <div className="text-sm font-mono font-semibold text-[var(--accent-blue)]">{job.objectId || 'N/A'}</div>
+                    <div className="text-xs text-muted mt-2">Job Label:</div>
+                    <div className="text-sm text-primary">{job.jobLabel || 'N/A'}</div>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Status</dt>
-                  <dd className="mt-1">{getStatusBadge(job)}</dd>
+                  <dt className="text-sm font-medium text-muted">Status</dt>
+                  <dd className="mt-1" data-testid="job-status-cell">{getStatusBadge(job)}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Design Job ID</dt>
-                  <dd className="mt-1 text-sm text-gray-900 font-mono">{job.id}</dd>
+                  <dt className="text-sm font-medium text-muted">Design Job ID</dt>
+                  <dd className="mt-1 text-sm text-primary font-mono">{job.id}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Type</dt>
+                  <dt className="text-sm font-medium text-muted">Type</dt>
                   <dd className="mt-1">
-                    <div className="text-sm font-medium text-gray-900">{job.design.name}</div>
-                    <div className="text-xs text-gray-500">{job.design.algorithmName}</div>
+                    <div className="text-sm font-medium text-primary">{job.design.name}</div>
+                    <div className="text-xs text-muted">{job.design.algorithmName}</div>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Created</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{formatDate(job.createdAt)}</dd>
+                  <dt className="text-sm font-medium text-muted">Created</dt>
+                  <dd className="mt-1 text-sm text-primary">{formatDate(job.createdAt)}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Created By</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{job.creator.name || job.creator.email}</dd>
+                  <dt className="text-sm font-medium text-muted">Created By</dt>
+                  <dd className="mt-1 text-sm text-primary">{job.creator.name || job.creator.email}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Organization</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{job.owningOrganization.name}</dd>
+                  <dt className="text-sm font-medium text-muted">Organization</dt>
+                  <dd className="mt-1 text-sm text-primary">{job.owningOrganization.name}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Enabled</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{job.isEnabled ? 'Yes' : 'No'}</dd>
+                  <dt className="text-sm font-medium text-muted">Enabled</dt>
+                  <dd className="mt-1 text-sm text-primary">{job.isEnabled ? 'Yes' : 'No'}</dd>
                 </div>
                 {job.processStartedAt && (
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Processing Started</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{formatDate(job.processStartedAt)}</dd>
+                    <dt className="text-sm font-medium text-muted">Processing Started</dt>
+                    <dd className="mt-1 text-sm text-primary">{formatDate(job.processStartedAt)}</dd>
                   </div>
                 )}
                 {job.processCompletedAt && (
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Processing Completed</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{formatDate(job.processCompletedAt)}</dd>
+                    <dt className="text-sm font-medium text-muted">Processing Completed</dt>
+                    <dd className="mt-1 text-sm text-primary">{formatDate(job.processCompletedAt)}</dd>
                   </div>
                 )}
                 {job.jobNote && (
                   <div className="md:col-span-2">
-                    <dt className="text-sm font-medium text-gray-500">Job Note</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{job.jobNote}</dd>
+                    <dt className="text-sm font-medium text-muted">Job Note</dt>
+                    <dd className="mt-1 text-sm text-primary">{job.jobNote}</dd>
                   </div>
                 )}
               </dl>
@@ -513,23 +508,23 @@ export default function GeometryJobDetailPage({
 
           {/* Input Values */}
           {parameterSchema.length > 0 && (
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Input Values</h2>
+            <div className="card shadow" data-testid="design-job-input-values-card">
+              <div className="card-header">
+                <h2 className="text-lg font-medium text-primary">Input Values</h2>
               </div>
-              <div className="px-6 py-4">
+              <div className="card-body">
                 <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {parameterSchema.map((param: any) => (
                     <div key={param.InputName}>
-                      <dt className="text-sm font-medium text-gray-500">{param.InputDescription}</dt>
-                      <dd className="mt-1 text-sm text-gray-900">
+                      <dt className="text-sm font-medium text-muted">{param.InputDescription}</dt>
+                      <dd className="mt-1 text-sm text-primary">
                         <span className="font-mono">
-                          {parameterData[param.InputName] !== undefined 
+                          {parameterData[param.InputName] !== undefined
                             ? String(parameterData[param.InputName])
                             : 'Not set'
                           }
                         </span>
-                        <span className="ml-2 text-xs text-gray-500">
+                        <span className="ml-2 text-xs text-muted">
                           ({param.InputType})
                         </span>
                       </dd>
@@ -542,20 +537,20 @@ export default function GeometryJobDetailPage({
 
           {/* Output Files */}
           {(job.meshFileName || job.printFileName) && (
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Output Files</h2>
+            <div className="card shadow" data-testid="design-job-output-files-card">
+              <div className="card-header">
+                <h2 className="text-lg font-medium text-primary">Output Files</h2>
               </div>
-              <div className="px-6 py-4">
+              <div className="card-body">
                 <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {job.meshFileName && (
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Mesh File</dt>
-                      <dd className="mt-1 text-sm text-gray-900 flex items-center gap-3">
+                      <dt className="text-sm font-medium text-muted">Mesh File</dt>
+                      <dd className="mt-1 text-sm text-primary flex items-center gap-3">
                         <span className="font-mono truncate" title={job.meshFileName}>{job.meshFileName}</span>
                         <a
                           href={`/api/design-jobs/${job.id}/mesh-file`}
-                          className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium"
+                          className="btn-primary text-xs px-3 py-1.5"
                         >
                           Download
                         </a>
@@ -564,12 +559,12 @@ export default function GeometryJobDetailPage({
                   )}
                   {job.printFileName && (
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Printer Gcode File</dt>
-                      <dd className="mt-1 text-sm text-gray-900 flex items-center gap-3">
+                      <dt className="text-sm font-medium text-muted">Printer Gcode File</dt>
+                      <dd className="mt-1 text-sm text-primary flex items-center gap-3">
                         <span className="font-mono truncate" title={job.printFileName}>{job.printFileName}</span>
                         <a
                           href={`/api/design-jobs/${job.id}/print-file`}
-                          className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium"
+                          className="btn-primary text-xs px-3 py-1.5"
                         >
                           Download
                         </a>
@@ -583,89 +578,77 @@ export default function GeometryJobDetailPage({
 
           {/* Developer Info - collapsible */}
           <details className="group">
-            <summary className="flex items-center cursor-pointer px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700">
+            <summary className="flex items-center cursor-pointer px-1 py-3 text-sm font-medium text-muted hover:text-[var(--text-secondary)]">
               <span className="mr-2 transition-transform group-open:rotate-90">&#9654;</span>
               Developer Info
             </summary>
             <div className="space-y-6">
 
           {/* Associated Print Jobs */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-lg font-medium text-gray-900">Associated Print Jobs</h2>
+          <div className="card shadow" data-testid="design-job-print-jobs-card">
+            <div className="card-header flex justify-between items-center">
+              <h2 className="text-lg font-medium text-primary">Associated Print Jobs</h2>
               {job && !job.isProcessSuccessful ? (
-                <span className="text-sm text-red-600">Processing failed</span>
+                <span className="text-sm text-error">Processing failed</span>
               ) : job && !job.printFileName ? (
-                <span className="text-sm text-gray-500">No print file available</span>
+                <span className="text-sm text-muted">No print file available</span>
               ) : (
                 <button
                   onClick={handleCreatePrint}
                   disabled={creatingPrint}
-                  className={`${
-                    creatingPrint 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-purple-600 hover:bg-purple-700'
-                  } text-white px-4 py-2 rounded text-sm font-medium`}
+                  className="btn-alt px-4 py-2 text-sm"
+                  data-testid="create-print-btn"
                 >
                   {creatingPrint ? 'Creating...' : 'New Print'}
                 </button>
               )}
             </div>
-            
-            <div className="px-6 py-4">
+
+            <div className="card-body">
               {loadingPrintJobs ? (
                 <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-sm text-gray-600">Loading print jobs...</p>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+                  <p className="mt-2 text-sm text-muted">Loading print jobs...</p>
                 </div>
               ) : printJobs.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted">
                   <p className="text-base">No print jobs yet</p>
                   <p className="text-sm mt-2">Click &quot;New Print&quot; to create a print job for this design</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="data-table min-w-full" data-testid="print-jobs-table">
+                    <thead>
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Print Job ID
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Started
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Completed
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
+                        <th>Print Job ID</th>
+                        <th>Status</th>
+                        <th>Started</th>
+                        <th>Completed</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody>
                       {printJobs.map((printJob) => (
-                        <tr key={printJob.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900 font-mono">
+                        <tr key={printJob.id} data-testid="print-job-row" data-print-job-id={printJob.id}>
+                          <td className="whitespace-nowrap">
+                            <div className="text-sm font-medium text-primary font-mono">
                               {printJob.id.substring(0, 12)}...
                             </div>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
+                          <td className="whitespace-nowrap" data-testid="print-job-status-cell">
                             {getPrintStatusBadge(printJob)}
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="whitespace-nowrap">
                             {printJob.printStartedAt ? formatDate(printJob.printStartedAt) : '\u2014'}
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="whitespace-nowrap">
                             {printJob.printCompletedAt ? formatDate(printJob.printCompletedAt) : '\u2014'}
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                          <td className="whitespace-nowrap">
                             <Link
                               href={`/print-queue/${printJob.id}`}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
+                              className="btn-primary text-xs px-3 py-1"
+                              data-testid="view-print-job-link"
                             >
                               Details
                             </Link>
@@ -680,16 +663,16 @@ export default function GeometryJobDetailPage({
           </div>
 
           {/* Mesh Output Data */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Mesh Output Data</h2>
+          <div className="card shadow">
+            <div className="card-header">
+              <h2 className="text-lg font-medium text-primary">Mesh Output Data</h2>
             </div>
             {!job.meshMetadata ? (
-              <div className="px-6 py-4">
-                <p className="text-sm text-gray-500 italic">No mesh output data available for this job.</p>
+              <div className="card-body">
+                <p className="text-sm text-muted italic">No mesh output data available for this job.</p>
               </div>
             ) : (
-              <div className="px-6 py-4">
+              <div className="card-body">
                 <pre className="display-field">
                   {(() => {
                     try { return JSON.stringify(JSON.parse(job.meshMetadata), null, 2); }
@@ -701,11 +684,11 @@ export default function GeometryJobDetailPage({
           </div>
 
           {/* Raw Parameter Data */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Raw Parameter Data</h2>
+          <div className="card shadow">
+            <div className="card-header">
+              <h2 className="text-lg font-medium text-primary">Raw Parameter Data</h2>
             </div>
-            <div className="px-6 py-4">
+            <div className="card-body">
               <pre className="display-field">
                 {JSON.stringify(parameterData, null, 2)}
               </pre>
@@ -713,8 +696,8 @@ export default function GeometryJobDetailPage({
           </div>
 
           {/* Processing Log */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4">
+          <div className="card shadow">
+            <div className="card-body">
               <ProcessingLogViewer log={job.processingLog} />
             </div>
           </div>
@@ -726,21 +709,19 @@ export default function GeometryJobDetailPage({
 
       {/* Debug Locally Modal */}
       {showDebugModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Debug Locally</h3>
-            <p className="text-sm text-gray-600 mb-3">
-              Run this command from the <code className="bg-gray-100 px-1 rounded">splint_geo_processor</code> directory to launch Grasshopper with this job&apos;s data:
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-testid="debug-modal">
+          <div className="card shadow-xl max-w-lg w-full mx-4 p-6">
+            <h3 className="text-lg font-medium text-primary mb-4">Debug Locally</h3>
+            <p className="text-sm text-secondary mb-3">
+              Run this command from the <code className="code-inline">splint_geo_processor</code> directory to launch Grasshopper with this job&apos;s data:
             </p>
             <div className="relative">
-              <pre className="bg-gray-900 text-green-400 p-4 rounded text-sm font-mono overflow-x-auto">
+              <pre className="display-field">
                 {getInspectCommand()}
               </pre>
               <button
-                onClick={() => {
-                  navigator.clipboard.writeText(getInspectCommand());
-                }}
-                className="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs"
+                onClick={() => { navigator.clipboard.writeText(getInspectCommand()); }}
+                className="btn-neutral absolute top-2 right-2 px-2 py-1 text-xs"
               >
                 Copy
               </button>
@@ -748,7 +729,7 @@ export default function GeometryJobDetailPage({
             <div className="mt-4 flex justify-end">
               <button
                 onClick={() => setShowDebugModal(false)}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+                className="btn-neutral px-4 py-2 text-sm"
               >
                 Close
               </button>
