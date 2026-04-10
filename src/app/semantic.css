@@ -481,6 +481,24 @@
 }
 
 /* ----------------------------------------------------------------------------
+   ACTION ICON BUTTON (delete/danger)
+   Icon-only button that goes red on hover. Size (w-10 h-10) applied via Tailwind.
+   ---------------------------------------------------------------------------- */
+.action-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  border-radius: 0.375rem;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.action-delete:hover {
+  color: var(--status-error-text);
+  background-color: var(--status-error-bg);
+}
+
+/* ----------------------------------------------------------------------------
    PROGRESS BAR
    Pair: <div class="progress-track"> <div class="progress-fill" style="width: N%"> </div>
    ---------------------------------------------------------------------------- */

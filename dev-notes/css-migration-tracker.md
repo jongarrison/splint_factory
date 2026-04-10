@@ -62,7 +62,7 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 |---|---|---|---|---|---|---|---|---|
 | 1 | `app/design-menu/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-09 | First migration. Revealed two plan amendments (see below) |
 | 2 | `app/design-jobs/page.tsx` | [x] | [x] | [x] | [x] | [x] | 2026-04-09 | First status badge migration. Added btn-primary, btn-secondary, text-error, text-link-alt to semantic.css |
-| 3 | `app/print-queue/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | Complex; depends on Header + PrinterStatusBanner being migrated |
+| 3 | `app/print-queue/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-10 | Most complex page. Added .action-delete to semantic.css. Dual Electron/browser paths. |
 | 4 | `app/design-jobs/[id]/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-10 | Detail page. Added banner-*/btn-neutral/btn-warning/btn-alt/code-inline. Developer details section + debug modal. |
 | 5 | `app/print-queue/[id]/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-10 | Detail page with Electron/browser paths. Added btn-success, btn-danger, progress-track/fill. |
 | 6 | `app/design-jobs/new/page.tsx` | [x] | [x] | — | [x] | [ ] | 2026-04-10 | Form page. Added .input-field to semantic.css. |

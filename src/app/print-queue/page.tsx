@@ -269,30 +269,30 @@ export default function PrintQueuePage() {
 
   const getStatusBadge = (entry: PrintQueueEntry) => {
     if (entry.printCompletedAt && entry.isPrintSuccessful) {
-      return <span className="status-badge status-completed px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Print Successful</span>;
+      return <span className="status-badge status-success">Print Successful</span>;
     }
     if (entry.printCompletedAt && !entry.isPrintSuccessful) {
-      return <span className="status-badge status-failed px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Print Failed</span>;
+      return <span className="status-badge status-error">Print Failed</span>;
     }
     if (entry.printStartedAt) {
       const progressText = entry.progress != null ? ` ${entry.progress.toFixed(1)}%` : '';
-      return <span className="status-badge status-printing px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Printing{progressText && <span className="progress-percentage">{progressText}</span>}</span>;
+      return <span className="status-badge status-warning">Printing{progressText && <span className="progress-percentage">{progressText}</span>}</span>;
     }
-    return <span className="status-badge status-ready px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Ready to Print</span>;
+    return <span className="status-badge status-pending">Ready to Print</span>;
   };
 
   const getAcceptanceBadge = (entry: PrintQueueEntry) => {
     if (entry.printAcceptance === 'ACCEPTED') {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-teal-100 text-teal-800">Accepted</span>;
+      return <span className="status-badge status-success">Accepted</span>;
     }
     if (entry.printAcceptance === 'REJECT_DESIGN') {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Rejected - Design</span>;
+      return <span className="status-badge status-warning">Rejected - Design</span>;
     }
     if (entry.printAcceptance === 'REJECT_PRINT') {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800">Rejected - Print</span>;
+      return <span className="status-badge status-error">Rejected - Print</span>;
     }
     if (entry.printAcceptance === 'REJECTED') {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800">Rejected</span>;
+      return <span className="status-badge status-error">Rejected</span>;
     }
     return null;
   };
@@ -307,12 +307,12 @@ export default function PrintQueuePage() {
       const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
       
       if (minutesAgo < 1) {
-        return <span className="last-updated-time text-xs text-gray-500">Updated just now</span>;
+        return <span className="last-updated-time text-xs text-muted">Updated just now</span>;
       } else if (minutesAgo < 60) {
-        return <span className="last-updated-time text-xs text-gray-500">Updated <span className="time-value">{minutesAgo}</span>m ago</span>;
+        return <span className="last-updated-time text-xs text-muted">Updated <span className="time-value">{minutesAgo}</span>m ago</span>;
       } else {
         const hoursAgo = Math.floor(minutesAgo / 60);
-        return <span className="last-updated-time text-xs text-gray-500">Updated <span className="time-value">{hoursAgo}</span>h ago</span>;
+        return <span className="last-updated-time text-xs text-muted">Updated <span className="time-value">{hoursAgo}</span>h ago</span>;
       }
     }
     
@@ -554,12 +554,12 @@ export default function PrintQueuePage() {
 
   if (status === 'loading' || (loading && !printQueue)) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell" data-testid="print-queue-loading">
         <Header variant={isElectronClient ? 'electron' : 'browser'} />
         <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+            <p className="mt-2 text-sm text-secondary">Loading...</p>
           </div>
         </div>
       </div>
@@ -567,12 +567,12 @@ export default function PrintQueuePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-shell" data-testid="print-queue-page">
       <Header variant={isElectronClient ? 'electron' : 'browser'} />
       
       <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
         <div className="mb-2 sm:mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Print Queue</h1>
+          <h1 className="page-title">Print Queue</h1>
         </div>
 
         {/* Printer Status Banner (only visible in Electron) */}
@@ -583,11 +583,12 @@ export default function PrintQueuePage() {
           <div 
             className={`mb-2 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between animate-slide-down shadow-lg ${
               notification.type === 'success' 
-                ? 'bg-green-50 border border-green-200 text-green-800' 
+                ? 'banner-success' 
                 : notification.type === 'error'
-                ? 'bg-red-50 border border-red-200 text-red-700'
-                : 'bg-blue-50 border border-blue-200 text-blue-800'
+                ? 'banner-error'
+                : 'banner-info'
             }`}
+            data-testid="notification-banner"
           >
             <span className="flex items-center gap-2">
               {notification.type === 'info' && (
@@ -606,10 +607,11 @@ export default function PrintQueuePage() {
                 }
               }}
               className={`ml-3 hover:opacity-70 transition-opacity ${
-                notification.type === 'success' ? 'text-green-600' :
-                notification.type === 'error' ? 'text-red-600' : 'text-blue-600'
+                notification.type === 'success' ? 'text-[var(--status-success-text)]' :
+                notification.type === 'error' ? 'text-[var(--status-error-text)]' : 'text-[var(--accent-blue)]'
               }`}
               title="Dismiss"
+              data-testid="dismiss-notification-btn"
             >
               ✕
             </button>
@@ -618,26 +620,27 @@ export default function PrintQueuePage() {
 
         {/* Error messages (separate from notifications) */}
         {error && (
-          <div className="mb-2 bg-red-50 border border-red-200 text-red-700 px-2 py-2 rounded text-sm">
+          <div className="alert-error text-sm mb-2" data-testid="alert-error">
             {error}
           </div>
         )}
 
-        <div className="bg-white shadow rounded">
-          <div className="px-2 py-2 border-b border-gray-200">
+        <div className="card">
+          <div className="card-header">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-base font-medium text-gray-900">Print Jobs</h2>
+              <h2 className="text-base font-medium text-primary">Print Jobs</h2>
               <div className="flex items-center gap-2">
                 {lastUpdate && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted">
                     Updated {lastUpdate.toLocaleTimeString()}
                   </span>
                 )}
                 <button
                   onClick={refreshPrintQueue}
                   disabled={isFetching}
-                  className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-neutral text-sm"
                   title="Refresh print queue"
+                  data-testid="refresh-btn"
                 >
                   <svg 
                     className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} 
@@ -658,14 +661,15 @@ export default function PrintQueuePage() {
             </div>
             
             {/* Active / History Toggle */}
-            <div className="flex gap-1 p-1 bg-gray-800 rounded-lg w-fit">
+            <div className="flex gap-1 p-1 bg-[var(--surface-secondary)] rounded-lg w-fit">
               <button
                 onClick={() => setViewMode('active')}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
                   viewMode === 'active'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-gray-600 text-gray-300'
+                    ? 'bg-[var(--accent-blue)] text-white shadow-sm'
+                    : 'bg-[var(--surface)] text-secondary'
                 }`}
+                data-testid="view-mode-active-btn"
               >
                 Active
               </button>
@@ -673,9 +677,10 @@ export default function PrintQueuePage() {
                 onClick={() => setViewMode('history')}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
                   viewMode === 'history'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-gray-600 text-gray-300'
+                    ? 'bg-[var(--accent-blue)] text-white shadow-sm'
+                    : 'bg-[var(--surface)] text-secondary'
                 }`}
+                data-testid="view-mode-history-btn"
               >
                 History
               </button>
@@ -685,10 +690,10 @@ export default function PrintQueuePage() {
           <div className="overflow-x-auto">
             {!filteredPrintQueue || filteredPrintQueue.length === 0 ? (
               <div className="text-center py-8">
-                <div className="text-gray-500 text-base">
-                  {viewMode === 'active' ? 'No active print jobs' : 'No print history'}
-                </div>
-                <p className="text-gray-400 mt-1 text-sm">
+                  <div className="text-secondary text-base">
+                    {viewMode === 'active' ? 'No active print jobs' : 'No print history'}
+                  </div>
+                  <p className="text-muted mt-1 text-sm">
                   {viewMode === 'active' 
                     ? 'Jobs appear after processing.' 
                     : 'Completed, accepted, and rejected prints appear here.'}
@@ -696,44 +701,41 @@ export default function PrintQueuePage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="data-table" data-testid="print-queue-table">
+                  <thead>
                     <tr>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2">
                         Actions
                       </th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2">
                         Info
                       </th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2">
                         Job
                       </th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2">
                         Status
                       </th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">
+                      <th className="px-2 py-2 hidden lg:table-cell">
                         Progress
                       </th>
-                      <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase w-12">
+                      <th className="px-2 py-2 text-center w-12">
                         {/* Delete column */}
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody>
                     {filteredPrintQueue.map((entry) => (
-                      <tr key={entry.id} className="hover:bg-gray-50">
+                      <tr key={entry.id}>
                         <td className="px-2 py-2 whitespace-nowrap">
                           <div className="flex flex-row sm:flex-col gap-1">
                             {/* Print button - shows for all users but only enabled in Electron client */}
                             {!entry.printStartedAt && entry.hasPrintFile && (
-                              <button
+                          <button
                                 onClick={() => isElectronClient && !printerBusy ? setPrintConfirmModal({ entry }) : null}
                                 disabled={!isElectronClient || printingJobId === entry.id || printerBusy}
-                                className={`${
-                                  !isElectronClient || printingJobId === entry.id || printerBusy
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-purple-600 hover:bg-purple-700'
-                                } text-white px-4 py-1.5 rounded text-sm font-semibold min-w-[80px] inline-flex items-center justify-center gap-1`}
+                                className="btn-alt px-4 py-1.5 text-sm font-semibold min-w-[80px] inline-flex items-center justify-center gap-1"
+                                data-testid="print-btn"
                               >
                                 {printingJobId === entry.id ? (
                                   <>
@@ -759,9 +761,10 @@ export default function PrintQueuePage() {
                             {entry.printCompletedAt && !entry.isPrintSuccessful && (
                               <button
                                 onClick={() => handleMarkPrintSuccessful(entry.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs min-w-[60px]"
+                                className="btn-success px-2 py-1 text-xs min-w-[60px]"
+                                data-testid="mark-done-btn"
                               >
-                                ✓ Done
+                                Done
                               </button>
                             )}
                             
@@ -772,8 +775,9 @@ export default function PrintQueuePage() {
                                     printId: entry.id,
                                     geometryName: entry.designJob.design.name,
                                   })}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-semibold min-w-[80px]"
+                                  className="btn-primary px-4 py-1.5 text-sm font-semibold min-w-[80px]"
                                   title="Review print quality"
+                                  data-testid="review-print-btn"
                                 >
                                   Review Print
                                 </button>
@@ -781,28 +785,28 @@ export default function PrintQueuePage() {
                           </div>
                         </td>
                         <td className="px-2 py-2">
-                          <div className="text-xs text-gray-500">Object:</div>
-                          <div className="text-sm font-mono font-semibold text-blue-600">
+                          <div className="text-xs text-muted">Object:</div>
+                          <div className="text-sm font-mono font-semibold text-link">
                             {entry.designJob.objectId || 'N/A'}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">Job:</div>
-                          <div className="text-sm text-gray-900">
+                          <div className="text-xs text-muted mt-1">Job:</div>
+                          <div className="text-sm text-primary">
                             {entry.designJob.jobLabel || 'N/A'}
                           </div>
                           {entry.designJob.jobNote && (
-                            <div className="text-xs text-gray-500 truncate max-w-[150px] mt-1">
+                            <div className="text-xs text-muted truncate max-w-[150px] mt-1">
                               {entry.designJob.jobNote}
                             </div>
                           )}
                         </td>
                         <td className="px-2 py-2">
                           <Link href={`/print-queue/${entry.id}`} className="block group">
-                            <div className="geometry-name text-sm font-medium text-gray-900 truncate max-w-[200px] group-hover:text-blue-600 transition-colors">
+                            <div className="geometry-name text-sm font-medium text-primary truncate max-w-[200px] group-hover:text-[var(--accent-blue)] transition-colors">
                               {entry.designJob.design.name}
                             </div>
                           </Link>
                           {entry.designJob.creator?.name && (
-                            <div className="text-xs text-gray-500 mt-0.5">
+                            <div className="text-xs text-muted mt-0.5">
                               {entry.designJob.creator.name}
                             </div>
                           )}
@@ -813,7 +817,7 @@ export default function PrintQueuePage() {
                             {getAcceptanceBadge(entry)}
                           </div>
                           {entry.printStartedAt && (
-                            <div className="print-started-time text-xs text-gray-500 mt-1 hidden sm:block">
+                            <div className="print-started-time text-xs text-muted mt-1 hidden sm:block">
                               {formatDate(entry.printStartedAt)}
                             </div>
                           )}
@@ -821,11 +825,11 @@ export default function PrintQueuePage() {
                         <td className="px-2 py-2 hidden lg:table-cell">
                           {entry.progress != null ? (
                             <div className="progress-info">
-                              <div className="progress-percentage text-sm font-semibold text-gray-900">
+                              <div className="progress-percentage text-sm font-semibold text-primary">
                                 {entry.progress.toFixed(1)}%
                               </div>
                               {entry.progressLastReportAt && (
-                                <div className="last-updated-time text-xs text-gray-500 mt-0.5">
+                                <div className="last-updated-time text-xs text-muted mt-0.5">
                                   {(() => {
                                     const lastUpdate = new Date(entry.progressLastReportAt);
                                     const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
@@ -843,7 +847,7 @@ export default function PrintQueuePage() {
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs text-gray-400">—</span>
+                            <span className="text-xs text-muted">—</span>
                           )}
                         </td>
                         <td className="px-2 py-2 text-center">
@@ -853,8 +857,9 @@ export default function PrintQueuePage() {
                               geometryName: entry.designJob.design.name,
                               printStarted: !!entry.printStartedAt,
                             })}
-                            className="action-delete inline-flex items-center justify-center w-10 h-10 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="action-delete w-10 h-10"
                             title="Delete print job"
+                            data-testid="delete-btn"
                           >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
