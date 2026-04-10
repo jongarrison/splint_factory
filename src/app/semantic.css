@@ -43,6 +43,8 @@
   --btn-warning-hover-bg: #b45309;
   --btn-alt-bg: var(--accent-purple); /* purple for copy/clone actions */
   --btn-alt-hover-bg: var(--accent-purple-hover);
+  --btn-success-hover-bg: #059669;   /* darker green */
+  --btn-danger-hover-bg: #b91c1c;    /* darker red */
 }
 
 /* ----------------------------------------------------------------------------
@@ -413,4 +415,85 @@
 
 .text-link:hover {
   color: var(--accent-blue-hover);
+}
+
+/* ----------------------------------------------------------------------------
+   FORM INPUT
+   Standard text/number input field. Pair with a <label> using text-secondary.
+   Padding and width still applied via Tailwind (mt-1, w-full, etc.).
+   ---------------------------------------------------------------------------- */
+.input-field {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background-color: var(--surface);
+}
+
+.input-field:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-blue);
+}
+
+/* Solid green button — positive action (mark successful, approve) */
+.btn-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--accent-green);
+  color: #ffffff;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+
+.btn-success:hover {
+  background-color: var(--btn-success-hover-bg);
+}
+
+.btn-success:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Red button — destructive or failure action (mark failed, delete) */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--accent-red);
+  color: #ffffff;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+
+.btn-danger:hover {
+  background-color: var(--btn-danger-hover-bg);
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----------------------------------------------------------------------------
+   PROGRESS BAR
+   Pair: <div class="progress-track"> <div class="progress-fill" style="width: N%"> </div>
+   ---------------------------------------------------------------------------- */
+.progress-track {
+  width: 100%;
+  background-color: var(--surface-secondary);
+  border-radius: 9999px;
+  height: 1rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--accent-blue);
+  border-radius: 9999px;
 }

@@ -224,31 +224,31 @@ export default function PrintQueueDetailPage({
 
   const getStatusBadge = (entry: PrintQueueEntry) => {
     if (entry.printCompletedAt && entry.isPrintSuccessful) {
-      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">Print Successful</span>;
+      return <span className="status-badge status-success">Print Successful</span>;
     }
     if (entry.printCompletedAt && !entry.isPrintSuccessful) {
-      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-red-100 text-red-800">Print Failed</span>;
+      return <span className="status-badge status-error">Print Failed</span>;
     }
     if (entry.printStartedAt) {
       const progressText = entry.progress != null ? ` ${entry.progress.toFixed(1)}%` : '';
-      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">Printing{progressText}</span>;
+      return <span className="status-badge status-warning">Printing{progressText}</span>;
     }
-    return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">Ready to Print</span>;
+    return <span className="status-badge status-pending">Ready to Print</span>;
   };
 
   const getAcceptanceBadge = (entry: PrintQueueEntry) => {
     if (entry.printAcceptance === 'ACCEPTED') {
-      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-teal-100 text-teal-800">Accepted</span>;
+      return <span className="status-badge status-success">Accepted</span>;
     }
     if (entry.printAcceptance === 'REJECT_DESIGN') {
-      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-orange-100 text-orange-800">Rejected - Design</span>;
+      return <span className="status-badge status-warning">Rejected - Design</span>;
     }
     if (entry.printAcceptance === 'REJECT_PRINT') {
-      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-rose-100 text-rose-800">Rejected - Print</span>;
+      return <span className="status-badge status-error">Rejected - Print</span>;
     }
     // Legacy fallback
     if (entry.printAcceptance === 'REJECTED') {
-      return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-rose-100 text-rose-800">Rejected</span>;
+      return <span className="status-badge status-error">Rejected</span>;
     }
     return null;
   };
@@ -508,12 +508,12 @@ export default function PrintQueueDetailPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell" data-testid="print-queue-detail-loading">
         <Header variant={isElectronClient ? 'electron' : 'browser'} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-content">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading print queue entry...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+            <p className="mt-4 text-secondary">Loading print queue entry...</p>
           </div>
         </div>
       </div>
@@ -522,22 +522,23 @@ export default function PrintQueueDetailPage({
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell" data-testid="print-queue-detail-error-page">
         <Header variant={isElectronClient ? 'electron' : 'browser'} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-content">
           <div className="mb-8">
             <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold text-gray-900">Print Queue Details</h1>
+              <h1 className="page-title">Print Queue Details</h1>
               <Link
                 href="/print-queue"
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+                className="btn-neutral px-4 py-2 text-sm"
+                data-testid="back-btn"
               >
-                ← Back to Print Queue
+                &larr; Back to Print Queue
               </Link>
             </div>
           </div>
-          
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+
+          <div className="alert-error" data-testid="print-queue-detail-error">
             {error}
           </div>
         </div>
@@ -553,72 +554,71 @@ export default function PrintQueueDetailPage({
   const parameterSchema = parseParameterSchema(entry.designJob.design.inputParameterSchema);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-shell" data-testid="print-queue-detail-page">
       <Header variant={isElectronClient ? 'electron' : 'browser'} />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-content">
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Print Queue Details</h1>
-              <p className="mt-2 text-gray-600">
+              <h1 className="page-title">Print Queue Details</h1>
+              <p className="mt-2 text-secondary">
                 View details and manage this print job
               </p>
             </div>
             <Link
               href="/print-queue"
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+              className="btn-neutral px-4 py-2 text-sm"
+              data-testid="back-btn"
             >
-              ← Back to Print Queue
+              &larr; Back to Print Queue
             </Link>
           </div>
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mb-6 alert-error" data-testid="alert-error">
             {error}
             <button 
               onClick={() => setError(null)}
-              className="ml-2 text-red-500 hover:text-red-700"
+              className="ml-2 text-error"
+              data-testid="dismiss-error-btn"
             >
-              ✕
+              &#x2715;
             </button>
           </div>
         )}
 
         <div className="space-y-6">
           {/* Status and Actions */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
+          <div className="card shadow" data-testid="print-status-card">
+            <div className="card-header">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-medium text-gray-900">Print Status</h2>
+                <h2 className="text-lg font-medium text-primary">Print Status</h2>
                 <div className="flex items-center gap-3">
                   {getStatusBadge(entry)}
                   {getAcceptanceBadge(entry)}
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4">
+            <div className="card-body">
               <div className="flex flex-wrap gap-3">
                 {!entry.printStartedAt && entry.hasPrintFile && (
                   <div className="relative group">
                     <button
                       onClick={() => isElectronClient ? handlePrint() : null}
                       disabled={!isElectronClient || printingJobId === entry.id}
-                      className={`action-print ${
-                        !isElectronClient || printingJobId === entry.id
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-purple-600 hover:bg-purple-700'
-                      } text-white px-4 py-2 rounded text-sm font-medium`}
+                      className="btn-alt px-4 py-2 text-sm"
                       title={!isElectronClient ? 'This feature only works from the 3D printer\'s splint computer' : ''}
+                      data-testid="print-btn"
                     >
                       {printingJobId === entry.id ? 'Printing...' : '🖨️ Print'}
                     </button>
                     {!isElectronClient && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[var(--surface)] text-primary text-xs rounded shadow-lg border border-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
                         <div className="relative">
-                          This feature only works from the 3D printer's splint computer
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                          This feature only works from the 3D printer&apos;s splint computer
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-[var(--surface)]"></div>
                         </div>
                       </div>
                     )}
@@ -630,14 +630,16 @@ export default function PrintQueueDetailPage({
                     <button
                       onClick={handleMarkSuccessful}
                       disabled={updating}
-                      className="action-mark-successful bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                      className="btn-success px-4 py-2 text-sm"
+                      data-testid="mark-successful-btn"
                     >
                       {updating ? 'Updating...' : 'Mark Successful'}
                     </button>
                     <button
                       onClick={handleMarkFailed}
                       disabled={updating}
-                      className="action-mark-failed bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                      className="btn-danger px-4 py-2 text-sm"
+                      data-testid="mark-failed-btn"
                     >
                       {updating ? 'Updating...' : 'Mark Failed'}
                     </button>
@@ -648,7 +650,8 @@ export default function PrintQueueDetailPage({
                   <button
                     onClick={handleMarkSuccessful}
                     disabled={updating}
-                    className="action-mark-successful bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                    className="btn-success px-4 py-2 text-sm"
+                    data-testid="mark-successful-btn"
                   >
                     {updating ? 'Updating...' : 'Mark Successful'}
                   </button>
@@ -661,8 +664,9 @@ export default function PrintQueueDetailPage({
                         printId: entry.id,
                         geometryName: entry.designJob.design.name,
                       })}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
+                      className="btn-primary px-4 py-2 text-sm"
                       title="Review print quality"
+                      data-testid="review-print-btn"
                     >
                       Review Print
                     </button>
@@ -674,7 +678,8 @@ export default function PrintQueueDetailPage({
                     geometryName: entry.designJob.design.name,
                   })}
                   disabled={updating}
-                  className="action-delete bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                  className="btn-danger px-4 py-2 text-sm"
+                  data-testid="delete-btn"
                 >
                   {updating ? 'Deleting...' : 'Delete'}
                 </button>
@@ -682,17 +687,18 @@ export default function PrintQueueDetailPage({
               
               {/* Progress Bar and Info */}
               {entry.printStartedAt && !entry.printCompletedAt && (
-                <div className="mt-6 border-t border-gray-200 pt-4">
+                <div className="mt-6 border-t border-[var(--border)] pt-4">
                   {entry.progress != null && (
-                    <div className="print-progress-section">
+                    <div data-testid="print-progress-section">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700">Print Progress</span>
-                        <span className="progress-percentage text-sm font-semibold text-gray-900">{entry.progress.toFixed(1)}%</span>
+                        <span className="text-sm font-medium text-secondary">Print Progress</span>
+                        <span className="text-sm font-semibold text-primary" data-testid="progress-percentage">{entry.progress.toFixed(1)}%</span>
                       </div>
-                      <div className="progress-bar w-full bg-gray-200 rounded-full h-4">
+                      <div className="progress-track" data-testid="progress-bar">
                         <div 
-                          className="progress-bar-fill bg-blue-600 h-4 rounded-full transition-all duration-300"
+                          className="progress-fill transition-all duration-300"
                           style={{ width: `${Math.min(100, Math.max(0, entry.progress))}%` }}
+                          data-testid="progress-fill"
                         />
                       </div>
                     </div>
@@ -706,19 +712,19 @@ export default function PrintQueueDetailPage({
                         const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
                         
                         if (minutesAgo < 1) {
-                          return <span className="time-indicator time-recent ml-2 text-green-600 font-medium">(just now)</span>;
+                          return <span className="ml-2 font-medium text-[var(--status-success-text)]">(just now)</span>;
                         } else if (minutesAgo < 60) {
-                          return <span className="time-indicator time-minutes ml-2 text-gray-500">(<span className="time-value">{minutesAgo}</span>m ago)</span>;
+                          return <span className="ml-2 text-muted">({minutesAgo}m ago)</span>;
                         } else {
                           const hoursAgo = Math.floor(minutesAgo / 60);
-                          return <span className="time-indicator time-hours ml-2 text-orange-600">(<span className="time-value">{hoursAgo}</span>h ago)</span>;
+                          return <span className="ml-2 text-[var(--status-warning-text)]">({hoursAgo}h ago)</span>;
                         }
                       })()}
                     </div>
                   )}
                   
                   {!entry.progress && !entry.progressLastReportAt && (
-                    <div className="text-sm text-gray-500 italic">
+                    <div className="text-sm text-muted italic">
                       Waiting for progress updates from printer...
                     </div>
                   )}
@@ -728,59 +734,59 @@ export default function PrintQueueDetailPage({
           </div>
 
           {/* Print Information */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Print Information</h2>
+          <div className="card shadow" data-testid="print-info-card">
+            <div className="card-header">
+              <h2 className="text-lg font-medium text-primary">Print Information</h2>
             </div>
-            <div className="px-6 py-4">
+            <div className="card-body">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">IDs</dt>
+                  <dt className="text-sm font-medium text-muted">IDs</dt>
                   <dd className="mt-1">
-                    <div className="text-xs text-gray-500">Object:</div>
-                    <div className="text-sm font-mono font-semibold text-blue-600">{entry.designJob.objectId || 'N/A'}</div>
-                    <div className="text-xs text-gray-500 mt-2">Job:</div>
-                    <div className="text-sm text-gray-900">{entry.designJob.jobLabel || 'N/A'}</div>
+                    <div className="text-xs text-muted">Object:</div>
+                    <div className="text-sm font-mono font-semibold text-[var(--accent-blue)]">{entry.designJob.objectId || 'N/A'}</div>
+                    <div className="text-xs text-muted mt-2">Job:</div>
+                    <div className="text-sm text-primary">{entry.designJob.jobLabel || 'N/A'}</div>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Type</dt>
+                  <dt className="text-sm font-medium text-muted">Type</dt>
                   <dd className="mt-1">
-                    <div className="text-sm font-medium text-gray-900">{entry.designJob.design.name}</div>
-                    <div className="text-xs text-gray-500">{entry.designJob.design.algorithmName}</div>
+                    <div className="text-sm font-medium text-primary">{entry.designJob.design.name}</div>
+                    <div className="text-xs text-muted">{entry.designJob.design.algorithmName}</div>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Print Queue ID</dt>
-                  <dd className="print-queue-id mt-1 text-sm text-gray-900 font-mono">{entry.id}</dd>
+                  <dt className="text-sm font-medium text-muted">Print Queue ID</dt>
+                  <dd className="mt-1 text-sm text-primary font-mono" data-testid="print-queue-id">{entry.id}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Design Job ID</dt>
-                  <dd className="geometry-job-id mt-1 text-sm text-gray-900 font-mono">
+                  <dt className="text-sm font-medium text-muted">Design Job ID</dt>
+                  <dd className="mt-1 text-sm font-mono" data-testid="design-job-id">
                     <Link 
                       href={`/design-jobs/${entry.designJob.id}`}
-                      className="text-blue-600 hover:text-blue-500"
+                      className="text-link"
                     >
                       {entry.designJob.id}
                     </Link>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Design Created</dt>
-                  <dd className="geometry-creation-time mt-1 text-sm text-gray-900">{formatDate(entry.designJob.createdAt)}</dd>
+                  <dt className="text-sm font-medium text-muted">Design Created</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="design-created-at">{formatDate(entry.designJob.createdAt)}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Created By</dt>
-                  <dd className="creator-name mt-1 text-sm text-gray-900">{entry.designJob.creator.name || entry.designJob.creator.email}</dd>
+                  <dt className="text-sm font-medium text-muted">Created By</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="creator-name">{entry.designJob.creator.name || entry.designJob.creator.email}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Organization</dt>
-                  <dd className="organization-name mt-1 text-sm text-gray-900">{entry.designJob.owningOrganization.name}</dd>
+                  <dt className="text-sm font-medium text-muted">Organization</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="organization-name">{entry.designJob.owningOrganization.name}</dd>
                 </div>
                 {entry.designJob.jobNote && (
                   <div className="md:col-span-2">
-                    <dt className="text-sm font-medium text-gray-500">Job Note</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{entry.designJob.jobNote}</dd>
+                    <dt className="text-sm font-medium text-muted">Job Note</dt>
+                    <dd className="mt-1 text-sm text-primary">{entry.designJob.jobNote}</dd>
                   </div>
                 )}
               </dl>
@@ -788,41 +794,41 @@ export default function PrintQueueDetailPage({
           </div>
 
           {/* Print Status Details */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Print Status Details</h2>
+          <div className="card shadow" data-testid="print-status-details-card">
+            <div className="card-header">
+              <h2 className="text-lg font-medium text-primary">Print Status Details</h2>
             </div>
-            <div className="px-6 py-4">
+            <div className="card-body">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Print Started</dt>
-                  <dd className="print-started-time mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium text-muted">Print Started</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="print-started-at">
                     {entry.printStartedAt ? formatDate(entry.printStartedAt) : (
-                      <span className="text-gray-400 italic">Not started</span>
+                      <span className="text-muted italic">Not started</span>
                     )}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Print Completed</dt>
-                  <dd className="print-completed-time mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium text-muted">Print Completed</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="print-completed-at">
                     {entry.printCompletedAt ? formatDate(entry.printCompletedAt) : (
-                      <span className="text-gray-400 italic">In progress</span>
+                      <span className="text-muted italic">In progress</span>
                     )}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Current Progress</dt>
-                  <dd className="progress mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium text-muted">Current Progress</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="current-progress">
                     {entry.progress != null ? (
                       <span className="font-semibold">{entry.progress.toFixed(1)}%</span>
                     ) : (
-                      <span className="text-gray-400 italic">No data</span>
+                      <span className="text-muted italic">No data</span>
                     )}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Last Progress Update</dt>
-                  <dd className="progress-last-report-time mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium text-muted">Last Progress Update</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="progress-last-report-at">
                     {entry.progressLastReportAt ? (
                       <>
                         {formatDate(entry.progressLastReportAt)}
@@ -831,68 +837,56 @@ export default function PrintQueueDetailPage({
                           const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
                           
                           if (minutesAgo < 1) {
-                            return <span className="ml-2 text-green-600 font-medium">(just now)</span>;
+                            return <span className="ml-2 font-medium text-[var(--status-success-text)]">(just now)</span>;
                           } else if (minutesAgo < 60) {
-                            return <span className="ml-2 text-gray-500">({minutesAgo}m ago)</span>;
+                            return <span className="ml-2 text-muted">({minutesAgo}m ago)</span>;
                           } else {
                             const hoursAgo = Math.floor(minutesAgo / 60);
-                            return <span className="ml-2 text-orange-600">({hoursAgo}h ago)</span>;
+                            return <span className="ml-2 text-[var(--status-warning-text)]">({hoursAgo}h ago)</span>;
                           }
                         })()}
                       </>
                     ) : (
-                      <span className="text-gray-400 italic">No updates</span>
+                      <span className="text-muted italic">No updates</span>
                     )}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Print Status</dt>
-                  <dd className="is-print-successful mt-1 text-sm">
+                  <dt className="text-sm font-medium text-muted">Print Status</dt>
+                  <dd className="mt-1 text-sm" data-testid="print-status">
                     <div className="flex flex-wrap gap-2">
                       {entry.printCompletedAt ? (
                         entry.isPrintSuccessful ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            ✓ Successful
-                          </span>
+                          <span className="status-badge status-success">&#x2713; Successful</span>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            ✗ Failed
-                          </span>
+                          <span className="status-badge status-error">&#x2717; Failed</span>
                         )
                       ) : entry.printStartedAt ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          ⟳ In Progress
-                        </span>
+                        <span className="status-badge status-warning">&#x27F3; In Progress</span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          ⏸ Ready
-                        </span>
+                        <span className="status-badge status-pending">&#x23F8; Ready</span>
                       )}
                       {entry.printAcceptance === 'ACCEPTED' && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
-                          Accepted
-                        </span>
+                        <span className="status-badge status-success">Accepted</span>
                       )}
                       {(entry.printAcceptance === 'REJECT_DESIGN' || entry.printAcceptance === 'REJECTED') && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        <span className="status-badge status-warning">
                           {entry.printAcceptance === 'REJECT_DESIGN' ? 'Rejected - Design' : 'Rejected'}
                         </span>
                       )}
                       {entry.printAcceptance === 'REJECT_PRINT' && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
-                          Rejected - Print
-                        </span>
+                        <span className="status-badge status-error">Rejected - Print</span>
                       )}
                     </div>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Print Note</dt>
-                  <dd className="print-note mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium text-muted">Print Note</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="print-note">
                     {entry.printNote ? (
                       <span>{entry.printNote}</span>
                     ) : (
-                      <span className="text-gray-400 italic">No note</span>
+                      <span className="text-muted italic">No note</span>
                     )}
                   </dd>
                 </div>
@@ -901,33 +895,33 @@ export default function PrintQueueDetailPage({
           </div>
 
           {/* Files */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Files</h2>
+          <div className="card shadow" data-testid="files-card">
+            <div className="card-header">
+              <h2 className="text-lg font-medium text-primary">Files</h2>
             </div>
-            <div className="px-6 py-4">
+            <div className="card-body">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Design File (3MF)</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium text-muted">Design File (3MF)</dt>
+                  <dd className="mt-1 text-sm">
                     {entry.hasGeometryFile ? (
-                      <span className="mesh-filename file-status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <span className="status-badge status-pending" data-testid="mesh-filename">
                         {entry.meshFileName || 'design.3mf'}
                       </span>
                     ) : (
-                      <span className="text-gray-500">Not available</span>
+                      <span className="text-muted">Not available</span>
                     )}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Print File (GCode)</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium text-muted">Print File (GCode)</dt>
+                  <dd className="mt-1 text-sm">
                     {entry.hasPrintFile ? (
-                      <span className="print-filename file-status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="status-badge status-success" data-testid="print-filename">
                         {entry.printFileName || 'print.gcode'}
                       </span>
                     ) : (
-                      <span className="text-gray-500">Not available</span>
+                      <span className="text-muted">Not available</span>
                     )}
                   </dd>
                 </div>
@@ -936,57 +930,57 @@ export default function PrintQueueDetailPage({
           </div>
 
           {/* Job Information */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Job Information</h2>
+          <div className="card shadow" data-testid="job-info-card">
+            <div className="card-header">
+              <h2 className="text-lg font-medium text-primary">Job Information</h2>
             </div>
-            <div className="px-6 py-4">
+            <div className="card-body">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Job ID</dt>
-                  <dd className="job-id mt-1 text-sm text-gray-900">{entry.designJob.jobLabel || 'Not specified'}</dd>
+                  <dt className="text-sm font-medium text-muted">Job ID</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="job-label">{entry.designJob.jobLabel || 'Not specified'}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Job Note</dt>
-                  <dd className="job-note mt-1 text-sm text-gray-900">{entry.designJob.jobNote || 'No note provided'}</dd>
+                  <dt className="text-sm font-medium text-muted">Job Note</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="job-note">{entry.designJob.jobNote || 'No note provided'}</dd>
                 </div>
               </dl>
             </div>
           </div>
 
           {/* Geometry Configuration */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Design Configuration</h2>
+          <div className="card shadow" data-testid="design-config-card">
+            <div className="card-header">
+              <h2 className="text-lg font-medium text-primary">Design Configuration</h2>
             </div>
-            <div className="px-6 py-4">
+            <div className="card-body">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Design Name</dt>
-                  <dd className="geometry-name mt-1 text-sm text-gray-900">{entry.designJob.design.name}</dd>
+                  <dt className="text-sm font-medium text-muted">Design Name</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="design-name">{entry.designJob.design.name}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Algorithm</dt>
-                  <dd className="geometry-algorithm mt-1 text-sm text-gray-900 font-mono">{entry.designJob.design.algorithmName}</dd>
+                  <dt className="text-sm font-medium text-muted">Algorithm</dt>
+                  <dd className="mt-1 text-sm text-primary font-mono" data-testid="design-algorithm">{entry.designJob.design.algorithmName}</dd>
                 </div>
               </dl>
 
               {/* Parameter Values */}
               {parameterSchema.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-3">Parameter Values</h3>
+                  <h3 className="text-sm font-medium text-muted mb-3">Parameter Values</h3>
                   <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {parameterSchema.map((param: any) => (
-                      <div key={param.InputName} className="geometry-parameter">
-                        <dt className="parameter-name text-xs font-medium text-gray-500">{param.InputDescription}</dt>
-                        <dd className="parameter-value mt-1 text-sm text-gray-900">
+                      <div key={param.InputName} data-testid="design-param" data-param-name={param.InputName}>
+                        <dt className="text-xs font-medium text-muted">{param.InputDescription}</dt>
+                        <dd className="mt-1 text-sm text-primary" data-testid="param-value">
                           <span className="font-mono">
                             {parameterData[param.InputName] !== undefined 
                               ? String(parameterData[param.InputName])
                               : 'Not set'
                             }
                           </span>
-                          <span className="parameter-type ml-2 text-xs text-gray-500">
+                          <span className="ml-2 text-xs text-muted">
                             ({param.InputType})
                           </span>
                         </dd>
@@ -1000,8 +994,8 @@ export default function PrintQueueDetailPage({
 
           {/* Print Logs */}
           {entry.logs && (
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4">
+            <div className="card shadow" data-testid="print-logs-card">
+              <div className="card-body">
                 <ProcessingLogViewer log={entry.logs} title="Print Logs" />
               </div>
             </div>

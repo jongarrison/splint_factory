@@ -249,12 +249,12 @@ function CreateGeometryJobPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell" data-testid="new-design-job-loading">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-content">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading designs...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+            <p className="mt-4 text-secondary">Loading designs...</p>
           </div>
         </div>
       </div>
@@ -262,18 +262,19 @@ function CreateGeometryJobPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-shell" data-testid="new-design-job-page">
       <Header />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-content">
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="page-title">
               {selectedDesign ? `New ${selectedDesign.name} Job` : 'Create New Print'}
             </h1>
             <Link
               href="/design-menu"
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+              className="btn-neutral px-4 py-2 text-sm"
+              data-testid="back-btn"
             >
               &larr; Back to Designs
             </Link>
@@ -281,66 +282,69 @@ function CreateGeometryJobPage() {
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mb-6 alert-error" data-testid="new-design-job-error">
             {error}
             <button 
               onClick={() => setError(null)}
-              className="ml-2 text-red-500 hover:text-red-700"
+              className="ml-2 text-error"
+              data-testid="dismiss-error-btn"
             >
-              ✕
+              &#x2715;
             </button>
           </div>
         )}
 
         {/* Measurement Helper Image */}
         {selectedDesign && (
-          <div className="mb-6 bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Measurement Guide</h2>
-            <div className="flex justify-center">
-              <div className="relative w-full max-w-3xl">
-                {selectedDesign.measurementImageUpdatedAt ? (
-                  <Image
-                    src={`/api/design-images/${selectedDesign.id}/measurement`}
-                    alt={`${selectedDesign.name} measurement guide`}
-                    width={800}
-                    height={600}
-                    className="rounded-lg"
-                    style={{ width: '100%', height: 'auto' }}
-                    unoptimized
-                  />
-                ) : (
-                  <div className="w-full aspect-[4/3] bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                    <div className="text-center p-8">
-                      <svg 
-                        className="mx-auto h-16 w-16 text-gray-400 mb-4" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={1.5} 
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
-                        />
-                      </svg>
-                      <p className="text-gray-500 text-sm">No measurement guide available</p>
-                      <p className="text-gray-400 text-xs mt-1">Contact administrator to add measurement image</p>
+          <div className="mb-6 card shadow" data-testid="measurement-guide-card">
+            <div className="card-body">
+              <h2 className="text-lg font-medium text-primary mb-4">Measurement Guide</h2>
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-3xl">
+                  {selectedDesign.measurementImageUpdatedAt ? (
+                    <Image
+                      src={`/api/design-images/${selectedDesign.id}/measurement`}
+                      alt={`${selectedDesign.name} measurement guide`}
+                      width={800}
+                      height={600}
+                      className="rounded-lg"
+                      style={{ width: '100%', height: 'auto' }}
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-full aspect-[4/3] bg-[var(--surface-secondary)] rounded-lg flex items-center justify-center border-2 border-dashed border-[var(--border)]">
+                      <div className="text-center p-8">
+                        <svg 
+                          className="mx-auto h-16 w-16 text-[var(--text-muted)] mb-4" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={1.5} 
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                          />
+                        </svg>
+                        <p className="text-secondary text-sm">No measurement guide available</p>
+                        <p className="text-muted text-xs mt-1">Contact administrator to add measurement image</p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        <div className="bg-white shadow rounded-lg">
+        <div className="card shadow" data-testid="new-design-job-form-card">
           <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6">
             {/* Design type shown as read-only info (pre-selected via URL) */}
             {selectedDesign && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">Design Type</label>
-                <p className="mt-1 text-sm text-gray-900 font-medium">
+                <label className="block text-sm font-medium text-secondary">Design Type</label>
+                <p className="mt-1 text-sm text-primary font-medium">
                   {selectedDesign.name} ({selectedDesign.algorithmName})
                 </p>
               </div>
@@ -348,7 +352,7 @@ function CreateGeometryJobPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="jobLabel" className="block text-sm font-medium text-gray-700" title="Short label that will show in the print queue. Do not include patient data.">
+                <label htmlFor="jobLabel" className="block text-sm font-medium text-secondary" title="Short label that will show in the print queue. Do not include patient data.">
                   Job Label
                 </label>
                 <input
@@ -356,13 +360,14 @@ function CreateGeometryJobPage() {
                   id="jobLabel"
                   value={jobLabel}
                   onChange={(e) => setJobLabel(e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 input-field"
                   placeholder="Optional label for this job"
+                  data-testid="job-label-input"
                 />
               </div>
               
               <div>
-                <label htmlFor="jobNote" className="block text-sm font-medium text-gray-700" title="Do not include patient data.">
+                <label htmlFor="jobNote" className="block text-sm font-medium text-secondary" title="Do not include patient data.">
                   Job Note
                 </label>
                 <input
@@ -370,21 +375,22 @@ function CreateGeometryJobPage() {
                   id="jobNote"
                   value={jobNote}
                   onChange={(e) => setJobNote(e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 input-field"
                   placeholder="Optional note about this job"
+                  data-testid="job-note-input"
                 />
               </div>
             </div>
 
             {selectedDesign && parameterSchema.length > 0 && (
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                <h3 className="text-lg font-medium text-primary mb-4">
                   Design Parameters for {selectedDesign.name}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {parameterSchema.map((param) => (
                     <div key={param.InputName}>
-                      <label htmlFor={param.InputName} className="block text-sm font-medium text-gray-700">
+                      <label htmlFor={param.InputName} className="block text-sm font-medium text-secondary">
                         {param.InputDescription} *
                       </label>
                       {param.InputType === 'Float' ? (
@@ -400,7 +406,7 @@ function CreateGeometryJobPage() {
                               handleParameterChange(param.InputName, parseFloat(val));
                             }
                           }}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="mt-1 input-field"
                           required
                         />
                       ) : param.InputType === 'Integer' ? (
@@ -416,7 +422,7 @@ function CreateGeometryJobPage() {
                               handleParameterChange(param.InputName, parseInt(val));
                             }
                           }}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="mt-1 input-field"
                           required
                         />
                       ) : (
@@ -427,12 +433,12 @@ function CreateGeometryJobPage() {
                           onChange={(e) => handleParameterChange(param.InputName, e.target.value)}
                           minLength={param.TextMinLen}
                           maxLength={param.TextMaxLen}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="mt-1 input-field"
                           required
                         />
                       )}
                       {param.InputType === 'Float' || param.InputType === 'Integer' ? (
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-muted">
                           {param.NumberMin !== undefined && param.NumberMax !== undefined
                             ? `Range: ${param.NumberMin} - ${param.NumberMax}`
                             : param.NumberMin !== undefined
@@ -442,7 +448,7 @@ function CreateGeometryJobPage() {
                             : ''}
                         </p>
                       ) : (
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-muted">
                           {param.TextMinLen !== undefined && param.TextMaxLen !== undefined
                             ? `Length: ${param.TextMinLen} - ${param.TextMaxLen} characters`
                             : param.TextMinLen !== undefined
@@ -458,17 +464,19 @@ function CreateGeometryJobPage() {
               </div>
             )}
 
-            <div className="flex justify-end gap-4 pt-4 border-t">
+            <div className="flex justify-end gap-4 pt-4 border-t border-[var(--border)]">
               <Link
                 href="/design-menu"
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium"
+                className="btn-neutral px-4 py-2 text-sm"
+                data-testid="cancel-btn"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={submitting || !selectedDesign}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                className="btn-primary px-4 py-2 text-sm"
+                data-testid="submit-btn"
               >
                 {submitting ? 'Creating Job...' : 'Create Job'}
               </button>
@@ -485,10 +493,10 @@ function CreateGeometryJobPage() {
 export default function CreateGeometryJobPageWrapper() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="page-shell flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+          <p className="mt-2 text-sm text-secondary">Loading...</p>
         </div>
       </div>
     }>
