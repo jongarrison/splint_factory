@@ -36,7 +36,7 @@ export default function OrganizationDetailPage({
   const [orgName, setOrgName] = useState('');
   const [orgDescription, setOrgDescription] = useState('');
   const [orgIsActive, setOrgIsActive] = useState(true);
-  const [orgScreenLockTimeout, setOrgScreenLockTimeout] = useState(1);
+  const [orgScreenLockTimeout, setOrgScreenLockTimeout] = useState('1');
   const [savingOrg, setSavingOrg] = useState(false);
   const [allGeometries, setAllGeometries] = useState<GeometrySummary[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -77,7 +77,7 @@ export default function OrganizationDetailPage({
       setOrgName(orgData.name);
       setOrgDescription(orgData.description || '');
       setOrgIsActive(orgData.isActive);
-      setOrgScreenLockTimeout(orgData.screenLockTimeoutMinutes);
+      setOrgScreenLockTimeout(String(orgData.screenLockTimeoutMinutes));
       setAllGeometries(
         geoData
           .sort((a, b) => a.name.localeCompare(b.name))
@@ -119,7 +119,7 @@ export default function OrganizationDetailPage({
     orgName !== org.name ||
     orgDescription !== (org.description || '') ||
     orgIsActive !== org.isActive ||
-    orgScreenLockTimeout !== org.screenLockTimeoutMinutes
+    parseInt(orgScreenLockTimeout) !== org.screenLockTimeoutMinutes
   );
 
   const saveOrg = async () => {
@@ -134,7 +134,7 @@ export default function OrganizationDetailPage({
           name: orgName,
           description: orgDescription,
           isActive: orgIsActive,
-          screenLockTimeoutMinutes: orgScreenLockTimeout,
+          screenLockTimeoutMinutes: parseInt(orgScreenLockTimeout) || 1,
         }),
       });
       if (!res.ok) {
@@ -274,9 +274,14 @@ export default function OrganizationDetailPage({
                 pattern="[0-9]*"
                 value={orgScreenLockTimeout}
                 onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  if (e.target.value === '') setOrgScreenLockTimeout(1);
-                  else if (!isNaN(val) && val > 0 && val <= 2147483647) setOrgScreenLockTimeout(val);
+                  const raw = e.target.value;
+                  if (raw === '' || /^\d+$/.test(raw)) setOrgScreenLockTimeout(raw);
+                }}
+                onBlur={() => {
+                  const val = parseInt(orgScreenLockTimeout);
+                  if (isNaN(val) || val < 1) setOrgScreenLockTimeout('1');
+                  else if (val > 2147483647) setOrgScreenLockTimeout('2147483647');
+                  else setOrgScreenLockTimeout(String(val));
                 }}
                 className="block w-32 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
