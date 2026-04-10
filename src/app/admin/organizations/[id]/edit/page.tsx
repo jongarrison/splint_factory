@@ -269,11 +269,15 @@ export default function OrganizationDetailPage({
                 Screen Lock Timeout (minutes)
               </label>
               <input
-                type="number"
-                min={1}
-                max={480}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={orgScreenLockTimeout}
-                onChange={(e) => setOrgScreenLockTimeout(Math.max(1, Math.min(480, parseInt(e.target.value) || 1)))}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  if (e.target.value === '') setOrgScreenLockTimeout(1);
+                  else if (!isNaN(val) && val > 0 && val <= 2147483647) setOrgScreenLockTimeout(val);
+                }}
                 className="block w-32 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
