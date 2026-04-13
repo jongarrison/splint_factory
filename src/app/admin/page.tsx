@@ -534,12 +534,6 @@ export default function SystemStatusPage() {
                 </div>
               </div>
             )}
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
 
             {/* Currently Processing */}
             {queueData.queues.processing.length > 0 && (
