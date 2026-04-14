@@ -80,56 +80,58 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="page-shell" data-testid="admin-organizations-loading">
         <Header />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center dark:text-gray-200">Loading...</div>
+          <div className="text-center text-primary">Loading...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="page-shell" data-testid="admin-organizations-page">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Organization Management</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <h1 className="page-title">Organization Management</h1>
+          <p className="mt-2 text-secondary">
             Phase 1: Basic organization management (System admin features)
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded">
-            {error}
-            <button 
+          <div className="alert-error mb-6 flex items-center justify-between" data-testid="alert-error">
+            <span>{error}</span>
+            <button
               onClick={() => setError(null)}
-              className="ml-2 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+              className="ml-2 hover:opacity-70"
+              data-testid="dismiss-error-btn"
             >
-              ✕
+              x
             </button>
           </div>
         )}
 
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Organizations</h2>
+        <div className="card" data-testid="organizations-card">
+          <div className="card-header flex justify-between items-center">
+            <h2 className="text-lg font-medium text-primary">Organizations</h2>
             <button
               onClick={() => setShowCreateForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
+              className="btn-primary px-4 py-2 text-sm"
+              data-testid="create-org-btn"
             >
               Create Organization
             </button>
           </div>
 
           {showCreateForm && (
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+            <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--surface-secondary)]" data-testid="create-org-form">
               <form onSubmit={createOrganization}>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="name" className="block text-sm font-medium text-secondary">
                       Organization Name *
                     </label>
                     <input
@@ -137,13 +139,14 @@ export default function AdminPage() {
                       id="name"
                       value={newOrgName}
                       onChange={(e) => setNewOrgName(e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="input-field mt-1 text-sm"
                       placeholder="Enter organization name"
                       required
+                      data-testid="org-name-input"
                     />
                   </div>
                   <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="description" className="block text-sm font-medium text-secondary">
                       Description
                     </label>
                     <input
@@ -151,8 +154,9 @@ export default function AdminPage() {
                       id="description"
                       value={newOrgDescription}
                       onChange={(e) => setNewOrgDescription(e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="input-field mt-1 text-sm"
                       placeholder="Optional description"
+                      data-testid="org-desc-input"
                     />
                   </div>
                 </div>
@@ -160,7 +164,8 @@ export default function AdminPage() {
                   <button
                     type="submit"
                     disabled={creating}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white px-4 py-2 rounded text-sm font-medium"
+                    className="btn-success px-4 py-2 text-sm"
+                    data-testid="create-submit-btn"
                   >
                     {creating ? 'Creating...' : 'Create'}
                   </button>
@@ -171,7 +176,8 @@ export default function AdminPage() {
                       setNewOrgName('');
                       setNewOrgDescription('');
                     }}
-                    className="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 px-4 py-2 rounded text-sm font-medium"
+                    className="btn-neutral px-4 py-2 text-sm"
+                    data-testid="create-cancel-btn"
                   >
                     Cancel
                   </button>
@@ -181,62 +187,49 @@ export default function AdminPage() {
           )}
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-900">
+            <table className="data-table" data-testid="organizations-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Members
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3">Name</th>
+                  <th className="px-6 py-3">Description</th>
+                  <th className="px-6 py-3">Members</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Created</th>
+                  <th className="px-6 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody>
                 {organizations.map((org) => (
-                  <tr key={org.id}>
+                  <tr key={org.id} data-testid="org-row" data-org-id={org.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => router.push(`/admin/organizations/${org.id}`)}
-                        className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                        className="text-sm font-medium text-link hover:underline"
                       >
                         {org.name}
                       </button>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{org.description || '—'}</div>
+                      <div className="text-sm text-muted">{org.description || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">{org._count.users}</div>
+                      <div className="text-sm text-primary">{org._count.users}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        org.isActive 
-                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
-                          : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                      }`}>
+                      <span className={`status-badge ${
+                        org.isActive ? 'status-success' : 'status-error'
+                      }`} data-testid="org-status-badge">
                         {org.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                       {new Date(org.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
                         onClick={() => router.push(`/admin/organizations/${org.id}/edit`)}
-                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                        className="text-link hover:underline"
+                        data-testid="edit-org-btn"
                       >
                         Edit
                       </button>

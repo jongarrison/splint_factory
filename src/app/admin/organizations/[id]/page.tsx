@@ -98,30 +98,31 @@ export default function OrganizationViewPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="page-shell" data-testid="org-view-loading">
         <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-gray-500 dark:text-gray-400">Loading...</div>
+          <div className="text-center text-muted">Loading...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="page-shell" data-testid="org-view-page">
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back link */}
         <button
           onClick={() => router.push('/admin/organizations')}
-          className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 inline-block"
+          className="text-sm text-link hover:underline mb-4 inline-block"
+          data-testid="back-btn"
         >
           &larr; Back to Organizations
         </button>
 
         {error && (
-          <div className="mb-6 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded">
+          <div className="alert-error mb-6" data-testid="alert-error">
             {error}
           </div>
         )}
@@ -129,21 +130,21 @@ export default function OrganizationViewPage({
         {org && (
           <>
             {/* Org header */}
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+            <div className="card mb-6" data-testid="org-header-card">
               <div className="px-6 py-4 flex justify-between items-start">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <h1 className="text-2xl font-bold text-primary">
                     {org.name}
                   </h1>
                   {org.description && (
-                    <p className="mt-1 text-gray-600 dark:text-gray-400">
+                    <p className="mt-1 text-secondary">
                       {org.description}
                     </p>
                   )}
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-500">
+                  <p className="mt-2 text-sm text-muted">
                     {org._count.users} member{org._count.users !== 1 ? 's' : ''}
                     {!org.isActive && (
-                      <span className="ml-2 inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                      <span className="ml-2 status-badge status-error">
                         Inactive
                       </span>
                     )}
@@ -151,7 +152,8 @@ export default function OrganizationViewPage({
                 </div>
                 <Link
                   href={`/admin/organizations/${orgId}/edit`}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded"
+                  className="btn-primary px-4 py-2 text-sm"
+                  data-testid="edit-org-btn"
                 >
                   Edit
                 </Link>
@@ -159,84 +161,72 @@ export default function OrganizationViewPage({
             </div>
 
             {/* Print stats table */}
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+            <div className="card" data-testid="print-stats-card">
+              <div className="card-header">
+                <h2 className="text-lg font-medium text-primary">
                   Print Summary
                 </h2>
               </div>
 
               {stats.length === 0 ? (
-                <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                <div className="px-6 py-8 text-center text-muted">
                   No prints recorded for this organization yet.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-900">
+                  <table className="data-table" data-testid="print-stats-table">
+                    <thead>
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Design Name
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Print Count
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Accepted
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Design Rejected
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Print Rejected
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Rejected (Legacy)
-                        </th>
+                        <th className="px-6 py-3">Design Name</th>
+                        <th className="px-6 py-3 text-right">Print Count</th>
+                        <th className="px-6 py-3 text-right">Accepted</th>
+                        <th className="px-6 py-3 text-right">Design Rejected</th>
+                        <th className="px-6 py-3 text-right">Print Rejected</th>
+                        <th className="px-6 py-3 text-right">Rejected (Legacy)</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tbody>
                       {stats.map((row) => (
                         <tr key={row.designName}>
-                          <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">
+                          <td className="px-6 py-3 text-sm text-primary">
                             {row.designName}
                           </td>
-                          <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">
+                          <td className="px-6 py-3 text-sm text-primary text-right">
                             {row.printCount}
                           </td>
-                          <td className="px-6 py-3 text-sm text-green-700 dark:text-green-400 text-right">
+                          <td className="px-6 py-3 text-sm text-right text-[var(--status-success-text)]">
                             {row.acceptedCount}
                           </td>
-                          <td className="px-6 py-3 text-sm text-orange-700 dark:text-orange-400 text-right">
+                          <td className="px-6 py-3 text-sm text-right text-[var(--status-warning-text)]">
                             {row.rejectDesignCount}
                           </td>
-                          <td className="px-6 py-3 text-sm text-red-700 dark:text-red-400 text-right">
+                          <td className="px-6 py-3 text-sm text-right text-[var(--status-error-text)]">
                             {row.rejectPrintCount}
                           </td>
-                          <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-400 text-right">
+                          <td className="px-6 py-3 text-sm text-muted text-right">
                             {row.rejectedLegacyCount}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-gray-50 dark:bg-gray-900 font-semibold">
-                        <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">
+                      <tr className="bg-[var(--surface-secondary)] font-semibold">
+                        <td className="px-6 py-3 text-sm text-primary">
                           Total
                         </td>
-                        <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">
+                        <td className="px-6 py-3 text-sm text-primary text-right">
                           {totals.printCount}
                         </td>
-                        <td className="px-6 py-3 text-sm text-green-700 dark:text-green-400 text-right">
+                        <td className="px-6 py-3 text-sm text-right text-[var(--status-success-text)]">
                           {totals.acceptedCount}
                         </td>
-                        <td className="px-6 py-3 text-sm text-orange-700 dark:text-orange-400 text-right">
+                        <td className="px-6 py-3 text-sm text-right text-[var(--status-warning-text)]">
                           {totals.rejectDesignCount}
                         </td>
-                        <td className="px-6 py-3 text-sm text-red-700 dark:text-red-400 text-right">
+                        <td className="px-6 py-3 text-sm text-right text-[var(--status-error-text)]">
                           {totals.rejectPrintCount}
                         </td>
-                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-400 text-right">
+                        <td className="px-6 py-3 text-sm text-muted text-right">
                           {totals.rejectedLegacyCount}
                         </td>
                       </tr>
@@ -247,55 +237,49 @@ export default function OrganizationViewPage({
             </div>
 
             {/* Devices table */}
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg mt-6">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+            <div className="card mt-6" data-testid="devices-card">
+              <div className="card-header">
+                <h2 className="text-lg font-medium text-primary">
                   Client Devices
                 </h2>
               </div>
 
               {devices.length === 0 ? (
-                <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                <div className="px-6 py-8 text-center text-muted">
                   No devices registered for this organization.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-900">
+                  <table className="data-table" data-testid="devices-table">
+                    <thead>
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Device
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Current Operator
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Last Seen
-                        </th>
+                        <th className="px-6 py-3">Device</th>
+                        <th className="px-6 py-3">Current Operator</th>
+                        <th className="px-6 py-3">Last Seen</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tbody>
                       {devices.map((device) => (
                         <tr key={device.id}>
-                          <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">
+                          <td className="px-6 py-3 text-sm text-primary">
                             <div className="font-medium">{device.name}</div>
-                            <div className="text-xs text-gray-400 font-mono">{device.id.slice(0, 8)}...</div>
+                            <div className="text-xs text-muted font-mono">{device.id.slice(0, 8)}...</div>
                           </td>
-                          <td className="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">
+                          <td className="px-6 py-3 text-sm text-primary">
                             {device.currentOperator ? (
                               <div>
                                 <div>{device.currentOperator.name || device.currentOperator.email}</div>
                                 {device.operatorValidatedAt && (
-                                  <div className="text-xs text-gray-400">
+                                  <div className="text-xs text-muted">
                                     since {new Date(device.operatorValidatedAt).toLocaleString()}
                                   </div>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-gray-400">None</span>
+                              <span className="text-muted">None</span>
                             )}
                           </td>
-                          <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-400">
+                          <td className="px-6 py-3 text-sm text-muted">
                             {new Date(device.lastSeenAt).toLocaleString()}
                           </td>
                         </tr>
