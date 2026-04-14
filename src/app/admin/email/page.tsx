@@ -19,10 +19,10 @@ export default function AdminEmailPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="page-shell" data-testid="email-loading">
         <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center dark:text-gray-200">Loading...</div>
+          <div className="text-center text-secondary">Loading...</div>
         </div>
       </div>
     );
@@ -63,28 +63,28 @@ export default function AdminEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="page-shell" data-testid="email-page">
       <Header />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Email Administration</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <h1 className="page-title">Email Administration</h1>
+          <p className="mt-2 text-muted">
             Test email delivery and manage email configuration.
           </p>
         </div>
 
         {/* Test Email Section */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Send Test Email</h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <div className="card">
+          <div className="px-6 py-4 border-b border-[var(--border)]">
+            <h2 className="text-lg font-medium text-primary">Send Test Email</h2>
+            <p className="mt-1 text-sm text-muted">
               Sends via notifications.splintfactory.com using Resend.
             </p>
           </div>
 
           <form onSubmit={handleSendTest} className="p-6 space-y-4">
             <div>
-              <label htmlFor="to" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="to" className="block text-sm font-medium text-secondary mb-1">
                 Recipient Email
               </label>
               <input
@@ -92,14 +92,15 @@ export default function AdminEmailPage() {
                 id="to"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field text-sm"
+                data-testid="to-input"
                 placeholder="recipient@example.com"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="subject" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="subject" className="block text-sm font-medium text-secondary mb-1">
                 Subject
               </label>
               <input
@@ -107,13 +108,14 @@ export default function AdminEmailPage() {
                 id="subject"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field text-sm"
+                data-testid="subject-input"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="body" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="body" className="block text-sm font-medium text-secondary mb-1">
                 Body (HTML)
               </label>
               <textarea
@@ -121,18 +123,16 @@ export default function AdminEmailPage() {
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 rows={6}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                className="input-field text-sm font-mono"
+                data-testid="body-textarea"
                 required
               />
             </div>
 
             {result && (
               <div
-                className={`px-4 py-3 rounded text-sm ${
-                  result.success
-                    ? 'bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-200'
-                    : 'bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200'
-                }`}
+                className={result.success ? 'alert-success' : 'alert-error'}
+                data-testid="send-result"
               >
                 {result.message}
               </div>
@@ -142,7 +142,8 @@ export default function AdminEmailPage() {
               <button
                 type="submit"
                 disabled={sending}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors"
+                className="btn-primary px-6 py-2 text-sm"
+                data-testid="send-btn"
               >
                 {sending ? 'Sending...' : 'Send Test Email'}
               </button>

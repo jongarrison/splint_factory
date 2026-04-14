@@ -78,8 +78,8 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | 16 | `app/admin/links/new/page.tsx` | [x] | [x] | — | [x] | [ ] | 2026-04-14 | Short form page |
 | 17 | `app/admin/links/[id]/activity/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-14 | Details card + activity table |
 | 18 | `app/admin/api-keys/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-14 | Table with permission + status badges; was heavily indigo-flavored |
-| 19 | `app/admin/api-keys/[id]/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
-| 20 | `app/admin/email/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
+| 19 | `app/admin/api-keys/[id]/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Form with generated key warning banner |
+| 20 | `app/admin/email/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Short email test form |
 | 21 | `app/profile/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
 | 22 | `app/printer/configure/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
 | 23 | `app/printer/test/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |

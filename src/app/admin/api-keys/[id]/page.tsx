@@ -191,12 +191,10 @@ export default function ApiKeyFormPage({ params }: Props) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell" data-testid="api-key-form-loading">
         <Header />
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
-            <div className="text-center">Loading...</div>
-          </div>
+        <div className="max-w-3xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="text-center text-secondary">Loading...</div>
         </div>
       </div>
     );
@@ -206,63 +204,63 @@ export default function ApiKeyFormPage({ params }: Props) {
   const pageTitle = isEditing ? 'Edit API Key' : 'Create API Key';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-shell" data-testid="api-key-form-page">
       <Header />
-      <div className="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+      <div className="max-w-3xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="mb-6">
             <Link 
               href="/admin/api-keys"
-              className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+              className="text-link hover:underline text-sm font-medium"
             >
               ← Back to API Keys
             </Link>
           </div>
 
-          <div className="bg-white shadow rounded-lg">
+          <div className="card">
             <div className="px-4 py-5 sm:p-6">
-              <h1 className="text-2xl font-semibold text-gray-900 mb-6">{pageTitle}</h1>
+              <h1 className="text-2xl font-semibold text-primary mb-6">{pageTitle}</h1>
 
               {error && (
-                <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <div className="alert-error mb-4" data-testid="alert-error">
                   {error}
                 </div>
               )}
 
               {success && (
-                <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                <div className="alert-success mb-4" data-testid="alert-success">
                   {success}
                 </div>
               )}
 
               {generatedApiKey && (
-                <div className="mb-6 bg-white shadow-lg rounded-lg border-2 border-yellow-300">
-                  <div className="bg-yellow-50 px-6 py-4 border-b border-yellow-200 rounded-t-lg">
+                <div className="mb-6 card border-2 border-[var(--status-warning-text)]" data-testid="generated-key-banner">
+                  <div className="bg-[var(--status-warning-bg)] px-6 py-4 border-b border-[var(--status-warning-text)] rounded-t-lg">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="h-5 w-5 text-[var(--status-warning-text)]" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
                       </div>
                       <div className="ml-3">
-                        <h3 className="text-lg font-semibold text-yellow-800">Important: Save Your API Key</h3>
-                        <p className="text-sm text-yellow-700">This is the only time you will see this key. Make sure to copy it now!</p>
+                        <h3 className="text-lg font-semibold text-[var(--status-warning-text)]">Important: Save Your API Key</h3>
+                        <p className="text-sm text-[var(--status-warning-text)]">This is the only time you will see this key. Make sure to copy it now!</p>
                       </div>
                     </div>
                   </div>
                   
                   <div className="px-6 py-6">
                     <div className="mb-4">
-                      <label className="block text-sm font-bold text-gray-900 mb-2">
+                      <label className="block text-sm font-bold text-primary mb-2">
                         Your New API Key:
                       </label>
                       <div>
-                        <div className="bg-gray-900 border-4 border-gray-800 rounded-lg p-4 font-mono text-sm text-white break-all shadow-inner min-h-[3rem] flex items-center">
+                        <div className="bg-[var(--surface-secondary)] border-2 border-[var(--border)] rounded-lg p-4 font-mono text-sm text-primary break-all min-h-[3rem] flex items-center" data-testid="generated-key-display">
                           {generatedApiKey}
                         </div>
                         <button
                           onClick={() => copyToClipboard(generatedApiKey)}
-                          className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium shadow-sm transition-colors"
+                          className="btn-primary mt-2 px-4 py-2 text-sm"
+                          data-testid="copy-key-btn"
                         >
                           Copy to Clipboard
                         </button>
@@ -272,7 +270,8 @@ export default function ApiKeyFormPage({ params }: Props) {
                     <div className="flex justify-end">
                       <Link
                         href="/admin/api-keys"
-                        className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors"
+                        className="btn-success inline-flex items-center px-6 py-2 text-sm"
+                        data-testid="done-btn"
                       >
                         Done
                       </Link>
@@ -284,7 +283,7 @@ export default function ApiKeyFormPage({ params }: Props) {
               {!generatedApiKey && (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="name" className="block text-sm font-medium text-secondary">
                       Name *
                     </label>
                     <input
@@ -292,25 +291,27 @@ export default function ApiKeyFormPage({ params }: Props) {
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className="input-field mt-1"
+                      data-testid="name-input"
                       placeholder="e.g., Design Processor v1.2"
                       maxLength={250}
                       required
                     />
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-muted">
                       A descriptive name for this API key (max 250 characters)
                     </p>
                   </div>
 
                   <div>
-                    <label htmlFor="organizationId" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="organizationId" className="block text-sm font-medium text-secondary">
                       Organization
                     </label>
                     <select
                       id="organizationId"
                       value={formData.organizationId}
                       onChange={(e) => setFormData(prev => ({ ...prev, organizationId: e.target.value }))}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className="input-field mt-1"
+                      data-testid="org-select"
                     >
                       <option value="">All Organizations</option>
                       {organizations.map((org) => (
@@ -319,13 +320,13 @@ export default function ApiKeyFormPage({ params }: Props) {
                         </option>
                       ))}
                     </select>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-muted">
                       Leave empty to allow access to all organizations
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                    <label className="block text-sm font-medium text-secondary mb-3">
                       Permissions *
                     </label>
                     <div className="space-y-4">
@@ -337,7 +338,7 @@ export default function ApiKeyFormPage({ params }: Props) {
                         }, {} as Record<string, typeof availablePermissions>)
                       ).map(([category, perms]) => (
                         <div key={category}>
-                          <h4 className="text-sm font-medium text-gray-900 mb-2">{category}</h4>
+                          <h4 className="text-sm font-medium text-primary mb-2">{category}</h4>
                           <div className="space-y-2">
                             {perms.map((permission) => (
                               <div key={permission.id} className="flex items-center">
@@ -346,9 +347,9 @@ export default function ApiKeyFormPage({ params }: Props) {
                                   type="checkbox"
                                   checked={formData.permissions.includes(permission.id)}
                                   onChange={(e) => handlePermissionChange(permission.id, e.target.checked)}
-                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                  className="h-4 w-4 rounded border-[var(--border)]"
                                 />
-                                <label htmlFor={permission.id} className="ml-3 text-sm text-gray-700">
+                                <label htmlFor={permission.id} className="ml-3 text-sm text-secondary">
                                   {permission.label}
                                 </label>
                               </div>
@@ -357,7 +358,7 @@ export default function ApiKeyFormPage({ params }: Props) {
                         </div>
                       ))}
                     </div>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-muted">
                       Select the permissions this API key should have
                     </p>
                   </div>
@@ -368,12 +369,13 @@ export default function ApiKeyFormPage({ params }: Props) {
                       type="checkbox"
                       checked={formData.isActive}
                       onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      className="h-4 w-4 rounded border-[var(--border)]"
+                      data-testid="is-active-checkbox"
                     />
-                    <label htmlFor="isActive" className="ml-3 text-sm text-gray-700">
+                    <label htmlFor="isActive" className="ml-3 text-sm text-secondary">
                       Active
                     </label>
-                    <p className="ml-3 text-sm text-gray-500">
+                    <p className="ml-3 text-sm text-muted">
                       Uncheck to create the API key in a disabled state
                     </p>
                   </div>
@@ -381,14 +383,16 @@ export default function ApiKeyFormPage({ params }: Props) {
                   <div className="flex justify-end gap-3">
                     <Link
                       href="/admin/api-keys"
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                      className="btn-neutral px-4 py-2 text-sm"
+                      data-testid="cancel-btn"
                     >
                       Cancel
                     </Link>
                     <button
                       type="submit"
                       disabled={saving}
-                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="btn-primary px-4 py-2 text-sm"
+                      data-testid="submit-btn"
                     >
                       {saving ? 'Saving...' : (isEditing ? 'Update' : 'Create')} API Key
                     </button>
@@ -397,7 +401,6 @@ export default function ApiKeyFormPage({ params }: Props) {
               )}
             </div>
           </div>
-        </div>
       </div>
     </div>
   );
