@@ -67,7 +67,7 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | 5 | `app/print-queue/[id]/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-10 | Detail page with Electron/browser paths. Added btn-success, btn-danger, progress-track/fill. |
 | 6 | `app/design-jobs/new/page.tsx` | [x] | [x] | — | [x] | [ ] | 2026-04-10 | Form page. Added .input-field to semantic.css. |
 | 7 | `app/admin/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-10 | System status dashboard. Colored stat tiles via CSS var inline refs. |
-| 8 | `app/admin/users/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
+| 8 | `app/admin/users/page.tsx` | [x] | [x] | [x] | [x] | [x] | 2026-04-11 | |
 | 9 | `app/admin/organizations/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
 | 10 | `app/admin/organizations/[id]/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
 | 11 | `app/admin/organizations/[id]/edit/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |

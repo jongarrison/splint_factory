@@ -16,12 +16,12 @@ export default function PrintConfirmModal({
   const [runCalibration, setRunCalibration] = useState(false);
 
   return (
-    <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 relative">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="card shadow-xl max-w-sm w-full p-6 relative">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 text-muted hover:text-secondary transition-colors"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -30,8 +30,8 @@ export default function PrintConfirmModal({
 
         {/* Title */}
         <div className="mb-5">
-          <h2 className="text-lg font-bold text-gray-900">Start Print</h2>
-          <p className="text-sm text-gray-600 mt-1">{geometryName}</p>
+          <h2 className="text-lg font-bold text-primary">Start Print</h2>
+          <p className="text-sm text-secondary mt-1">{geometryName}</p>
         </div>
 
         {/* Calibration checkbox */}
@@ -43,10 +43,10 @@ export default function PrintConfirmModal({
             className="mt-0.5 h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
           />
           <div>
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium text-primary">
               Run printer calibration (~5 minutes)
             </span>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-muted mt-0.5">
               Recommended on the first print of the day
             </p>
           </div>
@@ -56,13 +56,13 @@ export default function PrintConfirmModal({
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg transition-colors"
+            className="btn-neutral flex-1 font-semibold py-3 px-4 rounded-lg"
           >
             Cancel
           </button>
           <button
             onClick={() => onConfirm(runCalibration)}
-            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+            className="btn-alt flex-1 font-semibold py-3 px-4 rounded-lg"
           >
             Print
           </button>
