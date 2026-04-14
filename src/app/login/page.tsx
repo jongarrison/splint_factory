@@ -11,8 +11,8 @@ import { QRCodeSVG } from "qrcode.react"
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
-        <div className="text-gray-400">Loading...</div>
+      <div className="h-screen bg-gradient-to-br from-[var(--background)] to-[var(--surface-secondary)] flex items-center justify-center">
+        <div className="text-muted">Loading...</div>
       </div>
     }>
       <LoginPageInner />
@@ -179,25 +179,25 @@ function LoginPageInner() {
   return (
     <div className="h-screen overflow-hidden flex flex-col">
       <Header hideMaintenanceBanner={true} />
-      <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="flex-1 bg-gradient-to-br from-[var(--background)] to-[var(--surface-secondary)] flex items-center justify-center px-4 sm:px-6 lg:px-8" data-testid="login-page">
         <div className="max-w-md w-full space-y-8">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-primary">
               Sign in to your account
             </h2>
           </div>
 
           {/* QR code section -- Electron only */}
           {isElectron && (
-            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+            <div className="card p-6">
               <div className="flex items-center gap-6">
                 {/* QR Code */}
                 <div className="flex-shrink-0">
                   {exchanging ? (
-                    <div className="w-[152px] h-[152px] flex items-center justify-center bg-gray-700 rounded-lg">
-                      <div className="text-center text-white">
+                    <div className="w-[152px] h-[152px] flex items-center justify-center bg-[var(--surface)] rounded-lg">
+                      <div className="text-center text-primary">
                         <div className="text-sm font-medium">Signing in...</div>
-                        <div className="text-xs text-gray-300 mt-1">{approvedUser}</div>
+                        <div className="text-xs text-secondary mt-1">{approvedUser}</div>
                       </div>
                     </div>
                   ) : qrUrl ? (
@@ -205,23 +205,23 @@ function LoginPageInner() {
                       <QRCodeSVG value={qrUrl} size={120} level="M" />
                     </div>
                   ) : (
-                    <div className="w-[152px] h-[152px] bg-gray-700 rounded-lg animate-pulse" />
+                    <div className="w-[152px] h-[152px] bg-[var(--surface)] rounded-lg animate-pulse" />
                   )}
                 </div>
 
                 {/* Instructions */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-white text-lg">Scan to sign in</div>
-                  <div className="text-gray-300 text-sm mt-1">
+                  <div className="font-semibold text-primary text-lg">Scan to sign in</div>
+                  <div className="text-secondary text-sm mt-1">
                     Use your phone to scan this QR code and authorize this device.
                   </div>
                   {qrError && (
-                    <div className="text-red-400 text-xs mt-2">{qrError}</div>
+                    <div className="text-xs mt-2 text-[var(--status-error-text)]">{qrError}</div>
                   )}
                   {challenge && !exchanging && (
                     <button
                       onClick={createChallenge}
-                      className="text-blue-400 hover:text-blue-300 text-xs mt-2 flex items-center gap-1 transition-colors"
+                      className="text-link text-xs mt-2 flex items-center gap-1"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -232,8 +232,8 @@ function LoginPageInner() {
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-gray-700">
-                <p className="text-gray-500 text-xs text-center">
+              <div className="mt-4 pt-3 border-t border-[var(--border)]">
+                <p className="text-muted text-xs text-center">
                   Or use the form below to sign in manually
                 </p>
               </div>
@@ -252,7 +252,8 @@ function LoginPageInner() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white placeholder-gray-400 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="input-field appearance-none relative w-full px-3 py-2 rounded-b-none text-sm"
+                data-testid="email-input"
                   placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -268,7 +269,8 @@ function LoginPageInner() {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white placeholder-gray-400 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="input-field appearance-none relative w-full px-3 py-2 rounded-t-none border-t-0 text-sm"
+                data-testid="password-input"
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -277,13 +279,13 @@ function LoginPageInner() {
             </div>
 
             {error && (
-              <div className="text-red-600 text-sm text-center">{error}</div>
+              <div className="text-sm text-center text-[var(--status-error-text)]" data-testid="error-message">{error}</div>
             )}
 
             <div className="flex items-center justify-end">
               <Link
                 href="/forgot-password"
-                className="text-sm text-indigo-400 hover:text-indigo-300"
+                className="text-link text-sm"
               >
                 Forgot your password?
               </Link>
@@ -293,7 +295,8 @@ function LoginPageInner() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="btn-primary w-full flex justify-center py-2 px-4 text-sm"
+                data-testid="submit-btn"
               >
                 {isLoading ? "Signing in..." : "Sign in"}
               </button>

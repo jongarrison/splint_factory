@@ -82,8 +82,8 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | 20 | `app/admin/email/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Short email test form |
 | 21 | `app/profile/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Profile + password form, no Header component |
 | 22 | `app/printer/configure/page.tsx` | [x] | [x] | [x] | [x] | [x] | 2026-04-14 | Electron-only multi-tab printer manager |
-| 23 | `app/printer/test/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
-| 24 | `app/login/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Auth page |
+| 23 | `app/printer/test/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Electron G-code/LED test page |
+| 24 | `app/login/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Gradient auth layout, QR+form, kept gradient bg |
 | 25 | `app/register/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Auth page |
 | 26 | `app/verify-email/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Auth page |
 | 27 | `app/forgot-password/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Auth page |
