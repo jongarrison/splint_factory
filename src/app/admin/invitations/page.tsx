@@ -167,38 +167,37 @@ export default function InvitationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="page-shell" data-testid="invitations-loading">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading invitations...</p>
-          </div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-muted">Loading invitations...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="page-shell" data-testid="invitations-page">
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Invitation Management</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">Create and manage invitation links for your organization</p>
+              <h1 className="page-title">Invitation Management</h1>
+              <p className="text-muted mt-2">Create and manage invitation links for your organization</p>
             </div>
             <div className="flex gap-4">
               <Link 
                 href="/admin/organizations" 
-                className="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="btn-neutral px-4 py-2"
               >
                 ← Back to Admin
               </Link>
               <button
                 onClick={() => setShowCreateForm(!showCreateForm)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="btn-primary px-4 py-2"
+                data-testid="create-invitation-btn"
               >
                 {showCreateForm ? 'Cancel' : 'Create Invitation'}
               </button>
@@ -207,11 +206,11 @@ export default function InvitationsPage() {
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded">
+          <div className="alert-error mb-6" data-testid="alert-error">
             {error}
             <button 
               onClick={() => setError('')}
-              className="ml-2 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+              className="ml-2 text-[var(--status-error-text)] hover:opacity-80"
             >
               ✕
             </button>
@@ -220,11 +219,11 @@ export default function InvitationsPage() {
 
         {/* Create Form */}
         {showCreateForm && (
-          <div className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Create New Invitation</h2>
+          <div className="card p-6 mb-8">
+            <h2 className="text-xl font-semibold text-primary mb-4">Create New Invitation</h2>
             <form onSubmit={handleCreateInvitation} className="space-y-4">
               <div>
-                <label htmlFor="inviteEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="inviteEmail" className="block text-sm font-medium text-secondary mb-2">
                   Email Address (optional)
                 </label>
                 <input
@@ -232,23 +231,25 @@ export default function InvitationsPage() {
                   id="inviteEmail"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-field text-sm"
+                  data-testid="invite-email-input"
                   placeholder="user@example.com"
                 />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs text-muted">
                   If provided, an invitation email will be sent and the user&apos;s email will be pre-verified on registration. If left blank, you can copy the invitation link manually.
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="organization" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label htmlFor="organization" className="block text-sm font-medium text-secondary mb-2">
                     Organization
                   </label>
                   <select
                     id="organization"
                     value={selectedOrgId}
                     onChange={(e) => setSelectedOrgId(e.target.value)}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-field text-sm"
+                    data-testid="org-select"
                     required
                   >
                     <option value="">Select Organization</option>
@@ -259,7 +260,7 @@ export default function InvitationsPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="expiresInDays" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label htmlFor="expiresInDays" className="block text-sm font-medium text-secondary mb-2">
                     Expires In (Days)
                   </label>
                   <input
@@ -267,7 +268,8 @@ export default function InvitationsPage() {
                     id="expiresInDays"
                     value={expiresInDays}
                     onChange={(e) => setExpiresInDays(e.target.value ? parseInt(e.target.value) : '')}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-field text-sm"
+                    data-testid="expires-days-input"
                     placeholder="7"
                     min="1"
                     max="365"
@@ -279,14 +281,16 @@ export default function InvitationsPage() {
                 <button
                   type="button"
                   onClick={() => setShowCreateForm(false)}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  className="btn-neutral px-4 py-2"
+                  data-testid="form-cancel-btn"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  className="btn-primary px-4 py-2"
+                  data-testid="form-submit-btn"
                 >
                   {creating ? 'Creating...' : 'Create Invitation'}
                 </button>
@@ -296,23 +300,24 @@ export default function InvitationsPage() {
         )}
 
         {/* Invitations List */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <div className="card">
+          <div className="px-6 py-4 border-b border-[var(--border)] flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-primary">
               {showAll ? 'All' : 'Active'} Invitations ({(showAll ? invitations : invitations.filter(i => !i.usedAt && new Date(i.expiresAt) >= new Date())).length})
             </h2>
             <button
               onClick={() => setShowAll(!showAll)}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-sm text-link hover:underline"
+              data-testid="toggle-show-all-btn"
             >
               {showAll ? 'Show active only' : 'Show all'}
             </button>
           </div>
 
           {invitations.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+            <div className="p-8 text-center text-muted">
               <div className="mb-4">
-                <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mx-auto h-12 w-12 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
               </div>
@@ -320,7 +325,7 @@ export default function InvitationsPage() {
               <p className="text-sm">Create your first invitation link to get started</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="divide-y divide-[var(--border)]">
               {invitations.filter(inv => showAll || (!inv.usedAt && new Date(inv.expiresAt) >= new Date())).map((invitation) => {
                 const invitationUrl = getInvitationUrl(invitation.token);
                 const isExpired = new Date(invitation.expiresAt) < new Date();
@@ -331,21 +336,21 @@ export default function InvitationsPage() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          <span className="text-sm font-medium text-primary">
                             {invitation.organization.name}
                           </span>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            isUsed ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200' :
-                            isExpired ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
-                            'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                          <span className={`status-badge ${
+                            isUsed ? 'status-neutral' :
+                            isExpired ? 'status-error' :
+                            'status-success'
                           }`}>
                             {isUsed ? 'Used' : isExpired ? 'Expired' : 'Active'}
                           </span>
                         </div>
                         
-                        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                        <div className="text-sm text-muted space-y-1">
                           {invitation.email && (
-                            <div>Invited: <span className="font-medium text-gray-900 dark:text-gray-100">{invitation.email}</span></div>
+                            <div>Invited: <span className="font-medium text-primary">{invitation.email}</span></div>
                           )}
                           <div>Created by: {invitation.createdBy.name || invitation.createdBy.email}</div>
                           <div>Created: {formatDate(invitation.createdAt)}</div>
@@ -356,7 +361,7 @@ export default function InvitationsPage() {
                         </div>
                         
                         {invitation.email ? (
-                          <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="mt-3 text-sm text-muted">
                             Invitation sent by email
                           </div>
                         ) : (
@@ -365,11 +370,12 @@ export default function InvitationsPage() {
                               type="text"
                               value={invitationUrl}
                               readOnly
-                              className="flex-1 p-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded font-mono text-gray-900 dark:text-gray-100"
+                              className="flex-1 p-2 text-sm rounded font-mono border border-[var(--border)] bg-[var(--surface-secondary)] text-primary"
                             />
                             <button
                               onClick={() => copyToClipboard(invitationUrl)}
-                              className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                              className="btn-neutral px-3 py-2 text-sm"
+                              data-testid="copy-link-btn"
                             >
                               Copy
                             </button>

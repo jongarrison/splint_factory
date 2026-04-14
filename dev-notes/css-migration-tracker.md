@@ -70,10 +70,10 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | 8 | `app/admin/users/page.tsx` | [x] | [x] | [x] | [x] | [x] | 2026-04-11 | |
 | 9 | `app/admin/organizations/page.tsx` | [x] | [x] | [x] | [x] | [x] | 2026-04-14 | |
 | 10 | `app/admin/organizations/[id]/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | |
-| 11 | `app/admin/organizations/[id]/edit/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
-| 12 | `app/admin/design-definitions/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
-| 13 | `app/admin/design-definitions/[id]/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
-| 14 | `app/admin/invitations/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
+| 11 | `app/admin/organizations/[id]/edit/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Added .alert-success to semantic.css |
+| 12 | `app/admin/design-definitions/page.tsx` | [x] | [x] | [x] | [x] | [x] | 2026-04-14 | Had old gradient + fragment shell structure, cleaned up |
+| 13 | `app/admin/design-definitions/[id]/page.tsx` | [x] | [x] | — | [x] | [ ] | 2026-04-14 | Had old gradient + fragment shell; 3-card form with many param inputs |
+| 14 | `app/admin/invitations/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-14 | Invitation list + create form |
 | 15 | `app/admin/links/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
 | 16 | `app/admin/links/new/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
 | 17 | `app/admin/links/[id]/activity/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |

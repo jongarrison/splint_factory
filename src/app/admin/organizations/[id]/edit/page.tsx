@@ -176,10 +176,10 @@ export default function OrganizationDetailPage({
 
   if (loading || status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="page-shell" data-testid="org-edit-loading">
         <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center dark:text-gray-200">Loading...</div>
+          <div className="text-center text-primary">Loading...</div>
         </div>
       </div>
     );
@@ -187,10 +187,10 @@ export default function OrganizationDetailPage({
 
   if (!org) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="page-shell">
         <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-red-600 dark:text-red-400">
+          <div className="text-center text-error">
             Organization not found.
           </div>
         </div>
@@ -202,46 +202,49 @@ export default function OrganizationDetailPage({
   const someChecked = selectedIds.size > 0 && selectedIds.size < allGeometries.length;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="page-shell" data-testid="org-edit-page">
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back link */}
         <button
           onClick={() => router.push(`/admin/organizations/${orgId}`)}
-          className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 inline-block"
+          className="text-sm text-link hover:underline mb-4 inline-block"
+          data-testid="back-btn"
         >
           &larr; Back to Organization
         </button>
 
         {/* Org details panel */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+        <div className="card mb-6" data-testid="org-details-card">
+          <div className="card-header flex justify-between items-center">
+            <h2 className="text-lg font-medium text-primary">
               Organization Details
             </h2>
             <button
               onClick={saveOrg}
               disabled={savingOrg || !hasOrgChanges}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white px-4 py-2 rounded text-sm font-medium"
+              className="btn-primary px-4 py-2 text-sm"
+              data-testid="save-details-btn"
             >
               {savingOrg ? 'Saving...' : 'Save Details'}
             </button>
           </div>
           <div className="px-6 py-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Name
               </label>
               <input
                 type="text"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                className="block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field text-sm"
+                data-testid="org-name-input"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Description
               </label>
               <input
@@ -249,7 +252,8 @@ export default function OrganizationDetailPage({
                 value={orgDescription}
                 onChange={(e) => setOrgDescription(e.target.value)}
                 placeholder="Optional description"
-                className="block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field text-sm"
+                data-testid="org-desc-input"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -258,14 +262,15 @@ export default function OrganizationDetailPage({
                 id="orgActive"
                 checked={orgIsActive}
                 onChange={(e) => setOrgIsActive(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 rounded"
+                data-testid="org-active-checkbox"
               />
-              <label htmlFor="orgActive" className="text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="orgActive" className="text-sm text-secondary">
                 Active
               </label>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Screen Lock Timeout (minutes)
               </label>
               <input
@@ -283,13 +288,14 @@ export default function OrganizationDetailPage({
                   else if (val > 2147483647) setOrgScreenLockTimeout('2147483647');
                   else setOrgScreenLockTimeout(String(val));
                 }}
-                className="block w-32 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field text-sm w-32"
+                data-testid="screen-lock-timeout-input"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+              <p className="text-xs text-muted mt-1">
                 How long before the touchscreen device locks and requires QR scan to unlock.
               </p>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-500">
+            <p className="text-xs text-muted">
               {org._count.users} member{org._count.users !== 1 ? 's' : ''} &middot; Created{' '}
               {new Date(org.createdAt).toLocaleDateString()}
             </p>
@@ -298,45 +304,47 @@ export default function OrganizationDetailPage({
 
         {/* Messages */}
         {error && (
-          <div className="mb-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded">
-            {error}
+          <div className="alert-error mb-4 flex items-center justify-between" data-testid="alert-error">
+            <span>{error}</span>
             <button
               onClick={() => setError(null)}
-              className="ml-2 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+              className="ml-2 hover:opacity-70"
+              data-testid="dismiss-error-btn"
             >
               x
             </button>
           </div>
         )}
         {success && (
-          <div className="mb-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-600 text-green-700 dark:text-green-200 px-4 py-3 rounded">
+          <div className="alert-success mb-4" data-testid="alert-success">
             {success}
           </div>
         )}
 
         {/* Geometry visibility panel */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+        <div className="card" data-testid="visibility-card">
+          <div className="card-header flex justify-between items-center">
+            <h2 className="text-lg font-medium text-primary">
               Visible Splint Designs
             </h2>
             <button
               onClick={save}
               disabled={saving || !hasChanges}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white px-4 py-2 rounded text-sm font-medium"
+              className="btn-primary px-4 py-2 text-sm"
+              data-testid="save-visibility-btn"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
 
           {allGeometries.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+            <div className="px-6 py-8 text-center text-muted">
               No splint designs have been created yet.
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="divide-y divide-[var(--border)]">
               {/* Check-all header row */}
-              <label className="flex items-center gap-3 px-6 py-3 bg-gray-50 dark:bg-gray-900 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-850">
+              <label className="flex items-center gap-3 px-6 py-3 bg-[var(--surface-secondary)] cursor-pointer hover:opacity-90">
                 <input
                   type="checkbox"
                   checked={allChecked}
@@ -344,9 +352,10 @@ export default function OrganizationDetailPage({
                     if (el) el.indeterminate = someChecked;
                   }}
                   onChange={toggleAll}
-                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded"
+                  data-testid="toggle-all-checkbox"
                 />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <span className="text-sm font-medium text-secondary">
                   {allChecked
                     ? 'Deselect All'
                     : someChecked
@@ -359,27 +368,28 @@ export default function OrganizationDetailPage({
               {allGeometries.map((geo) => (
                 <label
                   key={geo.id}
-                  className="flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750"
+                  className="flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-[var(--surface-secondary)]"
+                  data-testid="geo-row"
                 >
                   <input
                     type="checkbox"
                     checked={selectedIds.has(geo.id)}
                     onChange={() => toggleGeometry(geo.id)}
-                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <span className="text-sm font-medium text-primary">
                         {geo.name}
                       </span>
                       {!geo.isActive && (
-                        <span className="inline-flex px-1.5 py-0.5 text-xs font-semibold rounded bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
+                        <span className="status-badge status-warning">
                           Inactive
                         </span>
                       )}
                     </div>
                     {geo.shortDescription && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      <p className="text-xs text-muted truncate">
                         {geo.shortDescription}
                       </p>
                     )}
