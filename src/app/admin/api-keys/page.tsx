@@ -77,12 +77,10 @@ export default function ApiKeysListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell" data-testid="api-keys-loading">
         <Header />
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
-            <div className="text-center">Loading API keys...</div>
-          </div>
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="text-center text-secondary">Loading API keys...</div>
         </div>
       </div>
     );
@@ -90,13 +88,11 @@ export default function ApiKeysListPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-shell">
         <Header />
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              Error: {error}
-            </div>
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="alert-error" data-testid="alert-error">
+            Error: {error}
           </div>
         </div>
       </div>
@@ -104,137 +100,114 @@ export default function ApiKeysListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-shell" data-testid="api-keys-page">
       <Header />
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="sm:flex sm:items-center">
-            <div className="sm:flex-auto">
-              <h1 className="text-2xl font-semibold text-gray-900">API Keys</h1>
-              <p className="mt-2 text-sm text-gray-700">
-                Manage API keys for external system access to the application.
-              </p>
-            </div>
-            <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-              <Link
-                href="/admin/api-keys/new"
-                className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Create API Key
-              </Link>
-            </div>
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="sm:flex sm:items-center mb-8">
+          <div className="sm:flex-auto">
+            <h1 className="page-title">API Keys</h1>
+            <p className="mt-2 text-sm text-muted">
+              Manage API keys for external system access to the application.
+            </p>
           </div>
+          <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+            <Link
+              href="/admin/api-keys/new"
+              className="btn-primary px-3 py-2 text-sm"
+              data-testid="create-api-key-btn"
+            >
+              Create API Key
+            </Link>
+          </div>
+        </div>
 
-          <div className="mt-8 flow-root">
-            <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-              <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                  <table className="min-w-full divide-y divide-gray-300">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          Name
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          Key ID
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          Organization
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          Permissions
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          Status
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          Last Used
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          Created
-                        </th>
-                        <th scope="col" className="relative px-6 py-3">
-                          <span className="sr-only">Actions</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
-                      {apiKeys.length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
-                            No API keys found. 
-                            <Link href="/admin/api-keys/new" className="text-indigo-600 hover:text-indigo-900 ml-1">
-                              Create your first API key
-                            </Link>
-                          </td>
-                        </tr>
-                      ) : (
-                        apiKeys.map((apiKey) => (
-                          <tr key={apiKey.id}>
-                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                              {apiKey.name}
-                            </td>
-                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 font-mono">
-                              {maskApiKey(apiKey.id)}
-                            </td>
-                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                              {apiKey.organization?.name || 'All Organizations'}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-500">
-                              <div className="flex flex-wrap gap-1">
-                                {apiKey.permissions.map((permission, index) => (
-                                  <span
-                                    key={index}
-                                    className="inline-flex items-center rounded-md bg-gray-700 px-2 py-1 text-xs font-medium text-gray-100"
-                                  >
-                                    {permission}
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="whitespace-nowrap px-6 py-4 text-sm">
-                              <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
-                                apiKey.isActive 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'bg-red-100 text-red-700'
-                              }`}>
-                                {apiKey.isActive ? 'Active' : 'Disabled'}
-                              </span>
-                            </td>
-                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                              {apiKey.lastUsedAt 
-                                ? new Date(apiKey.lastUsedAt).toLocaleDateString()
-                                : 'Never'
-                              }
-                            </td>
-                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                              {new Date(apiKey.createdAt).toLocaleDateString()}
-                            </td>
-                            <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                              <div className="flex justify-end gap-2">
-                                <Link
-                                  href={`/admin/api-keys/${apiKey.id}`}
-                                  className="text-indigo-600 hover:text-indigo-900"
-                                >
-                                  Edit
-                                </Link>
-                                <button
-                                  onClick={() => handleDelete(apiKey.id)}
-                                  className="text-red-600 hover:text-red-900"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="card overflow-hidden">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Key ID</th>
+                <th>Organization</th>
+                <th>Permissions</th>
+                <th>Status</th>
+                <th>Last Used</th>
+                <th>Created</th>
+                <th><span className="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {apiKeys.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-4 text-center text-muted">
+                    No API keys found.
+                    <Link href="/admin/api-keys/new" className="text-link hover:underline ml-1">
+                      Create your first API key
+                    </Link>
+                  </td>
+                </tr>
+              ) : (
+                apiKeys.map((apiKey) => (
+                  <tr key={apiKey.id}>
+                    <td className="whitespace-nowrap text-sm font-medium text-primary">
+                      {apiKey.name}
+                    </td>
+                    <td className="whitespace-nowrap text-sm text-muted font-mono">
+                      {maskApiKey(apiKey.id)}
+                    </td>
+                    <td className="whitespace-nowrap text-sm text-muted">
+                      {apiKey.organization?.name || 'All Organizations'}
+                    </td>
+                    <td className="text-sm">
+                      <div className="flex flex-wrap gap-1">
+                        {apiKey.permissions.map((permission, index) => (
+                          <span
+                            key={index}
+                            className="status-badge status-neutral"
+                          >
+                            {permission}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap text-sm">
+                      <span className={`status-badge ${
+                        apiKey.isActive ? 'status-success' : 'status-error'
+                      }`}>
+                        {apiKey.isActive ? 'Active' : 'Disabled'}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap text-sm text-muted">
+                      {apiKey.lastUsedAt
+                        ? new Date(apiKey.lastUsedAt).toLocaleDateString()
+                        : 'Never'
+                      }
+                    </td>
+                    <td className="whitespace-nowrap text-sm text-muted">
+                      {new Date(apiKey.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end gap-2">
+                        <Link
+                          href={`/admin/api-keys/${apiKey.id}`}
+                          className="text-link hover:underline"
+                          data-testid="edit-key-link"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(apiKey.id)}
+                          className="text-[var(--status-error-text)] hover:opacity-80"
+                          data-testid="delete-key-btn"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

@@ -96,8 +96,8 @@ export default function LinkActivityPage({ params }: { params: { id: string } })
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+      <div className="page-shell flex items-center justify-center" data-testid="activity-loading">
+        <div className="text-lg text-secondary">Loading...</div>
       </div>
     );
   }
@@ -108,10 +108,10 @@ export default function LinkActivityPage({ params }: { params: { id: string } })
 
   if (error || !link) {
     return (
-      <div>
+      <div className="page-shell">
         <Header />
         <div className="container mx-auto p-6 max-w-7xl">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div className="alert-error" data-testid="alert-error">
             Error: {error || 'Link not found'}
           </div>
         </div>
@@ -120,57 +120,54 @@ export default function LinkActivityPage({ params }: { params: { id: string } })
   }
 
   return (
-    <div className="min-h-screen bg-surface-secondary">
+    <div className="page-shell" data-testid="activity-page">
       <Header />
       <div className="container mx-auto p-6 max-w-7xl">
         <div className="mb-6">
-          <Link href="/admin/links" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
+          <Link href="/admin/links" className="text-link hover:underline mb-4 inline-block">
             ← Back to Links
           </Link>
-          <h1 className="text-3xl font-bold text-primary">Link Activity</h1>
+          <h1 className="page-title">Link Activity</h1>
         </div>
 
         {/* Link Details Card */}
-        <div className="bg-surface border rounded-lg p-6 mb-6">
+        <div className="card p-6 mb-6" data-testid="link-details-card">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h3 className="text-sm font-medium text-gray-500">Shortcode</h3>
+              <h3 className="text-sm font-medium text-muted">Shortcode</h3>
               <button
                 onClick={() => copyToClipboard(link.shortcode)}
-                className="text-lg font-mono text-blue-600 hover:text-blue-800"
+                className="text-lg font-mono text-link hover:underline"
                 title="Click to copy full URL"
+                data-testid="copy-shortcode-btn"
               >
                 /l/{link.shortcode}
               </button>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500">Title</h3>
-              <p className="text-lg">{link.title || <span className="text-gray-400 italic">No title</span>}</p>
+              <h3 className="text-sm font-medium text-muted">Title</h3>
+              <p className="text-lg text-primary">{link.title || <span className="text-muted italic">No title</span>}</p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500">Type</h3>
-              <span className={`inline-block px-2 py-1 text-xs rounded ${
-                link.linkType === 'EXTERNAL_URL' 
-                  ? 'bg-blue-100 text-blue-800' 
-                  : 'bg-green-100 text-green-800'
+              <h3 className="text-sm font-medium text-muted">Type</h3>
+              <span className={`status-badge ${
+                link.linkType === 'EXTERNAL_URL' ? 'status-pending' : 'status-success'
               }`}>
                 {link.linkType === 'EXTERNAL_URL' ? 'External URL' : 'Hosted File'}
               </span>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500">Target</h3>
-              <p className="text-lg break-all">{link.linkTarget}</p>
+              <h3 className="text-sm font-medium text-muted">Target</h3>
+              <p className="text-lg text-primary break-all">{link.linkTarget}</p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500">Total Clicks</h3>
-              <p className="text-2xl font-bold text-blue-600">{link.clickCount}</p>
+              <h3 className="text-sm font-medium text-muted">Total Clicks</h3>
+              <p className="text-2xl font-bold text-link">{link.clickCount}</p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500">Status</h3>
-              <span className={`inline-block px-2 py-1 text-xs rounded ${
-                link.isActive 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-800'
+              <h3 className="text-sm font-medium text-muted">Status</h3>
+              <span className={`status-badge ${
+                link.isActive ? 'status-success' : 'status-neutral'
               }`}>
                 {link.isActive ? 'Active' : 'Inactive'}
               </span>
@@ -179,47 +176,39 @@ export default function LinkActivityPage({ params }: { params: { id: string } })
         </div>
 
         {/* Activity Log */}
-        <div className="bg-white border rounded-lg overflow-hidden">
-          <div className="px-6 py-4 border-b bg-gray-50">
-            <h2 className="text-xl font-semibold">Recent Activity (Last 100 visits)</h2>
+        <div className="card overflow-hidden" data-testid="activity-log">
+          <div className="px-6 py-4 border-b border-[var(--border)]">
+            <h2 className="text-xl font-semibold text-primary">Recent Activity (Last 100 visits)</h2>
           </div>
           
           {activity.length === 0 ? (
-            <div className="p-8 text-center text-primary font-semibold">
+            <div className="p-8 text-center text-muted">
               No visits yet
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Visit Time
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      IP Address
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User Agent
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Referer
-                    </th>
+                    <th>Visit Time</th>
+                    <th>IP Address</th>
+                    <th>User Agent</th>
+                    <th>Referer</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                   {activity.map((visit) => (
                     <tr key={visit.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="whitespace-nowrap text-sm">
                         {new Date(visit.visitTime).toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
+                      <td className="whitespace-nowrap text-sm font-mono">
                         {visit.ipAddress || 'unknown'}
                       </td>
-                      <td className="px-6 py-4 text-sm max-w-md truncate" title={visit.userAgent || undefined}>
+                      <td className="text-sm max-w-md truncate" title={visit.userAgent || undefined}>
                         {visit.userAgent || '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm max-w-xs truncate" title={visit.referer || undefined}>
+                      <td className="text-sm max-w-xs truncate" title={visit.referer || undefined}>
                         {visit.referer || '-'}
                       </td>
                     </tr>

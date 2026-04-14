@@ -76,8 +76,8 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | 14 | `app/admin/invitations/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-14 | Invitation list + create form |
 | 15 | `app/admin/links/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-14 | Was partially migrated; fixed shell, table, status badges |
 | 16 | `app/admin/links/new/page.tsx` | [x] | [x] | — | [x] | [ ] | 2026-04-14 | Short form page |
-| 17 | `app/admin/links/[id]/activity/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
-| 18 | `app/admin/api-keys/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
+| 17 | `app/admin/links/[id]/activity/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-14 | Details card + activity table |
+| 18 | `app/admin/api-keys/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-14 | Table with permission + status badges; was heavily indigo-flavored |
 | 19 | `app/admin/api-keys/[id]/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
 | 20 | `app/admin/email/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
 | 21 | `app/profile/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
