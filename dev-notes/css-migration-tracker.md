@@ -74,8 +74,8 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | 12 | `app/admin/design-definitions/page.tsx` | [x] | [x] | [x] | [x] | [x] | 2026-04-14 | Had old gradient + fragment shell structure, cleaned up |
 | 13 | `app/admin/design-definitions/[id]/page.tsx` | [x] | [x] | — | [x] | [ ] | 2026-04-14 | Had old gradient + fragment shell; 3-card form with many param inputs |
 | 14 | `app/admin/invitations/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-14 | Invitation list + create form |
-| 15 | `app/admin/links/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
-| 16 | `app/admin/links/new/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
+| 15 | `app/admin/links/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-14 | Was partially migrated; fixed shell, table, status badges |
+| 16 | `app/admin/links/new/page.tsx` | [x] | [x] | — | [x] | [ ] | 2026-04-14 | Short form page |
 | 17 | `app/admin/links/[id]/activity/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
 | 18 | `app/admin/api-keys/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
 | 19 | `app/admin/api-keys/[id]/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |

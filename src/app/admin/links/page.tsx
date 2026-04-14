@@ -89,8 +89,8 @@ export default function LinksPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+      <div className="page-shell flex items-center justify-center" data-testid="links-loading">
+        <div className="text-lg text-secondary">Loading...</div>
       </div>
     );
   }
@@ -100,106 +100,93 @@ export default function LinksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-secondary">
+    <div className="page-shell" data-testid="links-page">
       <Header />
       <div className="container mx-auto p-6 max-w-7xl">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-primary">Link Tracking</h1>
+          <h1 className="page-title">Link Tracking</h1>
           <Link
             href="/admin/links/new"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="btn-primary px-4 py-2"
+            data-testid="create-link-btn"
           >
             Create New Link
           </Link>
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="alert-error mb-4" data-testid="alert-error">
             Error: {error}
           </div>
         )}
 
         {links.length === 0 ? (
-          <div className="bg-surface border border-gray-300 rounded-lg p-8 text-center">
+          <div className="card p-8 text-center">
             <p className="text-primary font-semibold mb-4">No links created yet.</p>
             <Link
               href="/admin/links/new"
-              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="btn-primary inline-block px-4 py-2"
             >
               Create Your First Link
             </Link>
           </div>
         ) : (
-          <div className="bg-surface border rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="card overflow-hidden">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Shortcode
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Target
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Clicks
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th>Shortcode</th>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Target</th>
+                  <th>Clicks</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-surface divide-y divide-gray-200">
+              <tbody>
                 {links.map((link) => (
                   <tr key={link.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td>
                       <button
                         onClick={() => copyToClipboard(link.shortcode)}
-                        className="text-blue-600 hover:text-blue-800 font-mono font-medium"
+                        className="text-link font-mono font-medium"
                         title="Click to copy full URL"
+                        data-testid="copy-shortcode-btn"
                       >
                         {link.shortcode}
                       </button>
                     </td>
-                    <td className="px-6 py-4">
-                      {link.title || <span className="text-gray-400 italic">No title</span>}
+                    <td>
+                      {link.title || <span className="text-muted italic">No title</span>}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        link.linkType === 'EXTERNAL_URL' 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-green-100 text-green-800'
+                    <td>
+                      <span className={`status-badge ${
+                        link.linkType === 'EXTERNAL_URL'
+                          ? 'status-pending'
+                          : 'status-success'
                       }`}>
                         {link.linkType === 'EXTERNAL_URL' ? 'URL' : 'File'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 max-w-xs truncate" title={link.linkTarget}>
+                    <td className="max-w-xs truncate" title={link.linkTarget}>
                       {link.linkTarget}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td>
                       <span className="font-semibold">{link.clickCount}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        link.isActive 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
+                    <td>
+                      <span className={`status-badge ${
+                        link.isActive ? 'status-success' : 'status-neutral'
                       }`}>
                         {link.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td>
                       <Link
                         href={`/admin/links/${link.id}/activity`}
-                        className="text-blue-600 hover:text-blue-800 mr-3"
+                        className="text-link hover:underline"
+                        data-testid="view-activity-link"
                       >
                         View Activity
                       </Link>

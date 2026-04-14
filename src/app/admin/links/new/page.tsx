@@ -69,8 +69,8 @@ export default function NewLinkPage() {
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+      <div className="page-shell flex items-center justify-center" data-testid="new-link-loading">
+        <div className="text-lg text-secondary">Loading...</div>
       </div>
     );
   }
@@ -80,22 +80,22 @@ export default function NewLinkPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-secondary">
+    <div className="page-shell" data-testid="new-link-page">
       <Header />
       <div className="container mx-auto p-6 max-w-2xl">
-        <h1 className="text-3xl font-bold mb-6 text-primary">Create New Link</h1>
+        <h1 className="page-title mb-6">Create New Link</h1>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="alert-error mb-4" data-testid="alert-error">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-surface border rounded-lg p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="card p-6 space-y-6">
           {/* Shortcode */}
           <div>
-            <label htmlFor="shortcode" className="block text-sm font-semibold text-primary mb-2">
-              Shortcode <span className="text-red-500">*</span>
+            <label htmlFor="shortcode" className="block text-sm font-semibold text-secondary mb-2">
+              Shortcode <span className="text-[var(--status-error-text)]">*</span>
             </label>
             <div className="flex gap-2">
               <input
@@ -105,25 +105,27 @@ export default function NewLinkPage() {
                 onChange={(e) => setShortcode(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))}
                 required
                 pattern="[a-z0-9]+"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field flex-1"
+                data-testid="shortcode-input"
                 placeholder="abc123"
               />
               <button
                 type="button"
                 onClick={() => setShortcode(generateShortcode())}
-                className="px-4 py-2 bg-gray-300 text-black rounded-md hover:bg-gray-400 font-semibold"
+                className="btn-neutral px-4 py-2"
+                data-testid="generate-shortcode-btn"
               >
                 Generate
               </button>
             </div>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-muted mt-1">
               Your link will be: {window.location.origin}/l/{shortcode || '...'}
             </p>
           </div>
 
           {/* Title */}
           <div>
-            <label htmlFor="title" className="block text-sm font-semibold text-primary mb-2">
+            <label htmlFor="title" className="block text-sm font-semibold text-secondary mb-2">
               Title (optional)
             </label>
             <input
@@ -131,15 +133,16 @@ export default function NewLinkPage() {
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input-field"
+              data-testid="title-input"
               placeholder="Internal reference name"
             />
           </div>
 
           {/* Link Type */}
           <div>
-            <label className="block text-sm font-semibold text-primary mb-2">
-              Link Type <span className="text-red-500">*</span>
+            <label className="block text-sm font-semibold text-secondary mb-2">
+              Link Type <span className="text-[var(--status-error-text)]">*</span>
             </label>
             <div className="space-y-2">
               <label className="flex items-center">
@@ -167,8 +170,8 @@ export default function NewLinkPage() {
 
           {/* Link Target */}
           <div>
-            <label htmlFor="linkTarget" className="block text-sm font-semibold text-primary mb-2">
-              {linkType === 'EXTERNAL_URL' ? 'Target URL' : 'Filename'} <span className="text-red-500">*</span>
+            <label htmlFor="linkTarget" className="block text-sm font-semibold text-secondary mb-2">
+              {linkType === 'EXTERNAL_URL' ? 'Target URL' : 'Filename'} <span className="text-[var(--status-error-text)]">*</span>
             </label>
             <input
               type="text"
@@ -176,7 +179,8 @@ export default function NewLinkPage() {
               value={linkTarget}
               onChange={(e) => setLinkTarget(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input-field"
+              data-testid="link-target-input"
               placeholder={
                 linkType === 'EXTERNAL_URL' 
                   ? 'https://example.com' 
@@ -184,7 +188,7 @@ export default function NewLinkPage() {
               }
             />
             {linkType === 'HOSTED_FILE' && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-muted mt-1">
                 File should be placed in public/shared-files/
               </p>
             )}
@@ -195,14 +199,16 @@ export default function NewLinkPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+              className="btn-primary px-6 py-2"
+              data-testid="submit-btn"
             >
               {saving ? 'Creating...' : 'Create Link'}
             </button>
             <button
               type="button"
               onClick={() => router.push('/admin/links')}
-              className="px-6 py-2 bg-gray-300 text-black rounded-md hover:bg-gray-400 font-semibold"
+              className="btn-neutral px-6 py-2"
+              data-testid="cancel-btn"
             >
               Cancel
             </button>
