@@ -84,8 +84,8 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | 22 | `app/printer/configure/page.tsx` | [x] | [x] | [x] | [x] | [x] | 2026-04-14 | Electron-only multi-tab printer manager |
 | 23 | `app/printer/test/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Electron G-code/LED test page |
 | 24 | `app/login/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Gradient auth layout, QR+form, kept gradient bg |
-| 25 | `app/register/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Auth page |
-| 26 | `app/verify-email/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Auth page |
+| 25 | `app/register/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Invitation-gated registration form |
+| 26 | `app/verify-email/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Email verification with resend, gradient bg |
 | 27 | `app/forgot-password/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Auth page |
 | 28 | `app/reset-password/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Auth page |
 | 29 | `app/about/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Thin wrapper — migrate when AboutContent is migrated |

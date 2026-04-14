@@ -72,24 +72,24 @@ function RegisterForm() {
   // Show message if no invitation token
   if (!invitationToken) {
     return (
-      <div className="h-screen overflow-hidden flex flex-col bg-gray-900">
+      <div className="h-screen overflow-hidden flex flex-col page-shell" data-testid="register-no-token">
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="w-full max-w-md">
-            <div className="bg-gray-800 rounded-lg shadow-xl p-8 text-center">
+            <div className="card p-8 text-center">
               <div className="mb-6">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="mx-auto h-12 w-12 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">
+              <h2 className="text-2xl font-bold text-primary mb-4">
                 Invitation Required
               </h2>
-              <p className="text-gray-400 mb-6">
+              <p className="text-muted mb-6">
                 Registration is by invitation only. Please contact an administrator to request access.
               </p>
               <Link
                 href="/login"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="btn-primary inline-flex items-center px-4 py-2 text-sm"
               >
                 Back to Login
               </Link>
@@ -101,22 +101,22 @@ function RegisterForm() {
   }
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-gray-900">
+    <div className="h-screen overflow-hidden flex flex-col page-shell" data-testid="register-page">
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-gray-800 rounded-lg shadow-xl p-8">
+          <div className="card p-8">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-white text-center">
+              <h2 className="text-2xl font-bold text-primary text-center">
                 Join Organization
               </h2>
-              <p className="mt-2 text-center text-sm text-blue-400">
+              <p className="mt-2 text-center text-sm text-link">
                 You&apos;ve been invited to join an organization
               </p>
-              <p className="mt-2 text-center text-sm text-gray-400">
+              <p className="mt-2 text-center text-sm text-muted">
                 Already have an account?{" "}
                 <Link
                   href="/login"
-                  className="font-medium text-blue-500 hover:text-blue-400"
+                  className="font-medium text-link"
                 >
                   Sign in
                 </Link>
@@ -125,7 +125,7 @@ function RegisterForm() {
 
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium text-secondary mb-1">
                   Full Name
                 </label>
                 <input
@@ -134,7 +134,8 @@ function RegisterForm() {
                   type="text"
                   autoComplete="name"
                   required
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input-field"
+                  data-testid="name-input"
                   placeholder="Enter your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -142,7 +143,7 @@ function RegisterForm() {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-secondary mb-1">
                   Email
                 </label>
                 <input
@@ -151,7 +152,8 @@ function RegisterForm() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input-field"
+                  data-testid="email-input"
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -159,7 +161,7 @@ function RegisterForm() {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-secondary mb-1">
                   Password
                 </label>
                 <input
@@ -168,16 +170,17 @@ function RegisterForm() {
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input-field"
+                  data-testid="password-input"
                   placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-                <p className="text-xs text-gray-400 mt-1">{PASSWORD_REQUIREMENTS_TEXT}</p>
+                <p className="text-xs text-muted mt-1">{PASSWORD_REQUIREMENTS_TEXT}</p>
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-secondary mb-1">
                   Confirm Password
                 </label>
                 <input
@@ -186,7 +189,8 @@ function RegisterForm() {
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input-field"
+                  data-testid="confirm-password-input"
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -194,7 +198,7 @@ function RegisterForm() {
               </div>
 
               {error && (
-                <div className="text-red-400 text-sm text-center bg-red-900/20 border border-red-800 rounded-md p-2">
+                <div className="alert-error" data-testid="error-message">
                   {error}
                 </div>
               )}
@@ -202,7 +206,8 @@ function RegisterForm() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="btn-primary w-full py-2 px-4 disabled:opacity-50"
+                data-testid="submit-btn"
               >
                 {isLoading ? "Creating account..." : "Create Account"}
               </button>
@@ -217,10 +222,10 @@ function RegisterForm() {
 export default function RegisterPage() {
   return (
     <Suspense fallback={
-      <div className="h-screen bg-gray-900 flex items-center justify-center">
+      <div className="h-screen page-shell flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-400">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+          <p className="mt-2 text-sm text-muted">Loading...</p>
         </div>
       </div>
     }>
