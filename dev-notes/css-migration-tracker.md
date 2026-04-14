@@ -80,8 +80,8 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | 18 | `app/admin/api-keys/page.tsx` | [x] | [x] | [x] | [x] | [ ] | 2026-04-14 | Table with permission + status badges; was heavily indigo-flavored |
 | 19 | `app/admin/api-keys/[id]/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Form with generated key warning banner |
 | 20 | `app/admin/email/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Short email test form |
-| 21 | `app/profile/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
-| 22 | `app/printer/configure/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | | |
+| 21 | `app/profile/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Profile + password form, no Header component |
+| 22 | `app/printer/configure/page.tsx` | [x] | [x] | [x] | [x] | [x] | 2026-04-14 | Electron-only multi-tab printer manager |
 | 23 | `app/printer/test/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
 | 24 | `app/login/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Auth page |
 | 25 | `app/register/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Auth page |
