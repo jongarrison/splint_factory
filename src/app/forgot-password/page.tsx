@@ -35,21 +35,21 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
+    <div className="h-screen overflow-hidden flex flex-col bg-gradient-to-br from-[var(--background)] to-[var(--surface-secondary)]" data-testid="forgot-password-page">
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-md w-full">
           {submitted ? (
-            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-8 text-center">
-              <svg className="mx-auto h-12 w-12 text-green-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="card p-8 text-center" data-testid="success-card">
+              <svg className="mx-auto h-12 w-12 text-[var(--status-ok-text)] mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              <h2 className="text-2xl font-bold text-white mb-2">Check your email</h2>
-              <p className="text-gray-400 mb-6">
-                If an account exists for <span className="text-gray-200">{email}</span>, we sent a password reset link. It expires in 1 hour.
+              <h2 className="text-2xl font-bold text-primary mb-2">Check your email</h2>
+              <p className="text-muted mb-6">
+                If an account exists for <span className="text-secondary">{email}</span>, we sent a password reset link. It expires in 1 hour.
               </p>
               <Link
                 href="/login"
-                className="text-indigo-400 hover:text-indigo-300 text-sm font-medium"
+                className="text-link text-sm font-medium"
               >
                 Back to Sign In
               </Link>
@@ -57,10 +57,10 @@ export default function ForgotPasswordPage() {
           ) : (
             <>
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-extrabold text-white">
+                <h2 className="text-3xl font-extrabold text-primary">
                   Forgot your password?
                 </h2>
-                <p className="mt-2 text-sm text-gray-400">
+                <p className="mt-2 text-sm text-muted">
                   Enter your email and we will send you a reset link.
                 </p>
               </div>
@@ -74,19 +74,21 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="appearance-none relative block w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white placeholder-gray-400 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="input-field w-full text-sm"
+                    data-testid="email-input"
                     placeholder="Email address"
                   />
                 </div>
 
                 {error && (
-                  <div className="text-red-400 text-sm text-center">{error}</div>
+                  <div className="text-sm text-center text-[var(--status-error-text)]" data-testid="error-message">{error}</div>
                 )}
 
                 <button
                   type="submit"
                   disabled={sending}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                  className="btn-primary w-full flex justify-center py-2 px-4 text-sm disabled:opacity-50"
+                  data-testid="submit-btn"
                 >
                   {sending ? 'Sending...' : 'Send Reset Link'}
                 </button>
@@ -94,7 +96,7 @@ export default function ForgotPasswordPage() {
                 <div className="text-center">
                   <Link
                     href="/login"
-                    className="text-sm text-indigo-400 hover:text-indigo-300"
+                    className="text-link text-sm"
                   >
                     Back to Sign In
                   </Link>
