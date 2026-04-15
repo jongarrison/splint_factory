@@ -74,6 +74,7 @@ function ProtectedEmail({ user, domain, label }: { user: string; domain: string;
     <>
       <button
         onClick={() => setOpen(true)}
+        data-testid={`contact-email-${user}`}
         className="text-[var(--accent-blue)] hover:text-[var(--accent-blue-hover)] underline underline-offset-2 transition-colors cursor-pointer"
       >
         {label}
@@ -84,7 +85,7 @@ function ProtectedEmail({ user, domain, label }: { user: string; domain: string;
           onClick={() => { setOpen(false); setCopied(false); }}
         >
           <div
-            className="bg-[var(--card-bg)] border border-[var(--border)] rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4"
+            className="bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{label}</h3>
@@ -134,7 +135,7 @@ export default function AboutContent() {
   const isLoggedIn = !!session?.user;
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <div className="min-h-screen bg-[var(--background)]" data-testid="about-page">
       <Header variant="browser" />
 
       {/* -- Hero Section with Ken Burns background -- */}
@@ -156,10 +157,10 @@ export default function AboutContent() {
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight">
             Splint Factory
           </h1>
-          <p className="text-xl sm:text-2xl md:text-3xl text-blue-200 font-medium mb-6 max-w-3xl">
+          <p className="text-xl sm:text-2xl md:text-3xl text-white/80 font-medium mb-6 max-w-3xl">
             Custom finger orthoses, printed in your clinic in under 20 minutes.
           </p>
-          <p className="text-base sm:text-lg text-gray-300 max-w-2xl leading-relaxed mb-8">
+          <p className="text-base sm:text-lg text-white/70 max-w-2xl leading-relaxed mb-8">
             Durable, comfortable, and built for patients who need support that
             lasts — not just for days or weeks, but for years.
           </p>

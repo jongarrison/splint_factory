@@ -88,8 +88,8 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | 26 | `app/verify-email/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Email verification with resend, gradient bg |
 | 27 | `app/forgot-password/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Email input + success card, gradient bg |
 | 28 | `app/reset-password/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Password reset form + 3 states, gradient bg |
-| 29 | `app/about/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Thin wrapper — migrate when AboutContent is migrated |
-| 30 | `app/logo-lab/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
+| 29 | `app/about/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Thin wrapper; migrated AboutContent.tsx — fixed --card-bg→--surface, text-blue-200→white/80, text-gray-300→white/70 |
+| 30 | `app/logo-lab/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Entirely inline styles (no Tailwind to migrate); added data-testids |
 | 31 | `app/client-auth/[id]/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
 | 32 | `app/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Root/landing |
 

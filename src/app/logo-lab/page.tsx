@@ -264,7 +264,7 @@ export default function LogoLabPage() {
   }
 
   return (
-    <div style={{ padding: 40, maxWidth: 1400, margin: '0 auto', fontFamily: 'system-ui' }}>
+    <div data-testid="logo-lab-page" style={{ padding: 40, maxWidth: 1400, margin: '0 auto', fontFamily: 'system-ui' }}>
       <h1 style={{ color: '#ddd', marginBottom: 32, fontSize: 24 }}>Logo Lab</h1>
 
       <div style={{ display: 'flex', gap: 40, flexWrap: 'wrap' }}>
@@ -278,6 +278,7 @@ export default function LogoLabPage() {
             <select
               value={font}
               onChange={e => setFont(e.target.value)}
+              data-testid="font-select"
               style={{
                 padding: '8px 12px', fontSize: 14, borderRadius: 6,
                 backgroundColor: '#2a2a2a', color: '#ddd', border: '1px solid #555',
@@ -324,6 +325,7 @@ export default function LogoLabPage() {
               />
               <button
                 onClick={() => loadImage(imageUrl)}
+                data-testid="load-image-btn"
                 style={{
                   padding: '6px 12px', fontSize: 13, borderRadius: 6,
                   backgroundColor: '#444', color: '#ddd', border: '1px solid #555',
@@ -334,6 +336,7 @@ export default function LogoLabPage() {
             <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
               <button
                 onClick={() => setSamplerTarget('primary')}
+                data-testid="sample-primary-btn"
                 style={{
                   flex: 1, padding: '6px 0', fontSize: 12, borderRadius: 6, cursor: 'pointer',
                   backgroundColor: samplerTarget === 'primary' ? '#335' : '#2a2a2a',
@@ -344,6 +347,7 @@ export default function LogoLabPage() {
               >Sampling Primary</button>
               <button
                 onClick={() => setSamplerTarget('secondary')}
+                data-testid="sample-secondary-btn"
                 style={{
                   flex: 1, padding: '6px 0', fontSize: 12, borderRadius: 6, cursor: 'pointer',
                   backgroundColor: samplerTarget === 'secondary' ? '#432' : '#2a2a2a',
@@ -356,6 +360,7 @@ export default function LogoLabPage() {
             <div style={{ position: 'relative', display: 'inline-block' }}>
               <canvas
                 ref={canvasRef}
+                data-testid="color-sampler-canvas"
                 onClick={handleCanvasClick}
                 onMouseMove={handleCanvasHover}
                 onMouseLeave={() => setHoveredColor(null)}
