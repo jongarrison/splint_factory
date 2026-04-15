@@ -226,7 +226,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
 {showAdminDropdown && (
                           <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-[var(--surface-secondary)] ring-1 ring-[var(--border)] z-50">
                             <div className="py-1">
-                              {/* Organizations - SYSTEM_ADMIN only */
+                              {/* Organizations - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (
                                 <Link
                                   href="/admin/organizations"
@@ -285,14 +285,19 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                               <Link
                                 href="/design-jobs"
                                 onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                              >
+                                Design Jobs
+                              </Link>
                               
                               {/* Print Queue - All roles */}
                               <Link
                                 href="/print-queue"
                                 onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                              
+                                className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                              >
+                                Print Queue
+                              </Link>
                               {/* System Status - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (
                                 <Link

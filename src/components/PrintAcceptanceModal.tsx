@@ -35,6 +35,7 @@ export default function PrintAcceptanceModal({
     }
   };
 
+  const options: { value: AcceptanceAction; label: string; description: string; color: string; selectedColor: string; ring: string }[] = [
     { value: 'ACCEPTED', label: 'Accept', description: 'Print quality is good',
       color: 'border-[var(--border)] hover:border-[var(--status-success-text)] hover:bg-[var(--status-success-bg)]',
       selectedColor: 'border-[var(--status-success-text)] bg-[var(--status-success-bg)]',
