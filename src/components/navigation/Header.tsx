@@ -309,6 +309,17 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 </Link>
                               )}
                               
+                              {/* Printer Fleet - SYSTEM_ADMIN only */}
+                              {session?.user?.role === 'SYSTEM_ADMIN' && (
+                                <Link
+                                  href="/admin/fleet"
+                                  onClick={() => setShowAdminDropdown(false)}
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                >
+                                  Printer Fleet
+                                </Link>
+                              )}
+                              
                               {/* Link Tracking - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (
                                 <Link

@@ -178,9 +178,11 @@ model PrintJob {
   logs                String?
   printedByUserId     String?
   acceptedByUserId    String?
+  printerSerial       String?
   designJob           DesignJob   @relation(fields: [designJobId], references: [id])
   printedBy           User?       @relation("PrintOperator", fields: [printedByUserId], references: [id])
   acceptedBy          User?       @relation("PrintReviewer", fields: [acceptedByUserId], references: [id])
+  printer             Printer?    @relation(fields: [printerSerial], references: [serial])
 
   @@map("PrintQueue")
 }
@@ -243,6 +245,7 @@ model ClientDevice {
   organization        Organization?        @relation(fields: [organizationId], references: [id])
   currentOperator     User?                @relation("DeviceOperator", fields: [currentOperatorId], references: [id])
   authChallenges      ClientAuthChallenge[]
+  printers            Printer[]
 }
 
 model ClientAuthChallenge {
@@ -305,4 +308,33 @@ model EmailVerificationToken {
 
   @@index([token])
   @@index([userId])
+}
+
+model Printer {
+  serial          String            @id // Bambu serial, globally unique
+  model           String            // "P1S", "X1C", etc.
+  name            String?           // user-friendly name
+  deviceId        String?           // which ClientDevice it's currently attached to
+  lastSnapshotAt  DateTime?
+  createdAt       DateTime          @default(now())
+  device          ClientDevice?     @relation(fields: [deviceId], references: [id])
+  snapshots       PrinterSnapshot[]
+  printJobs       PrintJob[]
+}
+
+model PrinterSnapshot {
+  id              String    @id @default(cuid())
+  printerSerial   String
+  deviceId        String    // denormalized -- which device captured this
+  firmware        String
+  modules         Json?     // { ota, ams, ahb, mc } versions
+  amsConfig       Json?     // tray info, humidity
+  networkIp       String?
+  activeHmsErrors Json?     // any active HMS errors at capture time
+  funField        String?   // raw hex for dev-mode analysis
+  rawReport       Json?     // full pushall response for future mining
+  capturedAt      DateTime  @default(now())
+  printer         Printer   @relation(fields: [printerSerial], references: [serial])
+
+  @@index([printerSerial, capturedAt])
 }
