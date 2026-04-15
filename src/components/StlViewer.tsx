@@ -222,8 +222,8 @@ export default function StlViewer({
   if (webGLSupported === false) {
     return (
       <div className={`relative ${className}`} style={{ width, height }}>
-        <div className="w-full h-full rounded-lg overflow-hidden bg-gray-700 flex items-center justify-center">
-          <div className="text-center text-gray-300 px-4">
+        <div className="w-full h-full rounded-lg overflow-hidden bg-[var(--surface-secondary)] flex items-center justify-center">
+          <div className="text-center text-muted px-4">
             <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
@@ -240,17 +240,17 @@ export default function StlViewer({
       <div ref={containerRef} className="w-full h-full rounded-lg overflow-hidden" />
       
       {loading && webGLSupported && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--surface-secondary)] rounded-lg">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-sm text-gray-600">Loading 3D model...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+            <p className="mt-4 text-sm text-muted">Loading 3D model...</p>
           </div>
         </div>
       )}
       
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-          <div className="text-center text-red-600">
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--surface-secondary)] rounded-lg">
+          <div className="text-center text-[var(--status-error-text)]">
             <svg className="w-12 h-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
@@ -260,7 +260,7 @@ export default function StlViewer({
       )}
       
       {!loading && !error && webGLSupported && (
-        <div className="absolute bottom-2 left-2 bg-white bg-opacity-90 px-3 py-2 rounded text-xs text-gray-600">
+        <div className="absolute bottom-2 left-2 bg-[var(--surface)]/90 px-3 py-2 rounded text-xs text-muted">
           Drag to rotate - Scroll to zoom - Right-click to pan
         </div>
       )}

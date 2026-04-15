@@ -22,10 +22,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  const isDarkMode = variant === 'electron';
-  const baseClasses = isDarkMode 
-    ? 'bg-gray-800 border-gray-700 text-white' 
-    : 'bg-white border-gray-200 text-gray-900';
+
 
   // Check geometry processor health on mount (SYSTEM_ADMIN only)
   useEffect(() => {
@@ -82,16 +79,16 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
     <>
       {/* Maintenance Mode Banner (All users) */}
       {!hideMaintenanceBanner && maintenanceMode?.enabled && (
-        <div className="bg-orange-50 border-b border-orange-200">
+        <div className="bg-[var(--status-warning-bg)] border-b border-[var(--status-warning-text)]/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex items-center gap-2 text-sm text-orange-900">
+            <div className="flex items-center gap-2 text-sm text-[var(--status-warning-text)]">
               <svg className="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <div>
                 <div className="font-semibold text-base">System Maintenance</div>
                 {maintenanceMode.message && (
-                  <div className="text-orange-800 mt-0.5">{maintenanceMode.message}</div>
+                  <div className="mt-0.5">{maintenanceMode.message}</div>
                 )}
               </div>
             </div>
@@ -101,14 +98,14 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
       
       {/* Geometry Processor Health Warning (SYSTEM_ADMIN only) */}
       {session?.user?.role === 'SYSTEM_ADMIN' && processorHealthy === false && (
-        <div className="bg-yellow-50 border-b border-yellow-200">
+        <div className="bg-[var(--status-warning-bg)] border-b border-[var(--status-warning-text)]/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <div className="flex items-center gap-2 text-sm text-yellow-800">
+            <div className="flex items-center gap-2 text-sm text-[var(--status-warning-text)]">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <span className="font-medium">Design Processor Offline</span>
-              <span className="text-yellow-700">
+              <span>
                 Last check-in: {secondsSinceLastPing}s ago
               </span>
             </div>
@@ -116,13 +113,13 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
         </div>
       )}
       
-      <nav className={`shadow-lg border-b ${baseClasses}`}>
+      <nav className="shadow-lg border-b bg-[var(--surface)] border-[var(--border)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Left side - Logo and brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <h1 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h1 className="text-xl font-semibold text-primary">
                 Splint Factory
               </h1>
             </Link>
@@ -131,7 +128,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
             {variant === 'browser' && (
               <Link
                 href="/about"
-                className={`ml-4 text-sm font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors`}
+                className="ml-4 text-sm font-medium text-secondary hover:text-[var(--text-primary)] transition-colors"
               >
                 About
               </Link>
@@ -141,7 +138,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
             {variant === 'browser' && session && pathname !== '/design-menu' && (
               <Link
                 href="/design-menu"
-                className="ml-4 inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md bg-green-600 hover:bg-green-700 text-white transition-colors shadow-sm"
+                className="ml-4 inline-flex items-center px-3 py-1.5 text-sm rounded-md btn-success shadow-sm"
                 title="Create New 3D Print"
               >
                 <svg 
@@ -162,7 +159,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
             {variant === 'electron' && (
               <Link
                 href="/printer/configure"
-                className={`ml-3 ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'} transition-colors`}
+                className="ml-3 text-link hover:text-[var(--accent-blue-hover)] transition-colors"
                 title="Printer Configuration"
               >
                 <svg 
@@ -186,7 +183,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
             {variant === 'electron' && session?.user?.role === 'SYSTEM_ADMIN' && (
               <Link
                 href="/printer/test"
-                className={`ml-2 ${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} transition-colors`}
+                className="ml-2 text-muted hover:text-[var(--text-primary)] transition-colors"
                 title="Printer Test"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
@@ -203,7 +200,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                   <>
                     <Link 
                       href="/print-queue" 
-                      className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} px-3 py-2 text-sm font-medium`}
+                      className="text-secondary hover:text-[var(--text-primary)] px-3 py-2 text-sm font-medium"
                     >
                       Print Queue
                     </Link>
@@ -215,7 +212,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                       <div className="relative" ref={dropdownRef}>
                         <button
                           onClick={() => setShowAdminDropdown(!showAdminDropdown)}
-                          className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} px-3 py-2 text-sm font-medium flex items-center`}
+                          className="text-secondary hover:text-[var(--text-primary)] px-3 py-2 text-sm font-medium flex items-center"
                         >
                           <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -227,14 +224,14 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                         </button>
                         
 {showAdminDropdown && (
-                          <div className={`absolute right-0 mt-2 w-56 rounded-md shadow-lg ${isDarkMode ? 'bg-gray-700 ring-gray-600' : 'bg-white ring-black'} ring-1 ring-opacity-5 z-50`}>
+                          <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-[var(--surface-secondary)] ring-1 ring-[var(--border)] z-50">
                             <div className="py-1">
-                              {/* Organizations - SYSTEM_ADMIN only */}
+                              {/* Organizations - SYSTEM_ADMIN only */
                               {session?.user?.role === 'SYSTEM_ADMIN' && (
                                 <Link
                                   href="/admin/organizations"
                                   onClick={() => setShowAdminDropdown(false)}
-                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                                 >
                                   Organizations
                                 </Link>
@@ -245,7 +242,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 <Link
                                   href="/admin/users"
                                   onClick={() => setShowAdminDropdown(false)}
-                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                                 >
                                   User Management
                                 </Link>
@@ -256,7 +253,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 <Link
                                   href="/admin/invitations"
                                   onClick={() => setShowAdminDropdown(false)}
-                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                                 >
                                   Invitations
                                 </Link>
@@ -267,7 +264,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 <Link
                                   href="/admin/design-definitions"
                                   onClick={() => setShowAdminDropdown(false)}
-                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                                 >
                                   Design Definitions
                                 </Link>
@@ -278,7 +275,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 <Link
                                   href="/admin/api-keys"
                                   onClick={() => setShowAdminDropdown(false)}
-                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                                 >
                                   API Keys
                                 </Link>
@@ -288,26 +285,20 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                               <Link
                                 href="/design-jobs"
                                 onClick={() => setShowAdminDropdown(false)}
-                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                              >
-                                Design Generation Jobs
-                              </Link>
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                               
                               {/* Print Queue - All roles */}
                               <Link
                                 href="/print-queue"
                                 onClick={() => setShowAdminDropdown(false)}
-                                className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                              >
-                                Print Queue
-                              </Link>
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                               
                               {/* System Status - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (
                                 <Link
                                   href="/admin"
                                   onClick={() => setShowAdminDropdown(false)}
-                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                                 >
                                   System Status
                                 </Link>
@@ -318,7 +309,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 <Link
                                   href="/admin/links"
                                   onClick={() => setShowAdminDropdown(false)}
-                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                                 >
                                   Link Tracking
                                 </Link>
@@ -329,7 +320,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 <Link
                                   href="/admin/email"
                                   onClick={() => setShowAdminDropdown(false)}
-                                  className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                                 >
                                   Email
                                 </Link>
@@ -353,13 +344,13 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
             
             {session ? (
               <>
-                <span className={`hidden sm:inline text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                <span className="hidden sm:inline text-sm text-muted">
                   Welcome, {session.user?.name || session.user?.email}!
                 </span>
                 <div className="relative" ref={userDropdownRef}>
                   <button
                     onClick={() => setShowUserDropdown(!showUserDropdown)}
-                    className={`${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'} transition-colors`}
+                    className="text-link hover:text-[var(--accent-blue-hover)] transition-colors"
                     title="User menu"
                   >
                     <svg 
@@ -378,12 +369,12 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                     </svg>
                   </button>
                   {showUserDropdown && (
-                    <div className={`absolute right-0 mt-2 w-56 rounded-md shadow-lg ${isDarkMode ? 'bg-gray-700 ring-gray-600' : 'bg-white ring-black'} ring-1 ring-opacity-5 z-50`}>
+                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-[var(--surface-secondary)] ring-1 ring-[var(--border)] z-50">
                       <div className="py-1">
                         <Link
                           href="/profile"
                           onClick={() => setShowUserDropdown(false)}
-                          className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                          className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                         >
                           Profile
                         </Link>
@@ -391,15 +382,15 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                           <Link
                             href={`/admin/organizations/${session.user.organizationId}`}
                             onClick={() => setShowUserDropdown(false)}
-                            className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                            className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                           >
                             {session.user.organizationName ? `${session.user.organizationName} Settings` : 'Organization Settings'}
                           </Link>
                         )}
-                        <div className={`border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-200'} my-1`}></div>
+                        <div className="border-t border-[var(--border)] my-1"></div>
                         <div
                           onClick={() => setShowUserDropdown(false)}
-                          className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600 hover:text-white' : 'text-gray-700 hover:bg-gray-100'} cursor-pointer`}
+                          className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)] cursor-pointer"
                         >
                           <SignOutButton variant={variant} inline />
                         </div>
@@ -415,7 +406,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                 {pathname !== '/login' && (
                   <Link 
                     href="/login" 
-                    className={`text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                    className="text-sm text-link hover:text-[var(--accent-blue-hover)]"
                   >
                     Sign In
                   </Link>

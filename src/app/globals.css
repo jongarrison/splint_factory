@@ -31,29 +31,6 @@
   --accent-purple: #a78bfa;
 }
 
-/* Light mode - only when explicitly enabled via toggle */
-:root.light {
-  --background: #ffffff;
-  --surface: #ffffff;
-  --surface-secondary: #f9fafb;
-  
-  --text-primary: #111827;       /* Headings - nearly black */
-  --text-secondary: #4b5563;     /* Body text - medium gray */
-  --text-tertiary: #6b7280;      /* Labels - lighter gray */
-  --text-muted: #9ca3af;         /* Disabled text - very light gray */
-  
-  --border: #e5e7eb;             /* Default borders */
-  --border-secondary: #d1d5db;   /* Stronger borders */
-  
-  --hover-bg: #f3f4f6;           /* Hover background for light mode */
-  
-  --accent-blue: #3b82f6;
-  --accent-blue-hover: #2563eb;
-  --accent-green: #10b981;
-  --accent-red: #ef4444;
-  --accent-yellow: #f59e0b;
-  --accent-purple: #8b5cf6;
-}
 
 body {
   background: var(--background);
@@ -165,87 +142,6 @@ select:disabled {
 /* Border utilities */
 .border-default {
   border-color: var(--border) !important;
-}
-
-/* Tailwind override classes - map Tailwind classes to our theme variables */
-.text-gray-900 {
-  color: var(--text-primary) !important;
-}
-
-.text-gray-800 {
-  color: var(--text-primary) !important;
-}
-
-.text-gray-700 {
-  color: var(--text-secondary) !important;
-}
-
-.text-gray-600 {
-  color: var(--text-secondary) !important;
-}
-
-.text-gray-500 {
-  color: var(--text-tertiary) !important;
-}
-
-.text-gray-400 {
-  color: var(--text-muted) !important;
-}
-
-/* Accent color overrides - these stay consistent */
-.text-blue-600 {
-  color: var(--accent-blue) !important;
-}
-
-.hover\:text-blue-900:hover {
-  color: var(--accent-blue-hover) !important;
-}
-
-.text-green-600 {
-  color: var(--accent-green) !important;
-}
-
-.text-red-600 {
-  color: var(--accent-red) !important;
-}
-
-.text-yellow-600 {
-  color: var(--accent-yellow) !important;
-}
-
-.text-purple-600 {
-  color: var(--accent-purple) !important;
-}
-
-/* Background overrides */
-.bg-white {
-  background-color: var(--surface) !important;
-}
-
-.bg-gray-50 {
-  background-color: var(--surface-secondary) !important;
-}
-
-/* Border overrides */
-.border-gray-200 {
-  border-color: var(--border) !important;
-}
-
-.border-gray-300 {
-  border-color: var(--border-secondary) !important;
-}
-
-.divide-gray-200 > * + * {
-  border-color: var(--border) !important;
-}
-
-/* Hover states */
-.hover\:bg-gray-50:hover {
-  background-color: var(--hover-bg) !important;
-}
-
-.hover\:bg-gray-100:hover {
-  background-color: var(--hover-bg) !important;
 }
 
 /* High-contrast display field for code/data blocks used in details pages */

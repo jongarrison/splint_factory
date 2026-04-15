@@ -36,19 +36,19 @@ Per-page checklist items (abbreviated from the plan):
 
 | Component | A | B | C | D | V | Notes |
 |---|---|---|---|---|---|---|
-| `components/navigation/Header.tsx` | [ ] | [ ] | — | [ ] | [ ] | Has `isDarkMode` JS branching; light-mode header in browser variant |
-| `components/printer/PrinterStatusBanner.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | Has dead `dark:` variants |
-| `components/ReloadButton.tsx` | [ ] | [ ] | — | [ ] | [ ] | Has dead `dark:` variants |
-| `components/PrintAcceptanceModal.tsx` | [ ] | [ ] | — | [ ] | [ ] | |
-| `components/PrintConfirmModal.tsx` | [ ] | [ ] | — | [ ] | [ ] | |
-| `components/DeletePrintModal.tsx` | [ ] | [ ] | — | [ ] | [ ] | |
-| `components/DeviceAuthOverlay.tsx` | [ ] | [ ] | — | [ ] | [ ] | |
-| `components/landing/AboutContent.tsx` | [ ] | [ ] | — | [ ] | [ ] | Already uses `var(--...)` directly; may be mostly done |
-| `components/landing/ElectronLanding.tsx` | [ ] | [ ] | — | [ ] | [ ] | |
-| `components/ImagePlaceholder.tsx` | [ ] | [ ] | — | [ ] | [ ] | |
-| `components/ProcessingLogViewer.tsx` | [ ] | [ ] | — | [ ] | [ ] | |
-| `components/StlViewer.tsx` | [ ] | [ ] | — | [ ] | [ ] | |
-| `components/VirtualKeyboard.tsx` | [ ] | [ ] | — | [ ] | [ ] | |
+| `components/navigation/Header.tsx` | [x] | [x] | — | [x] | [x] | Migrated 2026-04-14; removed isDarkMode branching |
+| `components/printer/PrinterStatusBanner.tsx` | [x] | [x] | [x] | [x] | [x] | Migrated 2026-04-14 |
+| `components/ReloadButton.tsx` | [x] | [x] | — | [x] | [x] | Migrated 2026-04-14 |
+| `components/PrintAcceptanceModal.tsx` | [x] | [x] | — | [x] | [x] | Migrated 2026-04-14 |
+| `components/PrintConfirmModal.tsx` | [x] | [x] | — | [x] | [x] | Already migrated (found clean) |
+| `components/DeletePrintModal.tsx` | [x] | [x] | — | [x] | [x] | Migrated 2026-04-14 |
+| `components/DeviceAuthOverlay.tsx` | [x] | [x] | — | [x] | [x] | Migrated 2026-04-14 |
+| `components/landing/AboutContent.tsx` | [x] | [x] | — | [x] | [x] | Migrated 2026-04-14 with page 29 |
+| `components/landing/ElectronLanding.tsx` | [x] | [x] | — | [x] | [x] | Migrated 2026-04-14 with page 32 |
+| `components/ImagePlaceholder.tsx` | [x] | [x] | — | [x] | [x] | Migrated 2026-04-14; SVG hex fills -> CSS vars |
+| `components/ProcessingLogViewer.tsx` | [x] | [x] | — | [x] | [x] | Migrated 2026-04-14 |
+| `components/StlViewer.tsx` | [x] | [x] | — | [x] | [x] | Migrated 2026-04-14 |
+| `components/VirtualKeyboard.tsx` | [x] | [x] | — | [x] | [x] | Already dark (inline CSS for simple-keyboard lib) |
 
 _Email templates (`src/emails/`) are intentionally excluded — they render in email clients and must stay self-contained with inline styles._
 
@@ -90,8 +90,8 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 | 28 | `app/reset-password/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Password reset form + 3 states, gradient bg |
 | 29 | `app/about/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Thin wrapper; migrated AboutContent.tsx — fixed --card-bg→--surface, text-blue-200→white/80, text-gray-300→white/70 |
 | 30 | `app/logo-lab/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Entirely inline styles (no Tailwind to migrate); added data-testids |
-| 31 | `app/client-auth/[id]/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | |
-| 32 | `app/page.tsx` | [ ] | [ ] | — | [ ] | [ ] | | Root/landing |
+| 31 | `app/client-auth/[id]/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Three state cards (error/approved/approving); bg-gray-*/dark: -> page-shell + card |
+| 32 | `app/page.tsx` | [x] | [x] | — | [x] | [x] | 2026-04-14 | Thin wrapper; migrated ElectronLanding.tsx — page-shell, card, btn-primary, text-muted |
 
 ---
 
@@ -99,11 +99,11 @@ Higher priority = more traffic or currently visually broken. Migrate when touche
 
 _The `!important` override block in globals.css can be removed only after these are all confirmed migrated:_
 
-- [ ] All pages above marked done
-- [ ] Header, PrinterStatusBanner, ReloadButton migrated
-- [ ] No remaining `bg-white`, `bg-gray-50`, `text-gray-900`, `text-gray-600` in JSX (run grep to verify)
-- [ ] `:root.light` block removed from globals.css
-- [ ] Tailwind override shim block removed from globals.css
+- [x] All pages above marked done
+- [x] Header, PrinterStatusBanner, ReloadButton migrated
+- [x] No remaining `bg-white`, `bg-gray-50`, `text-gray-900`, `text-gray-600` in JSX (run grep to verify)
+- [x] `:root.light` block removed from globals.css
+- [x] Tailwind override shim block removed from globals.css
 
 ---
 

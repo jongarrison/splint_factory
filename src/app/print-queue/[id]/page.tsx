@@ -705,7 +705,7 @@ export default function PrintQueueDetailPage({
                   )}
                   
                   {entry.progressLastReportAt && (
-                    <div className="last-updated-time mt-3 text-sm text-gray-600">
+                    <div className="last-updated-time mt-3 text-sm text-muted">
                       Last updated: <span className="timestamp">{formatDate(entry.progressLastReportAt)}</span>
                       {(() => {
                         const lastUpdate = new Date(entry.progressLastReportAt);

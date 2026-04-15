@@ -75,9 +75,9 @@ export default function ClientAuthPage({
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="page-shell" data-testid="client-auth-loading">
         <Header />
-        <div className="max-w-md mx-auto px-4 py-16 text-center text-gray-500">
+        <div className="max-w-md mx-auto px-4 py-16 text-center text-muted">
           Loading...
         </div>
       </div>
@@ -85,30 +85,30 @@ export default function ClientAuthPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="page-shell" data-testid="client-auth-page">
       <Header />
       <div className="max-w-md mx-auto px-4 py-16">
         {error && !approved && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
-            <div className="text-red-500 text-5xl mb-4">!</div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <div className="card p-8 text-center" data-testid="error-card">
+            <div className="text-[var(--status-error-text)] text-5xl mb-4">!</div>
+            <h1 className="text-xl font-bold text-primary mb-2">
               Unable to Authorize
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">{error}</p>
+            <p className="text-muted">{error}</p>
           </div>
         )}
 
         {approved && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
-            <div className="text-green-500 text-5xl mb-4">
+          <div className="card p-8 text-center" data-testid="approved-card">
+            <div className="text-[var(--status-ok-text)] text-5xl mb-4">
               <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            <h1 className="text-xl font-bold text-primary mb-2">
               Device Authorized
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted">
               You are now the active operator on <strong>{challenge?.deviceName}</strong>.
               You can close this page.
             </p>
@@ -116,12 +116,12 @@ export default function ClientAuthPage({
         )}
 
         {!error && !approved && challenge && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <div className="card p-8 text-center" data-testid="approving-card">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-blue)] mx-auto mb-4"></div>
+            <h1 className="text-xl font-bold text-primary mb-2">
               Authorizing...
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted">
               Signing in as <strong>{session?.user?.name || session?.user?.email}</strong> on <strong>{challenge.deviceName}</strong>
             </p>
           </div>

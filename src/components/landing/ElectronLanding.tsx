@@ -105,7 +105,7 @@ export default function ElectronLanding() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="page-shell" data-testid="electron-landing-page">
       <Header variant="electron" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -115,13 +115,14 @@ export default function ElectronLanding() {
               <h1 className="text-3xl font-bold">
                 Desktop Control Center
               </h1>
-              <p className="text-gray-300 mt-2">
+              <p className="text-muted mt-2">
                 Professional desktop interface for 3D printer management and monitoring.
               </p>
             </div>
             <button 
               onClick={openPrinterConfig}
-              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+              data-testid="configure-printer-btn"
+              className="btn-primary flex items-center gap-2"
               title="Configure Printer (Ctrl+P)"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,15 +134,15 @@ export default function ElectronLanding() {
           </div>
           
           <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-gray-800 p-6 rounded-lg">
+            <div className="card p-6">
               <h3 className="text-lg font-semibold mb-2">Print Queue</h3>
-              <p className="text-sm text-gray-300">Manage print jobs</p>
+              <p className="text-sm text-muted">Manage print jobs</p>
             </div>
 
-            <div className="bg-gray-800 p-6 rounded-lg">
+            <div className="card p-6">
               <h3 className="text-lg font-semibold mb-2">Printer Status</h3>
               {isLoading ? (
-                <p className="text-sm text-gray-300">Loading...</p>
+                <p className="text-sm text-muted">Loading...</p>
               ) : (
                 <>
                   <pre className="display-field text-xs whitespace-pre-wrap overflow-auto max-h-32 mb-3">
@@ -150,7 +151,8 @@ export default function ElectronLanding() {
                   <button 
                     onClick={getPrinterStatus}
                     disabled={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-3 py-1 rounded text-sm"
+                    data-testid="refresh-status-btn"
+                    className="btn-primary text-sm px-3 py-1"
                   >
                     Refresh Status
                   </button>
@@ -158,7 +160,7 @@ export default function ElectronLanding() {
               )}
             </div>
 
-            <div className="bg-gray-800 p-6 rounded-lg">
+            <div className="card p-6">
               <h3 className="text-lg font-semibold mb-2">System Info</h3>
               <pre className="display-field text-xs whitespace-pre-wrap">
                 {systemInfo || 'Loading system info...'}

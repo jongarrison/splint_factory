@@ -21,9 +21,9 @@ export default function processingLogViewer({ log, title = 'Processing Log' }: p
 
   if (!log) {
     return (
-      <div className="bg-gray-100 border border-gray-300 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">{title}</h3>
-        <p className="text-sm text-gray-500">No processing log available</p>
+      <div className="bg-[var(--surface-secondary)] border border-[var(--border)] rounded-lg p-4">
+        <h3 className="text-sm font-medium text-secondary mb-2">{title}</h3>
+        <p className="text-sm text-muted">No processing log available</p>
       </div>
     );
   }
@@ -34,22 +34,22 @@ export default function processingLogViewer({ log, title = 'Processing Log' }: p
 
   const getLineStyle = (line: string) => {
     if (line.includes('[error]') || line.toLowerCase().includes('error:') || line.includes('failed')) {
-      return 'text-red-700 bg-red-50';
+      return 'text-[var(--status-error-text)] bg-[var(--status-error-text)]/10';
     }
     if (line.includes('[warn]') || line.toLowerCase().includes('warning:')) {
-      return 'text-yellow-700 bg-yellow-50';
+      return 'text-[var(--status-warning-text)] bg-[var(--status-warning-text)]/10';
     }
     if (line.includes('[info]')) {
-      return 'text-blue-700';
+      return 'text-[var(--accent-blue)]';
     }
-    return 'text-gray-800';
+    return 'text-primary';
   };
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
-      <div className="bg-gray-50 border-b border-gray-300 px-4 py-2 flex justify-between items-center">
-        <h3 className="text-sm font-medium text-gray-700">{title}</h3>
-        <span className="text-xs text-gray-500">{lines.length} lines</span>
+    <div className="bg-[var(--surface)] border border-[var(--border)] rounded-lg overflow-hidden">
+      <div className="bg-[var(--surface-secondary)] border-b border-[var(--border)] px-4 py-2 flex justify-between items-center">
+        <h3 className="text-sm font-medium text-secondary">{title}</h3>
+        <span className="text-xs text-muted">{lines.length} lines</span>
       </div>
       
       <div className="relative">
@@ -57,8 +57,8 @@ export default function processingLogViewer({ log, title = 'Processing Log' }: p
           <table className="w-full text-xs font-mono">
             <tbody>
               {displayLines.map((line, index) => (
-                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="text-right text-gray-400 select-none px-2 py-1 border-r border-gray-200 bg-gray-50" style={{ minWidth: '50px' }}>
+                <tr key={index} className="border-b border-[var(--border)]/50 hover:bg-[var(--surface-secondary)]">
+                  <td className="text-right text-muted select-none px-2 py-1 border-r border-[var(--border)] bg-[var(--surface-secondary)]" style={{ minWidth: '50px' }}>
                     {index + 1}
                   </td>
                   <td className={`px-3 py-1 whitespace-pre-wrap ${getLineStyle(line)}`}>
@@ -71,24 +71,23 @@ export default function processingLogViewer({ log, title = 'Processing Log' }: p
         </div>
         
         {hasMore && (
-          <div className="border-t border-gray-200 bg-gray-50 px-4 py-2 flex justify-center">
+          <div className="border-t border-[var(--border)] bg-[var(--surface-secondary)] px-4 py-2 flex justify-center">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
+              className="text-sm text-link hover:text-[var(--accent-blue-hover)] font-medium">
               {isExpanded 
-                ? `Show Less ▲` 
-                : `Show All ${lines.length - 10} More Lines ▼`
+                ? `Show Less`
+                : `Show All ${lines.length - 10} More Lines`
               }
             </button>
           </div>
         )}
       </div>
       
-      <div className="bg-gray-50 border-t border-gray-200 px-4 py-2 flex justify-between items-center text-xs text-gray-600">
+      <div className="bg-[var(--surface-secondary)] border-t border-[var(--border)] px-4 py-2 flex justify-between items-center text-xs text-muted">
         <span>
           {log.includes('[Log truncated]') && (
-            <span className="text-yellow-600 font-medium">⚠️ Log truncated (exceeded 100KB limit)</span>
+            <span className="text-[var(--status-warning-text)] font-medium">[!] Log truncated (exceeded 100KB limit)</span>
           )}
         </span>
         <button
@@ -101,7 +100,7 @@ export default function processingLogViewer({ log, title = 'Processing Log' }: p
             a.click();
             URL.revokeObjectURL(url);
           }}
-          className="text-blue-600 hover:text-blue-700 font-medium"
+          className="text-link hover:text-[var(--accent-blue-hover)] font-medium"
         >
           Download Log
         </button>

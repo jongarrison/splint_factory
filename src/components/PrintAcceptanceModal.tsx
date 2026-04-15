@@ -35,43 +35,33 @@ export default function PrintAcceptanceModal({
     }
   };
 
-  const options: { value: AcceptanceAction; label: string; description: string; color: string; selectedColor: string; ring: string }[] = [
-    {
-      value: 'ACCEPTED',
-      label: 'Accept',
-      description: 'Print quality is good',
-      color: 'border-gray-200 hover:border-green-300 hover:bg-green-50',
-      selectedColor: 'border-green-500 bg-green-50 ring-2 ring-green-200',
-      ring: 'bg-green-600 hover:bg-green-700',
+    { value: 'ACCEPTED', label: 'Accept', description: 'Print quality is good',
+      color: 'border-[var(--border)] hover:border-[var(--status-success-text)] hover:bg-[var(--status-success-bg)]',
+      selectedColor: 'border-[var(--status-success-text)] bg-[var(--status-success-bg)]',
+      ring: 'btn-success',
     },
-    {
-      value: 'REJECT_DESIGN',
-      label: 'Reject Design',
-      description: 'Design is incorrect or unacceptable',
-      color: 'border-gray-200 hover:border-orange-300 hover:bg-orange-50',
-      selectedColor: 'border-orange-500 bg-orange-50 ring-2 ring-orange-200',
+    { value: 'REJECT_DESIGN', label: 'Reject Design', description: 'Design is incorrect or unacceptable',
+      color: 'border-[var(--border)] hover:border-orange-400 hover:bg-orange-900/30',
+      selectedColor: 'border-orange-400 bg-orange-900/30',
       ring: 'bg-orange-600 hover:bg-orange-700',
     },
-    {
-      value: 'REJECT_PRINT',
-      label: 'Reject Print',
-      description: 'Design OK, print quality is bad',
-      color: 'border-gray-200 hover:border-red-300 hover:bg-red-50',
-      selectedColor: 'border-red-500 bg-red-50 ring-2 ring-red-200',
-      ring: 'bg-red-600 hover:bg-red-700',
+    { value: 'REJECT_PRINT', label: 'Reject Print', description: 'Design OK, print quality is bad',
+      color: 'border-[var(--border)] hover:border-[var(--status-error-text)] hover:bg-[var(--status-error-bg)]',
+      selectedColor: 'border-[var(--status-error-text)] bg-[var(--status-error-bg)]',
+      ring: 'btn-danger',
     },
   ];
 
   const selectedOption = options.find(o => o.value === selected);
 
   return (
-    <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="card shadow-xl max-w-md w-full p-6 relative">
         {/* Close button */}
         <button
           onClick={onClose}
           disabled={submitting}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+          className="absolute top-4 right-4 text-muted hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -80,8 +70,8 @@ export default function PrintAcceptanceModal({
 
         {/* Title */}
         <div className="mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Print Review</h2>
-          <p className="text-sm text-gray-600 mt-1">{geometryName}</p>
+          <h2 className="text-xl font-bold text-primary">Print Review</h2>
+          <p className="text-sm text-muted mt-1">{geometryName}</p>
         </div>
 
         {/* Choice buttons */}
@@ -95,15 +85,15 @@ export default function PrintAcceptanceModal({
                 selected === opt.value ? opt.selectedColor : opt.color
               } disabled:opacity-50`}
             >
-              <div className="font-medium text-gray-900">{opt.label}</div>
-              <div className="text-xs text-gray-500">{opt.description}</div>
+              <div className="font-medium text-primary">{opt.label}</div>
+              <div className="text-xs text-muted">{opt.description}</div>
             </button>
           ))}
         </div>
 
         {/* Note input */}
         <div className="mb-4">
-          <label htmlFor="printNote" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="printNote" className="block text-sm font-medium text-secondary mb-1">
             Note (optional)
           </label>
           <textarea
@@ -112,7 +102,7 @@ export default function PrintAcceptanceModal({
             defaultValue=""
             placeholder="Any details about this decision..."
             rows={2}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="input-field text-sm"
             disabled={submitting}
           />
         </div>
@@ -122,7 +112,7 @@ export default function PrintAcceptanceModal({
           <button
             onClick={onClose}
             disabled={submitting}
-            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 btn-neutral font-semibold py-3 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
@@ -130,8 +120,8 @@ export default function PrintAcceptanceModal({
             onClick={handleSubmit}
             disabled={submitting || !selected}
             className={`flex-1 ${
-              selectedOption ? selectedOption.ring : 'bg-gray-400'
-            } text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+              selectedOption ? selectedOption.ring : 'btn-neutral opacity-50'
+            } text-white font-semibold py-3 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
           >
             {submitting ? (
               <>

@@ -182,14 +182,14 @@ export default function DeviceAuthOverlay({
     // Show a compact "Switch User" bar at the bottom when unlocked
     return (
       <div className="fixed bottom-0 left-0 right-0 z-40">
-        <div className="bg-gray-900/90 backdrop-blur border-t border-gray-700 px-6 py-3">
+        <div className="bg-[var(--surface)]/90 backdrop-blur border-t border-[var(--border)] px-6 py-3">
           <div className="max-w-lg mx-auto flex items-center justify-center">
             <button
               onClick={() => {
                 setLocked(true);
                 onLockStateChange(true);
               }}
-              className="flex items-center gap-2 text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              className="flex items-center gap-2 btn-neutral px-4 py-2 text-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -211,7 +211,7 @@ export default function DeviceAuthOverlay({
         className="fixed inset-0 bg-blue-900/30 pointer-events-auto flex items-center justify-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="text-center bg-gray-900/80 backdrop-blur rounded-xl px-8 py-5 shadow-lg">
+        <div className="text-center bg-black/80 backdrop-blur rounded-xl px-8 py-5 shadow-lg">
           <svg className="w-10 h-10 mx-auto mb-2 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
@@ -221,7 +221,7 @@ export default function DeviceAuthOverlay({
       </div>
 
       {/* QR code bar at bottom */}
-      <div className="relative pointer-events-auto bg-gray-900/95 backdrop-blur border-t border-gray-700 px-6 py-4">
+      <div className="relative pointer-events-auto bg-[var(--surface)]/95 backdrop-blur border-t border-[var(--border)] px-6 py-4">
         <div className="max-w-lg mx-auto flex items-center gap-6">
           {/* QR Code */}
           <div className="flex-shrink-0">
@@ -230,7 +230,7 @@ export default function DeviceAuthOverlay({
                 <QRCodeSVG value={qrUrl} size={120} level="M" />
               </div>
             ) : (
-              <div className="w-[152px] h-[152px] bg-gray-700 rounded-lg animate-pulse" />
+              <div className="w-[152px] h-[152px] bg-[var(--surface-secondary)] rounded-lg animate-pulse" />
             )}
           </div>
 
@@ -239,14 +239,14 @@ export default function DeviceAuthOverlay({
             {exchanging ? (
               <div className="text-white">
                 <div className="font-semibold text-lg">Signing in...</div>
-                <div className="text-gray-300 text-sm mt-1">
+                <div className="text-white/80 text-sm mt-1">
                   Welcome, {approvedInfo?.userName || approvedUserName || 'operator'}
                 </div>
               </div>
             ) : (
               <div className="text-white">
                 <div className="font-semibold text-lg">Scan to unlock</div>
-                <div className="text-gray-300 text-sm mt-1">
+                <div className="text-white/80 text-sm mt-1">
                   Use your phone to scan this code and authorize yourself as the device operator.
                 </div>
 
@@ -254,7 +254,7 @@ export default function DeviceAuthOverlay({
                 <div className="flex items-center gap-4 mt-3">
                   <button
                     onClick={onRefreshPoll}
-                    className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1 transition-colors"
+                    className="text-link hover:text-[var(--accent-blue-hover)] text-sm flex items-center gap-1 transition-colors"
                     title="Check for authorization"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,7 +265,7 @@ export default function DeviceAuthOverlay({
 
                   <button
                     onClick={() => setShowManualLogin(!showManualLogin)}
-                    className="text-gray-400 hover:text-gray-300 text-xs transition-colors"
+                    className="text-muted hover:text-[var(--text-primary)] text-xs transition-colors"
                   >
                     {showManualLogin ? 'Hide manual login' : 'Manual login'}
                   </button>
@@ -324,9 +324,9 @@ function ManualLoginForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-lg mx-auto mt-4 pt-4 border-t border-gray-700">
+    <form onSubmit={handleSubmit} className="max-w-lg mx-auto mt-4 pt-4 border-t border-[var(--border)]">
       {error && (
-        <div className="text-red-400 text-sm mb-2">{error}</div>
+        <div className="text-[var(--status-error-text)] text-sm mb-2">{error}</div>
       )}
       <div className="flex gap-2">
         <input
@@ -334,7 +334,7 @@ function ManualLoginForm({ onSuccess }: { onSuccess: () => void }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
-          className="flex-1 bg-gray-800 text-white border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input-field flex-1 text-sm"
           required
         />
         <input
@@ -342,13 +342,13 @@ function ManualLoginForm({ onSuccess }: { onSuccess: () => void }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="flex-1 bg-gray-800 text-white border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input-field flex-1 text-sm"
           required
         />
         <button
           type="submit"
           disabled={submitting}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded text-sm font-medium"
+          className="btn-primary px-4 py-2 text-sm font-medium"
         >
           {submitting ? '...' : 'Login'}
         </button>

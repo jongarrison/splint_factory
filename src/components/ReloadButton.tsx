@@ -54,7 +54,7 @@ export default function SettingsButton() {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="fixed bottom-4 right-20 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors"
+        className="fixed bottom-4 right-20 z-50 btn-primary p-3 rounded-full shadow-lg"
         title="Settings"
         aria-label="Settings"
       >
@@ -87,14 +87,14 @@ export default function SettingsButton() {
           onClick={() => setShowModal(false)}
         >
           <div 
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 m-4"
+            className="bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-xl w-full max-w-md p-6 m-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">App Settings</h2>
+              <h2 className="text-xl font-bold text-primary">App Settings</h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                className="text-muted hover:text-[var(--text-primary)]"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -109,14 +109,14 @@ export default function SettingsButton() {
                   handleReload();
                   setShowModal(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-secondary)] hover:bg-[var(--border)] rounded-lg transition-colors text-left"
               >
-                <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-link" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 <div>
-                  <div className="font-medium text-gray-100">Reload Page</div>
-                  <div className="text-sm text-gray-400">Refresh the application</div>
+                  <div className="font-medium text-primary">Reload Page</div>
+                  <div className="text-sm text-muted">Refresh the application</div>
                 </div>
               </button>
 
@@ -126,9 +126,9 @@ export default function SettingsButton() {
                   handleToggleFullscreen();
                   setShowModal(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-secondary)] hover:bg-[var(--border)] rounded-lg transition-colors text-left"
               >
-                <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-link" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   {isFullscreen ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
                   ) : (
@@ -136,10 +136,10 @@ export default function SettingsButton() {
                   )}
                 </svg>
                 <div>
-                  <div className="font-medium text-gray-100">
+                  <div className="font-medium text-primary">
                     {isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
                   </div>
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-muted">
                     {isFullscreen ? 'Exit kiosk mode' : 'Enter kiosk mode'}
                   </div>
                 </div>
@@ -150,16 +150,16 @@ export default function SettingsButton() {
                 onClick={() => {
                   handleToggleDevTools();
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-secondary)] hover:bg-[var(--border)] rounded-lg transition-colors text-left"
               >
-                <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-[var(--status-ok-text,#6ee7b7)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
                 <div>
-                  <div className="font-medium text-gray-100">
+                  <div className="font-medium text-primary">
                     {devToolsOpen ? 'Close Dev Tools' : 'Open Dev Tools'}
                   </div>
-                  <div className="text-sm text-gray-400">Inspect and debug</div>
+                  <div className="text-sm text-muted">Inspect and debug</div>
                 </div>
               </button>
 
@@ -171,19 +171,19 @@ export default function SettingsButton() {
                   }
                   setShowModal(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-secondary)] hover:bg-[var(--border)] rounded-lg transition-colors text-left"
               >
-                <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-link" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
                 </svg>
                 <div>
-                  <div className="font-medium text-gray-100">Wi-Fi Settings</div>
-                  <div className="text-sm text-gray-400">Manage network connection</div>
+                  <div className="font-medium text-primary">Wi-Fi Settings</div>
+                  <div className="text-sm text-muted">Manage network connection</div>
                 </div>
               </button>
 
               {/* Divider */}
-              <div className="border-t border-gray-600 my-2"></div>
+              <div className="border-t border-[var(--border)] my-2"></div>
 
               {/* Sign Out */}
               <button
@@ -199,14 +199,14 @@ export default function SettingsButton() {
                   }
                   setShowModal(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-red-700 hover:bg-red-600 rounded-lg transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 btn-danger rounded-lg text-left"
               >
-                <svg className="h-5 w-5 text-red-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 <div>
-                  <div className="font-medium text-gray-100">Sign Out</div>
-                  <div className="text-sm text-gray-300">Log out of your account</div>
+                  <div className="font-medium">Sign Out</div>
+                  <div className="text-sm opacity-70">Log out of your account</div>
                 </div>
               </button>
 
@@ -215,21 +215,21 @@ export default function SettingsButton() {
                 onClick={() => {
                   handleCloseWindow();
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-secondary)] hover:bg-[var(--border)] rounded-lg transition-colors text-left"
               >
-                <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-[var(--status-error-text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 <div>
-                  <div className="font-medium text-gray-100">Close App</div>
-                  <div className="text-sm text-gray-400">Quit the application</div>
+                  <div className="font-medium text-primary">Close App</div>
+                  <div className="text-sm text-muted">Quit the application</div>
                 </div>
               </button>
             </div>
 
             <button
               onClick={() => setShowModal(false)}
-              className="mt-6 w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-100 rounded-lg transition-colors font-medium"
+              className="mt-6 w-full px-4 py-2 btn-neutral text-white rounded-lg font-medium"
             >
               Close
             </button>
