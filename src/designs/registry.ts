@@ -8,6 +8,7 @@ import infinityExtendContractureDef from './infinity-extend-contracture/definiti
 import infinityFlexDef from './infinity-flex/definition.json';
 import infinitySplint251004Def from './infinity-splint-251004/definition.json';
 import staxSplintDef from './stax-splint/definition.json';
+import buddyRingsDuoDef from './buddy-rings-duo/definition.json';
 
 const publicDesignsDir = join(process.cwd(), 'public', 'designs');
 
@@ -19,6 +20,7 @@ const designEntries: Array<{ slug: string; definition: DesignDefinition }> = [
   { slug: 'infinity-flex', definition: infinityFlexDef as DesignDefinition },
   { slug: 'infinity-splint-251004', definition: infinitySplint251004Def as DesignDefinition },
   { slug: 'stax-splint', definition: staxSplintDef as DesignDefinition },
+  { slug: 'buddy-rings-duo', definition: buddyRingsDuoDef as DesignDefinition },
 ];
 
 // Build the registry map (by ID) at module load time

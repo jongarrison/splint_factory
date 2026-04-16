@@ -1,0 +1,38 @@
+{
+  "$schema": "../design-definition.schema.json",
+  "id": "dgdc5pnf5eizil6lxm419jil",
+  "name": "Buddy Ring Duo",
+  "algorithmName": "BuddyRingsDuo",
+  "shortDescription": "Buddy ring duo splint for two adjacent fingers",
+  "isActive": true,
+  "inputParameters": [
+    {
+      "InputName": "c_left_mm",
+      "InputDescription": "Left Finger Circumference (mm)",
+      "InputType": "Float",
+      "NumberMin": 30,
+      "NumberMax": 120
+    },
+    {
+      "InputName": "c_right_mm",
+      "InputDescription": "Right Finger Circumference (mm)",
+      "InputType": "Float",
+      "NumberMin": 30,
+      "NumberMax": 120
+    },
+    {
+      "InputName": "full_perimeter_mm",
+      "InputDescription": "Circumference of both fingers (mm). Fingers should be in natural alignment.",
+      "InputType": "Float",
+      "NumberMin": 70,
+      "NumberMax": 250
+    },
+    {
+      "InputName": "right_forward_offset_mm",
+      "InputDescription": "Forward offset of right finger (mm). How far advanced should right ring be? Negative is ok.",
+      "InputType": "Float",
+      "NumberMin": -20,
+      "NumberMax": 20
+    }
+  ]
+}
