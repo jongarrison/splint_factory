@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getDesignById } from '@/designs/registry';
 
 // GET /api/print-queue/[id] - Get specific print queue entry
 export async function GET(
@@ -51,11 +52,27 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
+    // Enrich design with inputParameterSchema from code registry
+    const registryDesign = getDesignById(printQueueEntry.designJob.designId);
+
     // Return without binary data unless specifically requested (files live on geometryProcessingQueue)
     const includeFiles = request.nextUrl.searchParams.get('includeFiles') === 'true';
     const gpq: any = (printQueueEntry as any).designJob;
-    const response = {
+
+    // Inject inputParameterSchema into the design object
+    const enrichedEntry = {
       ...printQueueEntry,
+      designJob: {
+        ...printQueueEntry.designJob,
+        design: {
+          ...printQueueEntry.designJob.design,
+          inputParameterSchema: registryDesign ? JSON.stringify(registryDesign.inputParameters) : '[]',
+        },
+      },
+    };
+
+    const response = {
+      ...enrichedEntry,
       meshFileName: gpq?.meshFileName ?? null,
       printFileName: gpq?.printFileName ?? null,
       meshFileContents: includeFiles && gpq?.meshFileContents

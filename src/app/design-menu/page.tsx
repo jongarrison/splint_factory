@@ -12,7 +12,8 @@ interface Design {
   id: string;
   name: string;
   shortDescription: string | null;
-  previewImageUpdatedAt: string | null;
+  slug: string;
+  hasPreviewImage: boolean;
 }
 
 export default function GeoJobMenuPage() {
@@ -46,11 +47,6 @@ export default function GeoJobMenuPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getImageUrl = (geometryId: string, updatedAt: string | null) => {
-    const baseUrl = `/api/design-images/${geometryId}/preview`;
-    return updatedAt ? `${baseUrl}?v=${new Date(updatedAt).getTime()}` : baseUrl;
   };
 
   if (status === 'loading' || loading) {
@@ -108,9 +104,9 @@ export default function GeoJobMenuPage() {
                 data-design-id={design.id}
               >
                 <div className="aspect-[4/3] relative bg-surface-secondary">
-                  {design.previewImageUpdatedAt ? (
+                  {design.hasPreviewImage ? (
                     <Image
-                      src={getImageUrl(design.id, design.previewImageUpdatedAt)}
+                      src={`/designs/${design.slug}/preview.png`}
                       alt={design.name}
                       fill
                       className="object-cover"

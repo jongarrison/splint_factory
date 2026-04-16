@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateObjectId } from '@/lib/objectId';
+import { getDesignById } from '@/designs/registry';
 
 // GET /api/design-jobs - List geometry processing queue entries for user's organization
 export async function GET() {
@@ -132,7 +133,6 @@ export async function POST(request: NextRequest) {
       where: { id: designId },
       select: { 
         id: true,
-        inputParameterSchema: true 
       }
     });
 
@@ -140,9 +140,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Geometry not found' }, { status: 404 });
     }
 
+    // Get schema from code registry for validation
+    const registryDesign = getDesignById(designId);
+    if (!registryDesign) {
+      return NextResponse.json({ error: 'Design definition not found in registry' }, { status: 404 });
+    }
+
     // Validate inputParameters against schema
     try {
-      const schema = JSON.parse(design.inputParameterSchema);
+      const schema = registryDesign.inputParameters;
       const inputData = JSON.parse(inputParameters);
       
       // Basic validation that required parameters are present

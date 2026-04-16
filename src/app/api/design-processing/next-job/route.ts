@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { validateApiKey, checkApiPermission } from '@/lib/api-auth';
 import { updateProcessorPing } from '@/lib/geo-processor-health';
+import { getDesignById } from '@/designs/registry';
 
 // GET /api/design-processing/next-job - Get next geometry processing record for external processing software
 export async function GET(request: NextRequest) {
@@ -47,7 +48,6 @@ export async function GET(request: NextRequest) {
           select: {
             name: true,
             algorithmName: true,
-            inputParameterSchema: true
           }
         },
         creator: {
@@ -86,6 +86,9 @@ export async function GET(request: NextRequest) {
     // This prevents race conditions where the job gets marked as started but the 
     // processor never receives it due to network issues
     
+    // Get inputParameterSchema from code registry
+    const registryDesign = getDesignById(nextJob.designId);
+
     // Prepare response - return the job without marking as started
     const response = NextResponse.json({
       id: nextJob.id,
@@ -93,7 +96,7 @@ export async function GET(request: NextRequest) {
       designId: nextJob.designId,
       name: nextJob.design.name,
       algorithmName: nextJob.design.algorithmName,
-      inputParameterSchema: nextJob.design.inputParameterSchema,
+      inputParameterSchema: registryDesign ? JSON.stringify(registryDesign.inputParameters) : '[]',
       inputParameters: nextJob.inputParameters,
       jobNote: nextJob.jobNote,
       jobLabel: nextJob.jobLabel,

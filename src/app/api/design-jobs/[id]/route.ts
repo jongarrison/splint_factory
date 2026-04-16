@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getDesignById } from '@/designs/registry';
 
 // GET /api/design-jobs/[id] - Get specific geometry processing job
 export async function GET(
@@ -36,7 +37,6 @@ export async function GET(
           select: {
             name: true,
             algorithmName: true,
-            inputParameterSchema: true
           }
         },
         creator: {
@@ -63,7 +63,14 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    return NextResponse.json(geometryJob);
+    // Enrich with inputParameterSchema from code registry
+    const registryDesign = getDesignById(geometryJob.designId);
+    const enrichedDesign = {
+      ...geometryJob.design,
+      inputParameterSchema: registryDesign ? JSON.stringify(registryDesign.inputParameters) : '[]',
+    };
+
+    return NextResponse.json({ ...geometryJob, design: enrichedDesign });
   } catch (error) {
     console.error('Error fetching geometry job:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

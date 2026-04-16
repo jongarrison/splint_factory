@@ -1,0 +1,45 @@
+{
+  "$schema": "../design-definition.schema.json",
+  "id": "b2858cf0-5d0a-4ecc-9fa0-400e67c6789f",
+  "name": "Infinity Splint 251004",
+  "algorithmName": "infinity_splint_generator_251004",
+  "shortDescription": "Used to prevent hyperextension of the PIP joint.",
+  "isActive": false,
+  "inputParameters": [
+    {
+      "InputName": "rootCircumferenceMM",
+      "InputDescription": "Circumference (mm) at the midpoint of the proximal phalanx.",
+      "InputType": "Float",
+      "NumberMin": 25,
+      "NumberMax": 120
+    },
+    {
+      "InputName": "midCircumferenceMM",
+      "InputDescription": "Circumference (mm) at the proximal interphalangeal (PIP) joint.",
+      "InputType": "Float",
+      "NumberMin": 25,
+      "NumberMax": 120
+    },
+    {
+      "InputName": "tipCircumferenceMM",
+      "InputDescription": "Circumference (mm) at the midpoint of the middle phalanx.",
+      "InputType": "Float",
+      "NumberMin": 25,
+      "NumberMax": 120
+    },
+    {
+      "InputName": "interPhalangeDistanceMM",
+      "InputDescription": "Interphalangeal length (mm) - Midpoint of the proximal phalanx to midpoint of the middle phalanx.",
+      "InputType": "Float",
+      "NumberMin": 25,
+      "NumberMax": 70
+    },
+    {
+      "InputName": "flexionDegrees",
+      "InputDescription": "Angle (degrees) of desired flexion.",
+      "InputType": "Float",
+      "NumberMin": -45,
+      "NumberMax": 45
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "../design-definition.schema.json",
+  "id": "cmn8hrxu00003k104zwhusykv",
+  "name": "Cylinder",
+  "algorithmName": "cylinder",
+  "shortDescription": "A simple system test",
+  "isActive": true,
+  "inputParameters": [
+    {
+      "InputName": "radius",
+      "InputDescription": "Radius of Cylinder",
+      "InputType": "Float",
+      "NumberMin": 4,
+      "NumberMax": 100
+    },
+    {
+      "InputName": "height",
+      "InputDescription": "Height of Cylinder",
+      "InputType": "Float",
+      "NumberMin": 1,
+      "NumberMax": 50
+    }
+  ]
+}

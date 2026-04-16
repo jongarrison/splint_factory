@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Design Definition",
+  "description": "Defines a Design that collects structured input for a Grasshopper processing algorithm.",
+  "type": "object",
+  "required": ["id", "name", "algorithmName", "isActive", "inputParameters"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable unique ID. Use existing prod ID for migrated designs, generate new cuid for new ones."
+    },
+    "name": {
+      "type": "string",
+      "description": "User-facing name of this design (must be unique across all designs)."
+    },
+    "algorithmName": {
+      "type": "string",
+      "description": "Maps to {algorithmName}.gh in splint_geo_processor/generators/."
+    },
+    "shortDescription": {
+      "type": ["string", "null"],
+      "description": "Brief description shown in design selection UI."
+    },
+    "isActive": {
+      "type": "boolean",
+      "description": "Whether this design is available for new jobs."
+    },
+    "inputParameters": {
+      "type": "array",
+      "description": "Input fields collected from the user to parameterize the algorithm.",
+      "items": {
+        "type": "object",
+        "required": ["InputName", "InputDescription", "InputType"],
+        "properties": {
+          "InputName": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_]+$",
+            "maxLength": 50,
+            "description": "Parameter key sent to the geo processor. Alphanumeric + underscore only."
+          },
+          "InputDescription": {
+            "type": "string",
+            "maxLength": 250,
+            "description": "Label shown to the user in the input form."
+          },
+          "InputType": {
+            "type": "string",
+            "enum": ["Float", "Integer", "Text"],
+            "description": "Data type for this parameter."
+          },
+          "NumberMin": {
+            "type": "number",
+            "description": "Minimum value (Float/Integer only)."
+          },
+          "NumberMax": {
+            "type": "number",
+            "description": "Maximum value (Float/Integer only)."
+          },
+          "TextMinLen": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 250,
+            "description": "Minimum text length (Text only)."
+          },
+          "TextMaxLen": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 250,
+            "description": "Maximum text length (Text only)."
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "InputType": { "const": "Text" } } },
+            "then": { "required": ["TextMinLen", "TextMaxLen"] }
+          }
+        ]
+      }
+    }
+  }
+}

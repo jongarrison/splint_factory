@@ -259,17 +259,6 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 </Link>
                               )}
                               
-                              {/* Design Definitions - SYSTEM_ADMIN only */}
-                              {session?.user?.role === 'SYSTEM_ADMIN' && (
-                                <Link
-                                  href="/admin/design-definitions"
-                                  onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                                >
-                                  Design Definitions
-                                </Link>
-                              )}
-                              
                               {/* API Keys - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (
                                 <Link

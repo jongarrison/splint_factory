@@ -11,8 +11,9 @@ interface Design {
   id: string;
   name: string;
   algorithmName: string;
-  inputParameterSchema: string;
-  measurementImageUpdatedAt?: string | null;
+  slug: string;
+  inputParameters: InputParameter[];
+  hasMeasurementImage: boolean;
 }
 
 interface InputParameter {
@@ -83,8 +84,7 @@ function CreateGeometryJobPage() {
       
       if (design) {
         setSelectedDesign(design);
-        const schema: InputParameter[] = JSON.parse(design.inputParameterSchema);
-        setParameterSchema(schema);
+        setParameterSchema(design.inputParameters);
         
         // Parse and set parameter values from template
         const templateParams = JSON.parse(templateJob.inputParameters);
@@ -102,7 +102,7 @@ function CreateGeometryJobPage() {
 
   const fetchGeometries = async () => {
     try {
-      const response = await fetch('/api/admin/design-definitions');
+      const response = await fetch('/api/designs?includeSchema=true');
       if (!response.ok) {
         throw new Error('Failed to fetch designs');
       }
@@ -120,21 +120,15 @@ function CreateGeometryJobPage() {
     setSelectedDesign(design || null);
     
     if (design) {
-      try {
-        const schema: InputParameter[] = JSON.parse(design.inputParameterSchema);
-        setParameterSchema(schema);
-        
-        // Initialize parameter values as empty (no defaults)
-        const initialValues: Record<string, any> = {};
-        schema.forEach(param => {
-          initialValues[param.InputName] = '';
+      const schema = design.inputParameters;
+      setParameterSchema(schema);
+      
+      // Initialize parameter values as empty (no defaults)
+      const initialValues: Record<string, any> = {};
+      schema.forEach(param => {
+        initialValues[param.InputName] = '';
         });
         setParameterValues(initialValues);
-      } catch (parseError) {
-        setError('Failed to parse design parameter schema');
-        setParameterSchema([]);
-        setParameterValues({});
-      }
     } else {
       setParameterSchema([]);
       setParameterValues({});
@@ -301,9 +295,9 @@ function CreateGeometryJobPage() {
               <h2 className="text-lg font-medium text-primary mb-4">Measurement Guide</h2>
               <div className="flex justify-center">
                 <div className="relative w-full max-w-3xl">
-                  {selectedDesign.measurementImageUpdatedAt ? (
+                  {selectedDesign.hasMeasurementImage ? (
                     <Image
-                      src={`/api/design-images/${selectedDesign.id}/measurement`}
+                      src={`/designs/${selectedDesign.slug}/measurement.png`}
                       alt={`${selectedDesign.name} measurement guide`}
                       width={800}
                       height={600}

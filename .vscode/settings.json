@@ -1,0 +1,8 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["src/designs/*/definition.json"],
+      "url": "./src/designs/design-definition.schema.json"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateApiKey, checkApiPermission } from '@/lib/api-auth';
+import { getDesignById } from '@/designs/registry';
 
 // GET /api/design-processing/job-by-id/[id]
 // Fetch a geometry processing job by either its UUID (cuid) or objectID.
@@ -25,7 +26,6 @@ export async function GET(
         select: {
           name: true,
           algorithmName: true,
-          inputParameterSchema: true,
         }
       },
       creator: {
@@ -54,13 +54,16 @@ export async function GET(
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
+    // Get inputParameterSchema from code registry
+    const registryDesign = getDesignById(job.designId);
+
     return NextResponse.json({
       id: job.id,
       objectId: job.objectId,
       designId: job.designId,
       name: job.design.name,
       algorithmName: job.design.algorithmName,
-      inputParameterSchema: job.design.inputParameterSchema,
+      inputParameterSchema: registryDesign ? JSON.stringify(registryDesign.inputParameters) : '[]',
       inputParameters: job.inputParameters,
       jobNote: job.jobNote,
       jobLabel: job.jobLabel,
