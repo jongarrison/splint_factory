@@ -14,6 +14,7 @@ import { useSmartPolling } from '@/hooks/useSmartPolling';
 
 interface PrintQueueEntry {
   id: string;
+  createdAt: string;
   meshFileName?: string;
   printFileName?: string;
   printStartedAt?: string;
@@ -798,6 +799,9 @@ export default function PrintQueuePage() {
                               {entry.designJob.jobNote}
                             </div>
                           )}
+                          <div className="text-xs text-muted mt-1">
+                            {formatDate(entry.createdAt)}
+                          </div>
                         </td>
                         <td className="px-2 py-2">
                           <Link href={`/print-queue/${entry.id}`} className="block group">

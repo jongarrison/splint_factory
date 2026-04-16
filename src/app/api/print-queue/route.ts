@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
       select: {
         // Print Queue fields
         id: true,
+        createdAt: true,
         printStartedAt: true,
         printCompletedAt: true,
         isPrintSuccessful: true,
