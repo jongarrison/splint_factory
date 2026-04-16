@@ -3,7 +3,7 @@
  * Based on the specification in agent-instructions/250903_print_queue_agent_instructions.md
  */
 
-export type InputType = 'Float' | 'Integer' | 'Text';
+export type InputType = 'Float' | 'Integer' | 'Text' | 'Boolean';
 
 export interface BaseInputParameter {
   /**
@@ -58,7 +58,11 @@ export interface NumericInputParameter extends BaseInputParameter {
   NumberMax?: number;
 }
 
-export type InputParameter = TextInputParameter | NumericInputParameter;
+export interface BooleanInputParameter extends BaseInputParameter {
+  InputType: 'Boolean';
+}
+
+export type InputParameter = TextInputParameter | NumericInputParameter | BooleanInputParameter;
 
 /**
  * Array of geometry input parameters for a named geometry design

@@ -75,7 +75,7 @@ export default function PrintQueuePage() {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [approvedChallengeId, setApprovedChallengeId] = useState<string | null>(null);
   const [approvedUserName, setApprovedUserName] = useState<string | null>(null);
-  const [screenLockTimeoutMs, setScreenLockTimeoutMs] = useState(60000);
+  const [screenLockTimeoutMs, setScreenLockTimeoutMs] = useState<number | null>(null);
 
   // Fetch org screen lock timeout from server
   const fetchOrgTimeout = useCallback(() => {
@@ -83,9 +83,8 @@ export default function PrintQueuePage() {
     fetch(`/api/organizations/${session.user.organizationId}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data?.screenLockTimeoutMinutes) {
-          setScreenLockTimeoutMs(data.screenLockTimeoutMinutes * 60_000);
-        }
+        const minutes = data?.screenLockTimeoutMinutes ?? 1;
+        setScreenLockTimeoutMs(minutes * 60_000);
       })
       .catch(err => console.error('Failed to fetch org settings:', err));
   }, [session?.user?.organizationId]);
@@ -915,7 +914,7 @@ export default function PrintQueuePage() {
       )}
 
       {/* Device Auth Overlay (Electron only) */}
-      {isElectronClient && deviceId && (
+      {isElectronClient && deviceId && screenLockTimeoutMs !== null && (
         <DeviceAuthOverlay
           factoryUrl={factoryUrl}
           deviceId={deviceId}

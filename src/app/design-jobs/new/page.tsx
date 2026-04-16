@@ -19,7 +19,7 @@ interface Design {
 interface InputParameter {
   InputName: string;
   InputDescription: string;
-  InputType: 'Float' | 'Integer' | 'Text';
+  InputType: 'Float' | 'Integer' | 'Text' | 'Boolean';
   NumberMin?: number;
   NumberMax?: number;
   TextMinLen?: number;
@@ -126,7 +126,7 @@ function CreateGeometryJobPage() {
       // Initialize parameter values as empty (no defaults)
       const initialValues: Record<string, any> = {};
       schema.forEach(param => {
-        initialValues[param.InputName] = '';
+        initialValues[param.InputName] = param.InputType === 'Boolean' ? false : '';
         });
         setParameterValues(initialValues);
     } else {
@@ -146,6 +146,11 @@ function CreateGeometryJobPage() {
     for (const param of parameterSchema) {
       const value = parameterValues[param.InputName];
       
+      if (param.InputType === 'Boolean') {
+        // Booleans are always valid (false is a valid value)
+        continue;
+      }
+
       if (value === undefined || value === null || value === '') {
         setError(`Parameter "${param.InputName}" is required`);
         return false;
@@ -384,9 +389,11 @@ function CreateGeometryJobPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {parameterSchema.map((param) => (
                     <div key={param.InputName}>
-                      <label htmlFor={param.InputName} className="block text-sm font-medium text-secondary">
-                        {param.InputDescription} *
-                      </label>
+                      {param.InputType !== 'Boolean' && (
+                        <label htmlFor={param.InputName} className="block text-sm font-medium text-secondary">
+                          {param.InputDescription} *
+                        </label>
+                      )}
                       {param.InputType === 'Float' ? (
                         <input
                           type="text"
@@ -419,6 +426,17 @@ function CreateGeometryJobPage() {
                           className="mt-1 input-field"
                           required
                         />
+                      ) : param.InputType === 'Boolean' ? (
+                        <label htmlFor={param.InputName} className="mt-2 inline-flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            id={param.InputName}
+                            checked={!!parameterValues[param.InputName]}
+                            onChange={(e) => handleParameterChange(param.InputName, e.target.checked)}
+                            className="h-5 w-5 rounded border-[var(--border)] accent-[var(--accent-blue)]"
+                          />
+                          <span className="text-sm text-secondary">{param.InputDescription}</span>
+                        </label>
                       ) : (
                         <input
                           type="text"
@@ -431,7 +449,7 @@ function CreateGeometryJobPage() {
                           required
                         />
                       )}
-                      {param.InputType === 'Float' || param.InputType === 'Integer' ? (
+                      {(param.InputType === 'Float' || param.InputType === 'Integer') && (
                         <p className="mt-1 text-xs text-muted">
                           {param.NumberMin !== undefined && param.NumberMax !== undefined
                             ? `Range: ${param.NumberMin} - ${param.NumberMax}`
@@ -441,7 +459,8 @@ function CreateGeometryJobPage() {
                             ? `Maximum: ${param.NumberMax}`
                             : ''}
                         </p>
-                      ) : (
+                      )}
+                      {param.InputType === 'Text' && (
                         <p className="mt-1 text-xs text-muted">
                           {param.TextMinLen !== undefined && param.TextMaxLen !== undefined
                             ? `Length: ${param.TextMinLen} - ${param.TextMaxLen} characters`

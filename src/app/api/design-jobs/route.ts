@@ -169,7 +169,11 @@ export async function POST(request: NextRequest) {
         const value = inputData[param.InputName];
         
         // Type validation
-        if (param.InputType === 'Float') {
+        if (param.InputType === 'Boolean') {
+          if (typeof value !== 'boolean') {
+            throw new Error(`Parameter ${param.InputName} must be true or false`);
+          }
+        } else if (param.InputType === 'Float') {
           if (typeof value !== 'number') {
             throw new Error(`Parameter ${param.InputName} must be a number`);
           }

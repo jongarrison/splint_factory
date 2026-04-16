@@ -4,6 +4,7 @@ import AuthProvider from "@/components/auth/AuthProvider";
 import VirtualKeyboard from "@/components/VirtualKeyboard";
 import SettingsButton from "@/components/ReloadButton";
 import KeyboardToggleButton from "@/components/KeyboardToggleButton";
+import DevModeAlertListener from "@/components/printer/DevModeAlertModal";
 import "./globals.css";
 import "./semantic.css";
 
@@ -37,6 +38,7 @@ export default function RootLayout({
           <KeyboardToggleButton />
           <SettingsButton />
           <VirtualKeyboard />
+          <DevModeAlertListener />
         </AuthProvider>
       </body>
     </html>

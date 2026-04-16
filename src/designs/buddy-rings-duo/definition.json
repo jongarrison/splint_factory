@@ -33,6 +33,16 @@
       "InputType": "Float",
       "NumberMin": -20,
       "NumberMax": 20
+    },
+    {
+      "InputName": "b_left_slit",
+      "InputDescription": "Left Ring Sizing Slit?",
+      "InputType": "Boolean"
+    },
+    {
+      "InputName": "b_right_slit",
+      "InputDescription": "Right Ring Sizing Slit?",
+      "InputType": "Boolean"
     }
   ]
 }

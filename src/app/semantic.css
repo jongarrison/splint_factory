@@ -37,8 +37,8 @@
   --accent-purple-hover: #c4b5fd;   /* lighter purple for hover */
 
   /* Button tokens */
-  --btn-neutral-bg: #4b5563;        /* solid gray for nav/back/close */
-  --btn-neutral-hover-bg: #374151;
+  --btn-neutral-bg: var(--border);          /* sits one step above surface */
+  --btn-neutral-hover-bg: var(--surface-secondary);
   --btn-warning-bg: #d97706;        /* amber for admin caution actions */
   --btn-warning-hover-bg: #b45309;
   --btn-alt-bg: var(--accent-purple); /* purple for copy/clone actions */
@@ -315,7 +315,8 @@
   align-items: center;
   gap: 0.5rem;
   background-color: var(--btn-neutral-bg);
-  color: #ffffff;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-secondary);
   border-radius: 0.375rem;
   font-weight: 500;
   transition: background-color 0.15s;

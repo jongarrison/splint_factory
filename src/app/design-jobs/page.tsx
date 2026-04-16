@@ -150,7 +150,7 @@ export default function GeometryJobsPage() {
                   setSearchError('');
                 }}
                 placeholder="Search by Object ID..."
-                className="form-input-base uppercase shadow-sm"
+                className="input-field uppercase shadow-sm"
                 data-testid="object-id-search-input"
               />
             </div>

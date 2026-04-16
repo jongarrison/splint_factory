@@ -49,7 +49,7 @@
           },
           "InputType": {
             "type": "string",
-            "enum": ["Float", "Integer", "Text"],
+            "enum": ["Float", "Integer", "Text", "Boolean"],
             "description": "Data type for this parameter."
           },
           "NumberMin": {
