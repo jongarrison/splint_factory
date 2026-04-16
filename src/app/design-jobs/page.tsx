@@ -302,7 +302,7 @@ export default function GeometryJobsPage() {
                           title="Create new job with same settings"
                           data-testid="copy-job-link"
                         >
-                          New
+                          Copy
                         </Link>
                       </td>
                     </tr>
