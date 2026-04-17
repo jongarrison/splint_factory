@@ -536,41 +536,25 @@ export default function GeometryJobDetailPage({
           )}
 
           {/* Output Files */}
-          {(job.meshFileName || job.printFileName) && (
+          {job.meshFileName && (
             <div className="card shadow" data-testid="design-job-output-files-card">
               <div className="card-header">
                 <h2 className="text-lg font-medium text-primary">Output Files</h2>
               </div>
               <div className="card-body">
-                <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {job.meshFileName && (
-                    <div>
-                      <dt className="text-sm font-medium text-muted">Mesh File</dt>
-                      <dd className="mt-1 text-sm text-primary flex items-center gap-3">
-                        <span className="font-mono truncate" title={job.meshFileName}>{job.meshFileName}</span>
-                        <a
-                          href={`/api/design-jobs/${job.id}/mesh-file`}
-                          className="btn-primary text-xs px-3 py-1.5"
-                        >
-                          Download
-                        </a>
-                      </dd>
-                    </div>
-                  )}
-                  {job.printFileName && (
-                    <div>
-                      <dt className="text-sm font-medium text-muted">Printer Gcode File</dt>
-                      <dd className="mt-1 text-sm text-primary flex items-center gap-3">
-                        <span className="font-mono truncate" title={job.printFileName}>{job.printFileName}</span>
-                        <a
-                          href={`/api/design-jobs/${job.id}/print-file`}
-                          className="btn-primary text-xs px-3 py-1.5"
-                        >
-                          Download
-                        </a>
-                      </dd>
-                    </div>
-                  )}
+                <dl>
+                  <div>
+                    <dt className="text-sm font-medium text-muted">Mesh File</dt>
+                    <dd className="mt-1 text-sm text-primary flex items-center gap-3">
+                      <span className="font-mono truncate" title={job.meshFileName}>{job.meshFileName}</span>
+                      <a
+                        href={`/api/design-jobs/${job.id}/mesh-file`}
+                        className="btn-primary text-xs px-3 py-1.5"
+                      >
+                        Download
+                      </a>
+                    </dd>
+                  </div>
                 </dl>
               </div>
             </div>
@@ -584,7 +568,30 @@ export default function GeometryJobDetailPage({
             </summary>
             <div className="space-y-6">
 
-          {/* Associated Print Jobs */}
+          {/* Machine Files */}
+          {job.printFileName && (
+            <div className="card shadow">
+              <div className="card-header">
+                <h2 className="text-lg font-medium text-primary">Machine Files</h2>
+              </div>
+              <div className="card-body">
+                <dl>
+                  <div>
+                    <dt className="text-sm font-medium text-muted">Printer Gcode File</dt>
+                    <dd className="mt-1 text-sm text-primary flex items-center gap-3">
+                      <span className="font-mono truncate" title={job.printFileName}>{job.printFileName}</span>
+                      <a
+                        href={`/api/design-jobs/${job.id}/print-file`}
+                        className="btn-primary text-xs px-3 py-1.5"
+                      >
+                        Download
+                      </a>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          )}
           <div className="card shadow" data-testid="design-job-print-jobs-card">
             <div className="card-header flex justify-between items-center">
               <h2 className="text-lg font-medium text-primary">Associated Print Jobs</h2>
