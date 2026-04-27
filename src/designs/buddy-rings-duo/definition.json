@@ -43,6 +43,13 @@
       "InputName": "b_right_slit",
       "InputDescription": "Right Ring Sizing Slit?",
       "InputType": "Boolean"
+    },
+    {
+      "InputName": "band_width_mm",
+      "InputDescription": "Band Width",
+      "InputType": "Float",
+      "NumberMin": 7.0,
+      "NumberMax": 20.0
     }
   ]
 }
