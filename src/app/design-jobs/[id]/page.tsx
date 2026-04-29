@@ -50,6 +50,12 @@ interface PrintJob {
   createdAt: string;
 }
 
+interface InputParameterDefinition {
+  InputName: string;
+  InputDescription: string;
+  InputType: string;
+}
+
 export default function GeometryJobDetailPage({ 
   params 
 }: { 
@@ -198,6 +204,10 @@ export default function GeometryJobDetailPage({
     return `npm run ${script} -- ${job?.objectId || id}`;
   };
 
+  const getInspectSaveFixtureCommand = () => {
+    return `${getInspectCommand()} --save-fixture`;
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
   };
@@ -218,17 +228,17 @@ export default function GeometryJobDetailPage({
     return <span className="status-badge status-pending">Pending</span>;
   };
 
-  const parseParameterData = (data: string) => {
+  const parseParameterData = (data: string): Record<string, unknown> => {
     try {
-      return JSON.parse(data);
+      return JSON.parse(data) as Record<string, unknown>;
     } catch {
       return {};
     }
   };
 
-  const parseParameterSchema = (schema: string) => {
+  const parseParameterSchema = (schema: string): InputParameterDefinition[] => {
     try {
-      return JSON.parse(schema);
+      return JSON.parse(schema) as InputParameterDefinition[];
     } catch {
       return [];
     }
@@ -514,7 +524,7 @@ export default function GeometryJobDetailPage({
               </div>
               <div className="card-body">
                 <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {parameterSchema.map((param: any) => (
+                  {parameterSchema.map((param) => (
                     <div key={param.InputName}>
                       <dt className="text-sm font-medium text-muted">{param.InputDescription}</dt>
                       <dd className="mt-1 text-sm text-primary">
@@ -722,16 +732,35 @@ export default function GeometryJobDetailPage({
             <p className="text-sm text-secondary mb-3">
               Run this command from the <code className="code-inline">splint_geo_processor</code> directory to launch Grasshopper with this job&apos;s data:
             </p>
-            <div className="relative">
-              <pre className="display-field">
-                {getInspectCommand()}
-              </pre>
-              <button
-                onClick={() => { navigator.clipboard.writeText(getInspectCommand()); }}
-                className="btn-neutral absolute top-2 right-2 px-2 py-1 text-xs"
-              >
-                Copy
-              </button>
+            <div className="space-y-4">
+              <div className="relative">
+                <pre className="display-field">
+                  {getInspectCommand()}
+                </pre>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(getInspectCommand()); }}
+                  className="btn-neutral absolute top-2 right-2 px-2 py-1 text-xs"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div>
+                <p className="text-sm text-secondary mb-3">
+                  Use this version to also save the job definition as a reusable test fixture for future generator testing:
+                </p>
+                <div className="relative">
+                  <pre className="display-field">
+                    {getInspectSaveFixtureCommand()}
+                  </pre>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(getInspectSaveFixtureCommand()); }}
+                    className="btn-neutral absolute top-2 right-2 px-2 py-1 text-xs"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="mt-4 flex justify-end">
               <button
