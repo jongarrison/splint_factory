@@ -1,0 +1,9 @@
+{
+  "$schema": "../design-definition.schema.json",
+  "id": "siz1ngr1ngs0apr2026vqx9k7w",
+  "name": "Sizing Rings",
+  "algorithmName": "SizingRings",
+  "shortDescription": "Set of sizing rings for fitting (no input parameters)",
+  "isActive": true,
+  "inputParameters": []
+}
