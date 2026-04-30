@@ -1,6 +1,6 @@
 # StlViewer Component
 
-Simple, reusable Three.js-based STL file viewer for React/Next.js.
+Simple, reusable Three.js-based STL/3MF viewer for React/Next.js.
 
 ## Usage
 
@@ -9,6 +9,7 @@ import StlViewer from '@/components/StlViewer';
 
 <StlViewer 
   url="/api/geometry-jobs/abc123/geometry-file"
+  fileName="abc123.3mf"
   height={500}
   modelColor="#3b82f6"
 />
@@ -18,7 +19,8 @@ import StlViewer from '@/components/StlViewer';
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `url` | `string` | *required* | URL to the STL file |
+| `url` | `string` | *required* | URL to the mesh file (STL or 3MF) |
+| `fileName` | `string` | `undefined` | Optional filename hint (recommended for extension-less API URLs) |
 | `width` | `number \| string` | `'100%'` | Container width |
 | `height` | `number \| string` | `400` | Container height in pixels |
 | `backgroundColor` | `string` | `'#f3f4f6'` | Scene background color |
@@ -56,5 +58,5 @@ The component is designed for future enhancement:
 
 - Uses Three.js for WebGL rendering
 - Uses OrbitControls for camera interaction
-- Uses STLLoader for file parsing
+- Uses STLLoader and 3MFLoader for file parsing
 - Cleans up all Three.js resources on unmount to prevent memory leaks

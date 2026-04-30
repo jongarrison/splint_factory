@@ -440,6 +440,7 @@ export default function GeometryJobDetailPage({
               <div className="card-body">
                 <StlViewer
                   url={`/api/design-jobs/${job.id}/mesh-file`}
+                    fileName={job.meshFileName || undefined}
                   height={500}
                   modelColor="#3b82f6"
                 />

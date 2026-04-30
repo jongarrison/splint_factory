@@ -6,6 +6,23 @@ import { getBlobStorageInstance } from '@/lib/blob-storage';
 import { sendEmail } from '@/lib/email';
 import DesignJobFailedEmail from '@/emails/design-job-failed';
 
+function fileExt(name: string | undefined): string {
+  if (!name) return '';
+  const i = name.lastIndexOf('.');
+  return i >= 0 ? name.slice(i).toLowerCase() : '';
+}
+
+function isAllowedGeometryFilename(name: string | undefined): boolean {
+  const ext = fileExt(name);
+  return ext === '.stl' || ext === '.3mf' || ext === '.obj';
+}
+
+function isAllowedPrintFilename(name: string | undefined): boolean {
+  const ext = fileExt(name);
+  // Keep compatibility for legacy/alternative print output names.
+  return ext === '.3mf' || ext === '.gcode' || ext === '.stl' || ext === '.obj';
+}
+
 // POST /api/design-processing/result - Report geometry processing result from external software
 export async function POST(request: NextRequest) {
   try {
@@ -168,6 +185,16 @@ export async function POST(request: NextRequest) {
     }
     if (printFileName && (printFileName.length > maxFileNameLen || invalidName.test(printFileName))) {
       return NextResponse.json({ error: 'Invalid printFileName' }, { status: 400 });
+    }
+    if (meshFileName && !isAllowedGeometryFilename(meshFileName)) {
+      return NextResponse.json({
+        error: 'Unsupported mesh file extension. Allowed: .stl, .3mf, .obj'
+      }, { status: 400 });
+    }
+    if (printFileName && !isAllowedPrintFilename(printFileName)) {
+      return NextResponse.json({
+        error: 'Unsupported print file extension. Allowed: .3mf, .gcode, .stl, .obj'
+      }, { status: 400 });
     }
 
     // Validate processingLog size (limit to 100KB)
@@ -348,8 +375,8 @@ export async function POST(request: NextRequest) {
     if (result.printQueueEntry) {
       response.printQueueEntry = {
         id: result.printQueueEntry.id,
-        hasGeometryFile: !!(geometryFile || meshFileContents),
-        hasPrintFile: !!(printFile || printFileContents),
+        hasGeometryFile: !!(geometryFile || meshFileContents || geometryBlobResult),
+        hasPrintFile: !!(printFile || printFileContents || printBlobResult),
         meshFileName: meshFileName || null,
         printFileName: printFileName || null,
         usedBlobStorage: !!(geometryBlobResult || printBlobResult)

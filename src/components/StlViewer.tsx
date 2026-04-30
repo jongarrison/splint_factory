@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 // Check if WebGL is available on this device
@@ -18,11 +19,54 @@ function checkWebGLSupport(): boolean {
 
 interface StlViewerProps {
   url: string;
+  fileName?: string;
   width?: number | string;
   height?: number | string;
   backgroundColor?: string;
   modelColor?: string;
   className?: string;
+}
+
+type MeshFormat = 'stl' | '3mf';
+
+function getExtension(value?: string): string | null {
+  if (!value) return null;
+  const q = value.indexOf('?');
+  const pathOnly = q >= 0 ? value.slice(0, q) : value;
+  const dot = pathOnly.lastIndexOf('.');
+  if (dot < 0) return null;
+  return pathOnly.slice(dot + 1).toLowerCase();
+}
+
+function isZipHeader(buffer: ArrayBuffer): boolean {
+  if (buffer.byteLength < 4) return false;
+  const b = new Uint8Array(buffer, 0, 4);
+  return b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04;
+}
+
+function detectMeshFormat(
+  url: string,
+  fileName: string | undefined,
+  contentType: string,
+  data: ArrayBuffer
+): MeshFormat {
+  const fileExt = getExtension(fileName);
+  if (fileExt === '3mf') return '3mf';
+  if (fileExt === 'stl') return 'stl';
+
+  const urlExt = getExtension(url);
+  if (urlExt === '3mf') return '3mf';
+  if (urlExt === 'stl') return 'stl';
+
+  const normalizedType = contentType.toLowerCase();
+  if (normalizedType.includes('model/3mf')) return '3mf';
+  if (normalizedType.includes('model/stl')) return 'stl';
+
+  // 3MF files are ZIP containers. If bytes are ZIP, prefer 3MF.
+  if (isZipHeader(data)) return '3mf';
+
+  // Default to STL to preserve behavior for legacy endpoints without file hints.
+  return 'stl';
 }
 
 /**
@@ -42,6 +86,7 @@ interface StlViewerProps {
  */
 export default function StlViewer({
   url,
+  fileName,
   width = '100%',
   height = 400,
   backgroundColor = '#f3f4f6',
@@ -116,54 +161,62 @@ export default function StlViewer({
     directionalLight2.position.set(-1, -1, -1);
     scene.add(directionalLight2);
 
-    // Load STL
-    const loader = new STLLoader();
-    loader.load(
-      url,
-      (geometry) => {
-        // Center geometry
-        geometry.center();
+      const abortController = new AbortController();
 
-        // Create material and mesh
-        const material = new THREE.MeshPhongMaterial({
-          color: modelColor,
-          specular: 0x111111,
-          shininess: 200,
-        });
-        const mesh = new THREE.Mesh(geometry, material);
+      const loadModel = async () => {
+        try {
+          const response = await fetch(url, { signal: abortController.signal });
+          if (!response.ok) {
+            throw new Error(`Failed to fetch model (${response.status})`);
+          }
 
-        // Calculate bounding box and scale to fit view
-        geometry.computeBoundingBox();
-        const boundingBox = geometry.boundingBox!;
-        const size = new THREE.Vector3();
-        boundingBox.getSize(size);
-        const maxDim = Math.max(size.x, size.y, size.z);
-        
-        // Position camera to view entire model with Z-up orientation
-        const fov = camera.fov * (Math.PI / 180);
-        const cameraDistance = maxDim / (2 * Math.tan(fov / 2));
-        // Position camera at an angle viewing from above with Z as up
-        camera.position.set(cameraDistance * 0.7, cameraDistance * 0.7, cameraDistance * 0.7);
-        camera.up.set(0, 0, 1); // Ensure camera's up vector is Z
-        camera.lookAt(0, 0, 0);
-        
-        // Update controls target
-        controls.target.set(0, 0, 0);
-        controls.update();
+          const contentType = response.headers.get('content-type') || '';
+          const data = await response.arrayBuffer();
+          const format = detectMeshFormat(url, fileName, contentType, data);
 
-        scene.add(mesh);
-        setLoading(false);
-      },
-      (progress) => {
-        // Optional: track loading progress
-        // console.log((progress.loaded / progress.total) * 100 + '% loaded');
-      },
-      (error) => {
-        console.error('Error loading STL:', error);
-        setError('Failed to load 3D model');
-        setLoading(false);
-      }
-    );
+          let modelRoot: THREE.Object3D;
+          if (format === '3mf') {
+            const loader = new ThreeMFLoader();
+            modelRoot = loader.parse(data);
+          } else {
+            const geometry = new STLLoader().parse(data);
+            const material = new THREE.MeshPhongMaterial({
+              color: modelColor,
+              specular: 0x111111,
+              shininess: 200,
+            });
+            modelRoot = new THREE.Mesh(geometry, material);
+          }
+
+          // Center model at origin and fit camera to bounds.
+          const modelBox = new THREE.Box3().setFromObject(modelRoot);
+          const center = modelBox.getCenter(new THREE.Vector3());
+          modelRoot.position.sub(center);
+
+          const fittedBox = new THREE.Box3().setFromObject(modelRoot);
+          const size = fittedBox.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z) || 1;
+
+          const fov = camera.fov * (Math.PI / 180);
+          const cameraDistance = maxDim / (2 * Math.tan(fov / 2));
+          camera.position.set(cameraDistance * 0.7, cameraDistance * 0.7, cameraDistance * 0.7);
+          camera.up.set(0, 0, 1);
+          camera.lookAt(0, 0, 0);
+
+          controls.target.set(0, 0, 0);
+          controls.update();
+
+          scene.add(modelRoot);
+          setLoading(false);
+        } catch (err) {
+          if (abortController.signal.aborted) return;
+          console.error('Error loading 3D model:', err);
+          setError('Failed to load 3D model');
+          setLoading(false);
+        }
+      };
+
+      void loadModel();
 
     // Animation loop
     const animate = () => {
@@ -188,6 +241,7 @@ export default function StlViewer({
 
     // Cleanup
     return () => {
+        abortController.abort();
       window.removeEventListener('resize', handleResize);
       
       if (animationFrameRef.current) {
@@ -216,7 +270,7 @@ export default function StlViewer({
         });
       }
     };
-  }, [url, height, backgroundColor, modelColor, webGLSupported]);
+  }, [url, fileName, height, backgroundColor, modelColor, webGLSupported]);
 
   // Show fallback if WebGL is not supported
   if (webGLSupported === false) {
