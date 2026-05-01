@@ -41,6 +41,7 @@ model User {
   password             String?
   organizationId       String?
   role                 UserRole                  @default(MEMBER)
+  siteAlertOptIn       Boolean                   @default(false)
   invitedByUserId      String?
   invitationAcceptedAt DateTime?
   createdAt            DateTime                  @default(now())
@@ -193,6 +194,15 @@ model SystemSettings {
   maintenanceModeEnabled    Boolean  @default(false)
   maintenanceMessage        String?
   maintenanceModeUpdatedAt  DateTime @default(now()) @updatedAt
+}
+
+model ProcessorHeartbeat {
+  id                     String    @id @default("geo_processor")
+  lastPingAt             DateTime?
+  offlineSince           DateTime?
+  lastOfflineAlertSentAt DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 }
 
 model Link {

@@ -5,6 +5,7 @@ import VirtualKeyboard from "@/components/VirtualKeyboard";
 import SettingsButton from "@/components/ReloadButton";
 import KeyboardToggleButton from "@/components/KeyboardToggleButton";
 import DevModeAlertListener from "@/components/printer/DevModeAlertModal";
+import { ensureInternalTaskRuntimeStarted } from "@/lib/internal-task-runtime";
 import "./globals.css";
 import "./semantic.css";
 
@@ -28,6 +29,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  ensureInternalTaskRuntimeStarted();
+
   return (
     <html lang="en" className="dark">
       <body

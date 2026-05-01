@@ -10,7 +10,10 @@
     "prisma:studio": "prisma studio",
     "db:start": "./scripts/start-postgres.sh",
     "db:stop": "./scripts/stop-postgres.sh",
-    "db:status": "./scripts/postgres-status.sh"
+    "db:status": "./scripts/postgres-status.sh",
+    "debug:processor-health": "tsx scripts/debug-processor-health.ts",
+    "debug:internal-tasks": "tsx scripts/debug-internal-tasks.ts",
+    "debug:monitor": "npm run debug:processor-health && npm run debug:internal-tasks"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/users - List users with role-based filtering
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await auth()
     
@@ -74,7 +74,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { userId, role, organizationId } = body
+    const { userId, role, organizationId, siteAlertOptIn } = body
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
@@ -118,6 +118,18 @@ export async function PATCH(request: NextRequest) {
           error: 'Cannot promote users to System Admin role' 
         }, { status: 403 })
       }
+
+      if (siteAlertOptIn !== undefined) {
+        return NextResponse.json({
+          error: 'Only System Admin users can modify site alert subscriptions'
+        }, { status: 403 })
+      }
+    }
+
+    if (siteAlertOptIn !== undefined && currentUser.role !== 'SYSTEM_ADMIN') {
+      return NextResponse.json({
+        error: 'Only System Admin users can modify site alert subscriptions'
+      }, { status: 403 })
     }
 
     // Build update data
@@ -133,6 +145,10 @@ export async function PATCH(request: NextRequest) {
       } else {
         updateData.organizationId = organizationId
       }
+    }
+
+    if (siteAlertOptIn !== undefined) {
+      updateData.siteAlertOptIn = Boolean(siteAlertOptIn)
     }
 
     // Update user

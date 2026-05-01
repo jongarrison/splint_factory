@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getProcessorStatus } from '@/lib/geo-processor-health';
+import { ensureInternalTaskRuntimeStarted, getInternalTaskStatuses } from '@/lib/internal-task-runtime';
 import { generateObjectId } from '@/lib/objectId';
 
 // GET /api/admin/system-status - View system status including geometry processing queue (admin only)
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
+    ensureInternalTaskRuntimeStarted();
+
     const session = await auth();
     
     if (!session?.user?.role || session.user.role !== 'SYSTEM_ADMIN') {
@@ -15,7 +18,6 @@ export async function GET(request: NextRequest) {
 
     const now = new Date();
     const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
@@ -202,7 +204,7 @@ export async function GET(request: NextRequest) {
     const geometryMap = new Map(geometries.map(g => [g.id, g]));
     
     // Calculate average processing times
-    const calcAvgProcessingTime = (jobs: any[]) => {
+    const calcAvgProcessingTime = (jobs: Array<{ processStartedAt: Date | null; processCompletedAt: Date | null }>) => {
       if (jobs.length === 0) return null;
       const times = jobs
         .filter(j => j.processStartedAt && j.processCompletedAt)
@@ -267,7 +269,8 @@ export async function GET(request: NextRequest) {
       };
     }).sort((a, b) => b.count - a.count);
 
-    const processorStatus = getProcessorStatus();
+    const processorStatus = await getProcessorStatus();
+    const internalTasks = getInternalTaskStatuses();
 
     // Get maintenance mode settings
     const maintenanceSettings = await prisma.systemSettings.findUnique({
@@ -323,7 +326,8 @@ export async function GET(request: NextRequest) {
       maintenance: {
         maintenanceModeEnabled: maintenanceSettings?.maintenanceModeEnabled || false,
         maintenanceMessage: maintenanceSettings?.maintenanceMessage || null
-      }
+      },
+      internalTasks
     });
 
   } catch (error) {
@@ -374,7 +378,7 @@ export async function PUT(request: NextRequest) {
 }
 
 // POST /api/admin/system-status - Create a processor health check job (admin only)
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const session = await auth();
 

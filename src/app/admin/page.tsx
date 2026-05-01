@@ -54,6 +54,38 @@ interface MaintenanceSettings {
   maintenanceMessage: string | null;
 }
 
+interface InternalTaskStatus {
+  key: string;
+  label: string;
+  description?: string;
+  intervalMs: number;
+  isRunning: boolean;
+  runCount: number;
+  successCount: number;
+  errorCount: number;
+  lastRunStartedAt: string | null;
+  lastRunCompletedAt: string | null;
+  lastSuccessAt: string | null;
+  lastErrorAt: string | null;
+  lastErrorMessage: string | null;
+  nextRunAt: string | null;
+}
+
+interface SiteAlertAdmin {
+  id: string;
+  name: string | null;
+  email: string;
+  siteAlertOptIn: boolean;
+}
+
+interface SiteAlertApiUser {
+  id: string;
+  name: string | null;
+  email: string;
+  role: string;
+  siteAlertOptIn?: boolean;
+}
+
 interface QueueData {
   timestamp: string;
   processor: ProcessorStatus;
@@ -66,6 +98,7 @@ interface QueueData {
     recentlyCompleted: Job[];
   };
   maintenance: MaintenanceSettings;
+  internalTasks: InternalTaskStatus[];
 }
 
 export default function SystemStatusPage() {
@@ -79,6 +112,10 @@ export default function SystemStatusPage() {
   const [maintenanceMessage, setMaintenanceMessage] = useState('');
   const [healthCheckLoading, setHealthCheckLoading] = useState(false);
   const [healthCheckResult, setHealthCheckResult] = useState<string | null>(null);
+  const [siteAlertAdmins, setSiteAlertAdmins] = useState<SiteAlertAdmin[]>([]);
+  const [updatingSiteAlertUserId, setUpdatingSiteAlertUserId] = useState<string | null>(null);
+  const [testAlertLoading, setTestAlertLoading] = useState(false);
+  const [testAlertResult, setTestAlertResult] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -89,6 +126,7 @@ export default function SystemStatusPage() {
     }
 
     fetchQueueStatus();
+    fetchSiteAlertAdmins();
   }, [session, status, router]);
 
   const fetchQueueStatus = async () => {
@@ -96,7 +134,10 @@ export default function SystemStatusPage() {
       const response = await fetch('/api/admin/system-status');
       if (!response.ok) throw new Error('Failed to fetch queue status');
       const data = await response.json();
-      setQueueData(data);
+      setQueueData({
+        ...data,
+        internalTasks: data.internalTasks || [],
+      });
       setMaintenanceEnabled(data.maintenance.maintenanceModeEnabled);
       setMaintenanceMessage(data.maintenance.maintenanceMessage || '');
       setError(null);
@@ -104,6 +145,28 @@ export default function SystemStatusPage() {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSiteAlertAdmins = async () => {
+    try {
+      const response = await fetch('/api/users');
+      if (!response.ok) throw new Error('Failed to fetch users');
+
+      const users: SiteAlertApiUser[] = await response.json();
+      const admins: SiteAlertAdmin[] = users
+        .filter((user) => user.role === 'SYSTEM_ADMIN')
+        .map((user) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          siteAlertOptIn: Boolean(user.siteAlertOptIn),
+        }))
+        .sort((a: SiteAlertAdmin, b: SiteAlertAdmin) => a.email.localeCompare(b.email));
+
+      setSiteAlertAdmins(admins);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch site alert admins');
     }
   };
 
@@ -124,6 +187,58 @@ export default function SystemStatusPage() {
       setError(err instanceof Error ? err.message : 'Failed to update maintenance mode');
     } finally {
       setSavingMaintenance(false);
+    }
+  };
+
+  const handleSiteAlertToggle = async (userId: string, siteAlertOptIn: boolean) => {
+    setUpdatingSiteAlertUserId(userId);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, siteAlertOptIn }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to update site alert subscription');
+      }
+
+      setSiteAlertAdmins((previous) =>
+        previous.map((admin) =>
+          admin.id === userId
+            ? { ...admin, siteAlertOptIn }
+            : admin,
+        ),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update site alert subscription');
+    } finally {
+      setUpdatingSiteAlertUserId(null);
+    }
+  };
+
+  const handleSendTestAlert = async () => {
+    setTestAlertLoading(true);
+    setTestAlertResult(null);
+
+    try {
+      const response = await fetch('/api/admin/notifications/test', {
+        method: 'POST',
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to send test alert');
+      }
+
+      setTestAlertResult(`Test alert sent to ${payload.recipientCount} recipient(s).`);
+    } catch (err) {
+      setTestAlertResult(err instanceof Error ? err.message : 'Failed to send test alert');
+    } finally {
+      setTestAlertLoading(false);
     }
   };
 
@@ -152,7 +267,10 @@ export default function SystemStatusPage() {
         const statusResp = await fetch('/api/admin/system-status');
         if (!statusResp.ok) continue;
         const statusData = await statusResp.json();
-        setQueueData(statusData);
+        setQueueData({
+          ...statusData,
+          internalTasks: statusData.internalTasks || [],
+        });
 
         // Check all completed/processing queues for our job
         const allJobs = [
@@ -311,6 +429,129 @@ export default function SystemStatusPage() {
                 {healthCheckResult && (
                   <div className="mt-2 text-sm text-secondary">{healthCheckResult}</div>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Site Alerts */}
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-3 text-primary">Site Alerts</h2>
+            <div className="card p-4" data-testid="site-alerts-card">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <p className="text-sm text-secondary">
+                  SYSTEM_ADMIN users can opt in for processor offline email alerts.
+                </p>
+                <button
+                  onClick={handleSendTestAlert}
+                  disabled={testAlertLoading}
+                  className="btn-primary px-4 py-2 text-sm"
+                  data-testid="send-site-alert-test-btn"
+                >
+                  {testAlertLoading ? 'Sending...' : 'Send Test Alert'}
+                </button>
+              </div>
+
+              {testAlertResult && (
+                <div className="alert-info mb-4" data-testid="site-alert-test-result">
+                  {testAlertResult}
+                </div>
+              )}
+
+              <div className="overflow-x-auto">
+                <table className="data-table" data-testid="site-alert-admin-table">
+                  <thead>
+                    <tr>
+                      <th className="px-3 py-2">Name</th>
+                      <th className="px-3 py-2">Email</th>
+                      <th className="px-3 py-2">Subscribed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {siteAlertAdmins.map((admin) => (
+                      <tr key={admin.id}>
+                        <td className="px-3 py-2 text-sm">{admin.name || 'Unnamed'}</td>
+                        <td className="px-3 py-2 text-sm text-secondary">{admin.email}</td>
+                        <td className="px-3 py-2 text-sm">
+                          <label className="inline-flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={admin.siteAlertOptIn}
+                              disabled={updatingSiteAlertUserId === admin.id}
+                              onChange={(event) => handleSiteAlertToggle(admin.id, event.target.checked)}
+                              className="w-4 h-4"
+                            />
+                            <span className="text-secondary">
+                              {admin.siteAlertOptIn ? 'Enabled' : 'Disabled'}
+                            </span>
+                          </label>
+                        </td>
+                      </tr>
+                    ))}
+                    {siteAlertAdmins.length === 0 && (
+                      <tr>
+                        <td colSpan={3} className="px-3 py-4 text-sm text-muted text-center">
+                          No SYSTEM_ADMIN users found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Internal Task Runtime */}
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-3 text-primary">Internal Task Runtime</h2>
+            <div className="card p-4" data-testid="internal-task-runtime-card">
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th className="px-3 py-2">Task</th>
+                      <th className="px-3 py-2">Interval</th>
+                      <th className="px-3 py-2">Runs</th>
+                      <th className="px-3 py-2">Last Success</th>
+                      <th className="px-3 py-2">Last Error</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {queueData.internalTasks.map((task) => (
+                      <tr key={task.key}>
+                        <td className="px-3 py-2 text-sm">
+                          <div className="font-medium text-primary">{task.label}</div>
+                          {task.description && <div className="text-xs text-muted">{task.description}</div>}
+                        </td>
+                        <td className="px-3 py-2 text-sm text-secondary">
+                          {Math.round(task.intervalMs / 1000)}s
+                        </td>
+                        <td className="px-3 py-2 text-sm text-secondary">
+                          {task.runCount} total ({task.successCount} ok / {task.errorCount} failed)
+                        </td>
+                        <td className="px-3 py-2 text-sm text-secondary">
+                          {task.lastSuccessAt ? formatTimestamp(task.lastSuccessAt) : 'Never'}
+                        </td>
+                        <td className="px-3 py-2 text-sm">
+                          {task.lastErrorAt ? (
+                            <span className="text-[var(--status-error-text)]">
+                              {formatTimestamp(task.lastErrorAt)}
+                              {task.lastErrorMessage ? ` - ${task.lastErrorMessage}` : ''}
+                            </span>
+                          ) : (
+                            <span className="text-secondary">None</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {queueData.internalTasks.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-3 py-4 text-sm text-muted text-center">
+                          No internal tasks registered yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

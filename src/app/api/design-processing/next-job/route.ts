@@ -3,13 +3,14 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { validateApiKey, checkApiPermission } from '@/lib/api-auth';
 import { updateProcessorPing } from '@/lib/geo-processor-health';
+import { ensureInternalTaskRuntimeStarted } from '@/lib/internal-task-runtime';
 import { getDesignById } from '@/designs/registry';
 
 // GET /api/design-processing/next-job - Get next geometry processing record for external processing software
 export async function GET(request: NextRequest) {
   try {
-    // Track that the processor called in (for health monitoring)
-    updateProcessorPing();
+    ensureInternalTaskRuntimeStarted();
+
     // Try API key authentication first
     const apiAuth = await validateApiKey(request);
     
@@ -18,6 +19,9 @@ export async function GET(request: NextRequest) {
       if (!checkApiPermission(apiAuth.apiKey, 'geometry-queue:read')) {
         return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
       }
+
+      // Only processor API-key traffic should advance heartbeat recency.
+      await updateProcessorPing();
       console.log(`API key access: ${apiAuth.apiKey?.name} requesting next job`);
     } else {
       // Fall back to session authentication
@@ -88,6 +92,10 @@ export async function GET(request: NextRequest) {
     
     // Get inputParameterSchema from code registry
     const registryDesign = getDesignById(nextJob.designId);
+    const geometryJobWithFiles = nextJob as typeof nextJob & {
+      meshFileName?: string | null;
+      printFileName?: string | null;
+    };
 
     // Prepare response - return the job without marking as started
     const response = NextResponse.json({
@@ -103,8 +111,8 @@ export async function GET(request: NextRequest) {
       createdAt: nextJob.createdAt,
       processStartedAt: nextJob.processStartedAt,
       // File metadata lives on geometry job; no binary returned here
-      meshFileName: (nextJob as any).meshFileName ?? null,
-      printFileName: (nextJob as any).printFileName ?? null,
+      meshFileName: geometryJobWithFiles.meshFileName ?? null,
+      printFileName: geometryJobWithFiles.printFileName ?? null,
       creator: nextJob.creator,
       owningOrganization: nextJob.owningOrganization
     });

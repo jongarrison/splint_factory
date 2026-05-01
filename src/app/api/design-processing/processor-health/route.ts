@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getProcessorStatus } from '@/lib/geo-processor-health';
+import { ensureInternalTaskRuntimeStarted } from '@/lib/internal-task-runtime';
 
 // GET /api/design-processing/processor-health - Check if geometry processor is actively polling
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
+    ensureInternalTaskRuntimeStarted();
+
     const session = await auth();
     
     // Only allow SYSTEM_ADMIN to check processor health
@@ -12,7 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const status = getProcessorStatus();
+    const status = await getProcessorStatus();
     
     return NextResponse.json(status);
   } catch (error) {
