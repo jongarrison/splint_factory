@@ -208,6 +208,32 @@ export default function GeometryJobDetailPage({
     return `${getInspectCommand()} --save-fixture`;
   };
 
+  // navigator.clipboard is only available in secure contexts (HTTPS/localhost).
+  // Fall back to a hidden textarea + execCommand for HTTP origins like splintserver.local.
+  const copyToClipboard = (text: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+      return;
+    }
+    fallbackCopy(text);
+  };
+
+  const fallbackCopy = (text: string) => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (err) {
+      console.error('Copy failed', err);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
   };
@@ -739,7 +765,7 @@ export default function GeometryJobDetailPage({
                   {getInspectCommand()}
                 </pre>
                 <button
-                  onClick={() => { navigator.clipboard.writeText(getInspectCommand()); }}
+                  onClick={() => { copyToClipboard(getInspectCommand()); }}
                   className="btn-neutral absolute top-2 right-2 px-2 py-1 text-xs"
                 >
                   Copy
@@ -755,7 +781,7 @@ export default function GeometryJobDetailPage({
                     {getInspectSaveFixtureCommand()}
                   </pre>
                   <button
-                    onClick={() => { navigator.clipboard.writeText(getInspectSaveFixtureCommand()); }}
+                    onClick={() => { copyToClipboard(getInspectSaveFixtureCommand()); }}
                     className="btn-neutral absolute top-2 right-2 px-2 py-1 text-xs"
                   >
                     Copy
