@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  async redirects() {
+    return [
+      {
+        source: '/tag',
+        destination: '/design-jobs',
+        permanent: true,
+      },
+    ]
+  },
   // Allow connections from any hostname in development
   async rewrites() {
     return []
