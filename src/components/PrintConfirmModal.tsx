@@ -20,7 +20,8 @@ export default function PrintConfirmModal({
   // resolves with { success, error } rather than rejecting, so we inspect
   // the result explicitly.
   const setChamberLight = async (mode: 'on' | 'off') => {
-    const setLed = (window as any)?.electronAPI?.printer?.setLed;
+    // setLed lives on the `printing` namespace in splint_client/preload.js
+    const setLed = (window as any)?.electronAPI?.printing?.setLed;
     if (typeof setLed !== 'function') {
       console.log(`[PrintConfirmModal] setLed bridge unavailable; skipping ${mode}`);
       return;
