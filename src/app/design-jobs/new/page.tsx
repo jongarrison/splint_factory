@@ -360,6 +360,7 @@ function CreateGeometryJobPage() {
                 id="jobLabel"
                 value={jobLabel}
                 onChange={(e) => setJobLabel(e.target.value)}
+                maxLength={20}
                 className="mt-1 input-field"
                 placeholder="Optional label shown in the print queue"
                 data-testid="job-label-input"

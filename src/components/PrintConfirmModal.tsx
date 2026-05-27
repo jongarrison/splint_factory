@@ -15,15 +15,37 @@ export default function PrintConfirmModal({
 }: PrintConfirmModalProps) {
   const [runCalibration, setRunCalibration] = useState(false);
 
-  // Turn the chamber light on when the modal opens so the operator can
-  // visually inspect the print bed. Gracefully no-op if the IPC bridge or
-  // the setLed method is not present (older splint_client builds).
-  useEffect(() => {
+  // Helper to drive the chamber light. Resolves silently — failures are
+  // logged but never block the user's flow. The splint_client IPC handler
+  // resolves with { success, error } rather than rejecting, so we inspect
+  // the result explicitly.
+  const setChamberLight = async (mode: 'on' | 'off') => {
     const setLed = (window as any)?.electronAPI?.printer?.setLed;
-    if (typeof setLed !== 'function') return;
-    Promise.resolve(setLed('chamber_light', 'on')).catch((err) => {
-      console.warn('chamber_light on failed', err);
-    });
+    if (typeof setLed !== 'function') {
+      console.log(`[PrintConfirmModal] setLed bridge unavailable; skipping ${mode}`);
+      return;
+    }
+    console.log(`[PrintConfirmModal] requesting chamber_light ${mode}`);
+    try {
+      const result = await setLed('chamber_light', mode);
+      if (result?.success) {
+        console.log(`[PrintConfirmModal] chamber_light ${mode} OK`);
+      } else {
+        console.warn(`[PrintConfirmModal] chamber_light ${mode} failed:`, result);
+      }
+    } catch (err) {
+      console.warn(`[PrintConfirmModal] chamber_light ${mode} threw:`, err);
+    }
+  };
+
+  // Turn the chamber light on when the modal opens so the operator can
+  // visually inspect the print bed. Turn it off again on unmount so we don't
+  // leave it on after Cancel, close, or successful confirm.
+  useEffect(() => {
+    void setChamberLight('on');
+    return () => {
+      void setChamberLight('off');
+    };
   }, []);
 
   return (
