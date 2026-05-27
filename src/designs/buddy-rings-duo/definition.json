@@ -8,45 +8,45 @@
   "inputParameters": [
     {
       "InputName": "c_left_mm",
-      "InputDescription": "Left Finger Circumference (mm)",
+      "InputDescription": "1. Left Finger Circumference (mm)",
       "InputType": "Float",
       "NumberMin": 30,
       "NumberMax": 120
     },
     {
       "InputName": "c_right_mm",
-      "InputDescription": "Right Finger Circumference (mm)",
+      "InputDescription": "2.Right Finger Circumference (mm)",
       "InputType": "Float",
       "NumberMin": 30,
       "NumberMax": 120
     },
     {
       "InputName": "full_perimeter_mm",
-      "InputDescription": "Circumference of both fingers (mm). Fingers should be in natural alignment.",
+      "InputDescription": "3. Circumference of both fingers (mm). Fingers should be in natural alignment.",
       "InputType": "Float",
       "NumberMin": 70,
       "NumberMax": 250
     },
     {
       "InputName": "right_forward_offset_mm",
-      "InputDescription": "Forward offset of right finger (mm). How far advanced should right ring be? Negative is ok.",
+      "InputDescription": "4. Forward offset of right finger (mm). How far advanced should right ring be? Negative is ok.",
       "InputType": "Float",
       "NumberMin": -20,
       "NumberMax": 20
     },
     {
       "InputName": "b_left_slit",
-      "InputDescription": "Left Ring Sizing Slit?",
+      "InputDescription": "5. Left Ring Sizing Slit?",
       "InputType": "Boolean"
     },
     {
       "InputName": "b_right_slit",
-      "InputDescription": "Right Ring Sizing Slit?",
+      "InputDescription": "6. Right Ring Sizing Slit?",
       "InputType": "Boolean"
     },
     {
       "InputName": "band_width_mm",
-      "InputDescription": "Band Width",
+      "InputDescription": "7. Band Width",
       "InputType": "Float",
       "NumberMin": 7.0,
       "NumberMax": 20.0
