@@ -391,7 +391,7 @@ export default function PrintQueuePage() {
       setPrintingJobId(entry.id);
 
       // Step 1: Downloading file
-      showNotification('📥 Downloading print file from server...', 'info');
+      showNotification('Downloading print file from server...', 'info');
 
       // Get the print queue ID and geometry processing queue ID
       const printQueueId = entry.id;
@@ -404,7 +404,7 @@ export default function PrintQueuePage() {
       const jobName = `${entry.designJob.design.name.replace(/\s+/g, '_')}_${entry.designJob.jobLabel || 'job'}`;
 
       // Step 2: Uploading to printer
-      showNotification('📤 Uploading file to printer...', 'info');
+      showNotification('Uploading file to printer...', 'info');
 
       // Call the Electron API to print
       const electronAPI = (window as any).electronAPI;
@@ -421,10 +421,10 @@ export default function PrintQueuePage() {
       }
 
       // Step 3: Loading filament
-      showNotification('🧵 Loading filament from AMS...', 'info');
+      showNotification('Loading filament from AMS...', 'info');
 
       // Step 4: Starting print
-      showNotification('🖨️ Sending print command to printer...', 'info');
+      showNotification('Sending print command to printer...', 'info');
 
       // Update the print queue entry to mark as started
       await fetch(`/api/print-queue/${entry.id}`, {
@@ -441,11 +441,11 @@ export default function PrintQueuePage() {
       await refreshPrintQueue();
       
       // Success notification (stays longer - 5 seconds)
-      showNotification(`✅ Print started: ${entry.designJob.design.name}`, 'success', 5000);
+      showNotification(`Print started: ${entry.designJob.design.name}`, 'success', 5000);
     } catch (err) {
       // Show error notification instead of setting error state
       showNotification(
-        `❌ Print failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        `Print failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
         'error',
         5000
       );
