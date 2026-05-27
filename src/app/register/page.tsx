@@ -109,7 +109,7 @@ function RegisterForm() {
               <h2 className="text-2xl font-bold text-primary text-center">
                 Join Organization
               </h2>
-              <p className="mt-2 text-center text-sm text-link">
+              <p className="mt-2 text-center text-sm text-secondary">
                 You&apos;ve been invited to join an organization
               </p>
               <p className="mt-2 text-center text-sm text-muted">

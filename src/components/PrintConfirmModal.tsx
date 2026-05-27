@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface PrintConfirmModalProps {
   geometryName: string;
@@ -14,6 +14,17 @@ export default function PrintConfirmModal({
   onConfirm,
 }: PrintConfirmModalProps) {
   const [runCalibration, setRunCalibration] = useState(false);
+
+  // Turn the chamber light on when the modal opens so the operator can
+  // visually inspect the print bed. Gracefully no-op if the IPC bridge or
+  // the setLed method is not present (older splint_client builds).
+  useEffect(() => {
+    const setLed = (window as any)?.electronAPI?.printer?.setLed;
+    if (typeof setLed !== 'function') return;
+    Promise.resolve(setLed('chamber_light', 'on')).catch((err) => {
+      console.warn('chamber_light on failed', err);
+    });
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -29,9 +40,14 @@ export default function PrintConfirmModal({
         </button>
 
         {/* Title */}
-        <div className="mb-5">
+        <div className="mb-4">
           <h2 className="text-lg font-bold text-primary">Start Print</h2>
           <p className="text-sm text-secondary mt-1">{geometryName}</p>
+        </div>
+
+        {/* Print bed guidance */}
+        <div className="alert-info text-sm mb-4">
+          Please ensure the print bed is clean before continuing.
         </div>
 
         {/* Calibration checkbox */}
@@ -64,7 +80,7 @@ export default function PrintConfirmModal({
             onClick={() => onConfirm(runCalibration)}
             className="btn-alt flex-1 font-semibold py-3 px-4 rounded-lg"
           >
-            Print
+            {runCalibration ? 'Calibrate and Print' : 'Print'}
           </button>
         </div>
       </div>

@@ -242,6 +242,16 @@
    Color/style only. Padding and width are left to Tailwind in JSX since
    buttons appear at different sizes in different contexts.
    ---------------------------------------------------------------------------- */
+.btn-primary:not(.text-left):not(.justify-start):not(.justify-end):not(.justify-between),
+.btn-secondary:not(.text-left):not(.justify-start):not(.justify-end):not(.justify-between),
+.btn-neutral:not(.text-left):not(.justify-start):not(.justify-end):not(.justify-between),
+.btn-warning:not(.text-left):not(.justify-start):not(.justify-end):not(.justify-between),
+.btn-alt:not(.text-left):not(.justify-start):not(.justify-end):not(.justify-between),
+.btn-success:not(.text-left):not(.justify-start):not(.justify-end):not(.justify-between),
+.btn-danger:not(.text-left):not(.justify-start):not(.justify-end):not(.justify-between) {
+  justify-content: center;
+}
+
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -445,6 +455,15 @@
 .input-field:focus {
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-blue);
+}
+
+/* Modifier: invalid input — apply alongside .input-field when a field fails validation */
+.input-field-error {
+  border-color: var(--accent-red);
+}
+
+.input-field-error:focus {
+  box-shadow: 0 0 0 2px var(--accent-red);
 }
 
 /* Solid green button — positive action (mark successful, approve) */

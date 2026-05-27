@@ -132,7 +132,6 @@ model DesignJob {
   isProcessSuccessful   Boolean       @default(false)
   isEnabled             Boolean       @default(true)
   isDebugRequest        Boolean       @default(false)
-  jobNote               String?
   jobLabel              String?
   objectId              String?       @unique
   objectIdGeneratedAt   DateTime?

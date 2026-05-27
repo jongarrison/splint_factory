@@ -13,7 +13,6 @@ interface GeometryJob {
   objectId?: string;
   createdAt: string;
   inputParameters: string;
-  jobNote?: string;
   jobLabel?: string;
   processStartedAt?: string;
   processCompletedAt?: string;
@@ -239,19 +238,20 @@ export default function GeometryJobDetailPage({
   };
 
   const getStatusBadge = (job: GeometryJob) => {
+    // data-testid + data-status enable stable polling from E2E tests.
     if (!job.isEnabled) {
-      return <span className="status-badge status-neutral">Disabled</span>;
+      return <span className="status-badge status-neutral" data-testid="design-job-status" data-status="disabled">Disabled</span>;
     }
     if (job.processCompletedAt && job.isProcessSuccessful) {
-      return <span className="status-badge status-success">Completed</span>;
+      return <span className="status-badge status-success" data-testid="design-job-status" data-status="completed">Completed</span>;
     }
     if (job.processCompletedAt && !job.isProcessSuccessful) {
-      return <span className="status-badge status-error">Failed</span>;
+      return <span className="status-badge status-error" data-testid="design-job-status" data-status="failed">Failed</span>;
     }
     if (job.processStartedAt) {
-      return <span className="status-badge status-warning">Processing</span>;
+      return <span className="status-badge status-warning" data-testid="design-job-status" data-status="processing">Processing</span>;
     }
-    return <span className="status-badge status-pending">Pending</span>;
+    return <span className="status-badge status-pending" data-testid="design-job-status" data-status="pending">Pending</span>;
   };
 
   const parseParameterData = (data: string): Record<string, unknown> => {
@@ -486,7 +486,7 @@ export default function GeometryJobDetailPage({
                   <dd className="mt-1">
                     <div className="text-xs text-muted">Object ID:</div>
                     <div className="text-sm font-mono font-semibold text-[var(--accent-blue)]">{job.objectId || 'N/A'}</div>
-                    <div className="text-xs text-muted mt-2">Job Label:</div>
+                    <div className="text-xs text-muted mt-2">Print Queue Label:</div>
                     <div className="text-sm text-primary">{job.jobLabel || 'N/A'}</div>
                   </dd>
                 </div>
@@ -517,10 +517,13 @@ export default function GeometryJobDetailPage({
                   <dt className="text-sm font-medium text-muted">Organization</dt>
                   <dd className="mt-1 text-sm text-primary">{job.owningOrganization.name}</dd>
                 </div>
-                <div>
-                  <dt className="text-sm font-medium text-muted">Enabled</dt>
-                  <dd className="mt-1 text-sm text-primary">{job.isEnabled ? 'Yes' : 'No'}</dd>
-                </div>
+                {/* Enabled flag is an admin-only concern; hidden for members. */}
+                {session?.user?.role === 'SYSTEM_ADMIN' && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted">Enabled</dt>
+                    <dd className="mt-1 text-sm text-primary">{job.isEnabled ? 'Yes' : 'No'}</dd>
+                  </div>
+                )}
                 {job.processStartedAt && (
                   <div>
                     <dt className="text-sm font-medium text-muted">Processing Started</dt>
@@ -531,12 +534,6 @@ export default function GeometryJobDetailPage({
                   <div>
                     <dt className="text-sm font-medium text-muted">Processing Completed</dt>
                     <dd className="mt-1 text-sm text-primary">{formatDate(job.processCompletedAt)}</dd>
-                  </div>
-                )}
-                {job.jobNote && (
-                  <div className="md:col-span-2">
-                    <dt className="text-sm font-medium text-muted">Job Note</dt>
-                    <dd className="mt-1 text-sm text-primary">{job.jobNote}</dd>
                   </div>
                 )}
               </dl>

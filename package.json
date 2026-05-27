@@ -13,7 +13,12 @@
     "db:status": "./scripts/postgres-status.sh",
     "debug:processor-health": "tsx scripts/debug-processor-health.ts",
     "debug:internal-tasks": "tsx scripts/debug-internal-tasks.ts",
-    "debug:monitor": "npm run debug:processor-health && npm run debug:internal-tasks"
+    "debug:monitor": "npm run debug:processor-health && npm run debug:internal-tasks",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:prod": "E2E_BASE_URL=https://splintfactory.com playwright test",
+    "test:e2e:report": "playwright show-report",
+    "cleanup:e2e": "tsx scripts/cleanup-e2e-test-data.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
@@ -35,11 +40,13 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.6.1",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "tailwindcss": "^4",

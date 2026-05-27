@@ -11,7 +11,6 @@ interface GeometryJob {
   id: string;
   objectId?: string;
   createdAt: string;
-  jobNote?: string;
   jobLabel?: string;
   processStartedAt?: string;
   processCompletedAt?: string;
@@ -264,11 +263,6 @@ export default function GeometryJobsPage() {
                         <div className="text-sm text-primary">
                           {job.jobLabel || 'N/A'}
                         </div>
-                        {job.jobNote && (
-                          <div className="text-xs text-muted truncate max-w-xs mt-1">
-                            {job.jobNote}
-                          </div>
-                        )}
                       </td>
                       <td className="whitespace-nowrap">
                         <div className="text-sm font-medium text-primary">

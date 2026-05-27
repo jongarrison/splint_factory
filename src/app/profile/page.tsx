@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useProfile } from '@/hooks/useProfile';
 import { validatePassword, PASSWORD_REQUIREMENTS_TEXT } from '@/lib/password';
 
 export default function ProfilePage() {
+  const { update: updateSession } = useSession();
   const { profile, loading, error, updating, updateProfile } = useProfile();
   const [formData, setFormData] = useState({
     name: '',
@@ -76,6 +77,13 @@ export default function ProfilePage() {
       if (emailChanged) {
         signOut({ callbackUrl: '/login' });
         return;
+      }
+
+      // Re-sync NextAuth session fields (name/role/org) after profile edits.
+      try {
+        await updateSession();
+      } catch {
+        // Non-critical: profile itself saved even if session refresh fails.
       }
 
       setSuccessMessage(

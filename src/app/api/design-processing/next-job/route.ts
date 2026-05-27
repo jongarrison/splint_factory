@@ -106,7 +106,6 @@ export async function GET(request: NextRequest) {
       algorithmName: nextJob.design.algorithmName,
       inputParameterSchema: registryDesign ? JSON.stringify(registryDesign.inputParameters) : '[]',
       inputParameters: nextJob.inputParameters,
-      jobNote: nextJob.jobNote,
       jobLabel: nextJob.jobLabel,
       createdAt: nextJob.createdAt,
       processStartedAt: nextJob.processStartedAt,

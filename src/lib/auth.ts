@@ -80,7 +80,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id
         token.email = user.email
@@ -90,6 +90,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.organizationName = user.organizationName
         token.emailVerified = user.emailVerified
       }
+
+      // Keep header/user-menu identity fields fresh without forcing logout.
+      if (trigger === "update" && token.id) {
+        try {
+          const refreshedUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            include: { organization: { select: { name: true } } },
+          })
+
+          if (refreshedUser) {
+            token.email = refreshedUser.email
+            token.name = refreshedUser.name
+            token.role = refreshedUser.role
+            token.organizationId = refreshedUser.organizationId
+            token.organizationName = refreshedUser.organization?.name
+            token.emailVerified = refreshedUser.emailVerified?.toISOString() ?? null
+          }
+        } catch (error) {
+          console.error("[Auth] Failed to refresh JWT user fields:", error)
+        }
+      }
+
       return token
     }
   },

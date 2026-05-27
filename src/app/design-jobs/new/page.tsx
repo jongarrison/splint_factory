@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/navigation/Header';
+import ValidationSummary from '@/components/forms/ValidationSummary';
+import { useFormValidation, fieldErrorClass, type FieldErrors } from '@/lib/formValidation';
 
 interface Design {
   id: string;
@@ -37,11 +39,14 @@ function CreateGeometryJobPage() {
   const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
   const [parameterSchema, setParameterSchema] = useState<InputParameter[]>([]);
   const [parameterValues, setParameterValues] = useState<Record<string, any>>({});
-  const [jobNote, setJobNote] = useState('');
   const [jobLabel, setJobLabel] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Scroll target for failed-submit feedback — top of the form card,
+  // so the summary alert lands well within view on mobile.
+  const formCardRef = useRef<HTMLDivElement | null>(null);
+  const validation = useFormValidation({ scrollTargetRef: formCardRef });
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -92,7 +97,6 @@ function CreateGeometryJobPage() {
         
         // Optionally copy job info (leave blank for new job)
         // setJobID(templateJob.jobLabel || '');
-        // setJobNote(templateJob.jobNote || '');
       }
     } catch (err) {
       console.error('Failed to load template job:', err);
@@ -135,82 +139,75 @@ function CreateGeometryJobPage() {
     }
   };
 
+  // Clear only the edited field's error so other invalid fields stay highlighted.
   const handleParameterChange = (paramName: string, value: any) => {
+    validation.clearError(paramName);
     setParameterValues(prev => ({
       ...prev,
       [paramName]: value
     }));
   };
 
-  const validateParameters = (): boolean => {
+  // Build a map of all parameter errors at once (first error per field wins).
+  // Returning the full map lets the validation hook scroll/highlight everything
+  // that needs attention rather than only the first failure.
+  const collectParameterErrors = (): FieldErrors => {
+    const errors: FieldErrors = {};
     for (const param of parameterSchema) {
       const value = parameterValues[param.InputName];
-      
-      if (param.InputType === 'Boolean') {
-        // Booleans are always valid (false is a valid value)
+      const label = param.InputDescription || param.InputName;
+
+      if (param.InputType === 'Boolean') continue; // false is a valid value
+
+      if (value === undefined || value === null || value === '') {
+        errors[param.InputName] = `${label} is required`;
         continue;
       }
 
-      if (value === undefined || value === null || value === '') {
-        setError(`Parameter "${param.InputName}" is required`);
-        return false;
-      }
-      
-      if (param.InputType === 'Float') {
-        const numValue = parseFloat(value);
-        if (isNaN(numValue)) {
-          setError(`Parameter "${param.InputName}" must be a valid number`);
-          return false;
+      if (param.InputType === 'Float' || param.InputType === 'Integer') {
+        const numValue = param.InputType === 'Float' ? parseFloat(value) : parseInt(value);
+        const isInt = param.InputType === 'Integer' && Number.isInteger(parseFloat(value));
+        if (isNaN(numValue) || (param.InputType === 'Integer' && !isInt)) {
+          errors[param.InputName] = `${label} must be a valid ${param.InputType === 'Integer' ? 'integer' : 'number'}`;
+          continue;
         }
         if (param.NumberMin !== undefined && numValue < param.NumberMin) {
-          setError(`Parameter "${param.InputName}" must be >= ${param.NumberMin}`);
-          return false;
+          errors[param.InputName] = `${label} must be >= ${param.NumberMin}`;
+          continue;
         }
         if (param.NumberMax !== undefined && numValue > param.NumberMax) {
-          setError(`Parameter "${param.InputName}" must be <= ${param.NumberMax}`);
-          return false;
-        }
-      } else if (param.InputType === 'Integer') {
-        const numValue = parseInt(value);
-        if (isNaN(numValue) || !Number.isInteger(parseFloat(value))) {
-          setError(`Parameter "${param.InputName}" must be a valid integer`);
-          return false;
-        }
-        if (param.NumberMin !== undefined && numValue < param.NumberMin) {
-          setError(`Parameter "${param.InputName}" must be >= ${param.NumberMin}`);
-          return false;
-        }
-        if (param.NumberMax !== undefined && numValue > param.NumberMax) {
-          setError(`Parameter "${param.InputName}" must be <= ${param.NumberMax}`);
-          return false;
+          errors[param.InputName] = `${label} must be <= ${param.NumberMax}`;
+          continue;
         }
       } else if (param.InputType === 'Text') {
         const strValue = String(value);
         if (param.TextMinLen !== undefined && strValue.length < param.TextMinLen) {
-          setError(`Parameter "${param.InputName}" must be at least ${param.TextMinLen} characters`);
-          return false;
+          errors[param.InputName] = `${label} must be at least ${param.TextMinLen} characters`;
+          continue;
         }
         if (param.TextMaxLen !== undefined && strValue.length > param.TextMaxLen) {
-          setError(`Parameter "${param.InputName}" must be no more than ${param.TextMaxLen} characters`);
-          return false;
+          errors[param.InputName] = `${label} must be no more than ${param.TextMaxLen} characters`;
+          continue;
         }
       }
     }
-    
-    return true;
+    return errors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedDesign) {
-      setError('Please select a design');
-      return;
-    }
-    
-    if (!validateParameters()) {
-      return;
-    }
+
+    // Build a single error map covering design selection + every parameter,
+    // then hand it to the validation hook which sets state and scrolls on failure.
+    const isValid = validation.runValidation(() => {
+      const errors: FieldErrors = {};
+      if (!selectedDesign) {
+        errors.__design = 'Please select a design';
+        return errors;
+      }
+      return collectParameterErrors();
+    });
+    if (!isValid || !selectedDesign) return;
     
     setSubmitting(true);
     setError(null);
@@ -224,7 +221,6 @@ function CreateGeometryJobPage() {
         body: JSON.stringify({
           designId: selectedDesign.id,
           inputParameters: JSON.stringify(parameterValues),
-          jobNote: jobNote.trim() || null,
           jobLabel: jobLabel.trim() || null,
         }),
       });
@@ -337,48 +333,37 @@ function CreateGeometryJobPage() {
           </div>
         )}
 
-        <div className="card shadow" data-testid="new-design-job-form-card">
-          <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6">
+        <div ref={formCardRef} className="card shadow" data-testid="new-design-job-form-card">
+          <form onSubmit={handleSubmit} noValidate className="px-6 py-4 space-y-6">
+            <ValidationSummary
+              errors={validation.errors}
+              summaryRef={validation.summaryRef}
+              testId="new-design-job-validation-error"
+            />
+
             {/* Design type shown as read-only info (pre-selected via URL) */}
             {selectedDesign && (
               <div>
                 <label className="block text-sm font-medium text-secondary">Design Type</label>
                 <p className="mt-1 text-sm text-primary font-medium">
-                  {selectedDesign.name} ({selectedDesign.algorithmName})
+                  {selectedDesign.name}
                 </p>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="jobLabel" className="block text-sm font-medium text-secondary" title="Short label that will show in the print queue. Do not include patient data.">
-                  Job Label
-                </label>
-                <input
-                  type="text"
-                  id="jobLabel"
-                  value={jobLabel}
-                  onChange={(e) => setJobLabel(e.target.value)}
-                  className="mt-1 input-field"
-                  placeholder="Optional label for this job"
-                  data-testid="job-label-input"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="jobNote" className="block text-sm font-medium text-secondary" title="Do not include patient data.">
-                  Job Note
-                </label>
-                <input
-                  type="text"
-                  id="jobNote"
-                  value={jobNote}
-                  onChange={(e) => setJobNote(e.target.value)}
-                  className="mt-1 input-field"
-                  placeholder="Optional note about this job"
-                  data-testid="job-note-input"
-                />
-              </div>
+            <div>
+              <label htmlFor="jobLabel" className="block text-sm font-medium text-secondary" title="Short label that will show in the print queue. Do not include patient data.">
+                Print Queue Label (No PII)
+              </label>
+              <input
+                type="text"
+                id="jobLabel"
+                value={jobLabel}
+                onChange={(e) => setJobLabel(e.target.value)}
+                className="mt-1 input-field"
+                placeholder="Optional label shown in the print queue"
+                data-testid="job-label-input"
+              />
             </div>
 
             {selectedDesign && parameterSchema.length > 0 && (
@@ -387,7 +372,10 @@ function CreateGeometryJobPage() {
                   Design Parameters for {selectedDesign.name}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {parameterSchema.map((param) => (
+                  {parameterSchema.map((param) => {
+                    const fieldError = validation.errors[param.InputName];
+                    const errClass = fieldErrorClass(fieldError);
+                    return (
                     <div key={param.InputName}>
                       {param.InputType !== 'Boolean' && (
                         <label htmlFor={param.InputName} className="block text-sm font-medium text-secondary">
@@ -407,8 +395,8 @@ function CreateGeometryJobPage() {
                               handleParameterChange(param.InputName, parseFloat(val));
                             }
                           }}
-                          className="mt-1 input-field"
-                          required
+                          className={`mt-1 input-field ${errClass}`}
+                          aria-invalid={!!fieldError}
                         />
                       ) : param.InputType === 'Integer' ? (
                         <input
@@ -423,8 +411,8 @@ function CreateGeometryJobPage() {
                               handleParameterChange(param.InputName, parseInt(val));
                             }
                           }}
-                          className="mt-1 input-field"
-                          required
+                          className={`mt-1 input-field ${errClass}`}
+                          aria-invalid={!!fieldError}
                         />
                       ) : param.InputType === 'Boolean' ? (
                         <label htmlFor={param.InputName} className="mt-2 inline-flex items-center gap-2 cursor-pointer">
@@ -443,11 +431,14 @@ function CreateGeometryJobPage() {
                           id={param.InputName}
                           value={parameterValues[param.InputName] || ''}
                           onChange={(e) => handleParameterChange(param.InputName, e.target.value)}
-                          minLength={param.TextMinLen}
-                          maxLength={param.TextMaxLen}
-                          className="mt-1 input-field"
-                          required
+                          className={`mt-1 input-field ${errClass}`}
+                          aria-invalid={!!fieldError}
                         />
+                      )}
+                      {fieldError && (
+                        <p className="mt-1 text-xs text-[var(--accent-red)]" data-testid={`field-error-${param.InputName}`}>
+                          {fieldError}
+                        </p>
                       )}
                       {(param.InputType === 'Float' || param.InputType === 'Integer') && (
                         <p className="mt-1 text-xs text-muted">
@@ -472,7 +463,8 @@ function CreateGeometryJobPage() {
                         </p>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

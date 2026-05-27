@@ -33,6 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.e2e.example
 
 # vercel
 .vercel
@@ -55,3 +56,8 @@ next-env.d.ts
 # supabase
 /supabase/.temp/
 prod_*_dump*.sql
+
+# playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/

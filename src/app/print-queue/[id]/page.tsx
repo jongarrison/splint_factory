@@ -28,7 +28,6 @@ interface PrintQueueEntry {
     id: string;
     objectId?: string;
     createdAt: string;
-    jobNote?: string;
     jobLabel?: string;
     inputParameters: string;
     design: {
@@ -782,12 +781,6 @@ export default function PrintQueueDetailPage({
                   <dt className="text-sm font-medium text-muted">Organization</dt>
                   <dd className="mt-1 text-sm text-primary" data-testid="organization-name">{entry.designJob.owningOrganization.name}</dd>
                 </div>
-                {entry.designJob.jobNote && (
-                  <div className="md:col-span-2">
-                    <dt className="text-sm font-medium text-muted">Job Note</dt>
-                    <dd className="mt-1 text-sm text-primary">{entry.designJob.jobNote}</dd>
-                  </div>
-                )}
               </dl>
             </div>
           </div>
@@ -938,10 +931,6 @@ export default function PrintQueueDetailPage({
                 <div>
                   <dt className="text-sm font-medium text-muted">Job ID</dt>
                   <dd className="mt-1 text-sm text-primary" data-testid="job-label">{entry.designJob.jobLabel || 'Not specified'}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-muted">Job Note</dt>
-                  <dd className="mt-1 text-sm text-primary" data-testid="job-note">{entry.designJob.jobNote || 'No note provided'}</dd>
                 </div>
               </dl>
             </div>

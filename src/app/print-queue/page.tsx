@@ -30,7 +30,6 @@ interface PrintQueueEntry {
     id: string;
     objectId?: string;
     createdAt: string;
-    jobNote?: string;
     jobLabel?: string;
     design: {
       name: string;
@@ -275,8 +274,20 @@ export default function PrintQueuePage() {
       return <span className="status-badge status-error">Print Failed</span>;
     }
     if (entry.printStartedAt) {
-      const progressText = entry.progress != null ? ` ${entry.progress.toFixed(1)}%` : '';
-      return <span className="status-badge status-warning">Printing{progressText && <span className="progress-percentage">{progressText}</span>}</span>;
+      // Integer-precision progress; floor so we don't show 100% until truly done.
+      const progress = entry.progress;
+      const progressText = progress != null ? `${Math.floor(progress)}%` : null;
+      return (
+        <span className="status-badge status-warning">
+          Printing
+          {progressText && (
+            <>
+              {'\u00A0'}
+              <span className="progress-percentage">{progressText}</span>
+            </>
+          )}
+        </span>
+      );
     }
     return <span className="status-badge status-pending">Ready to Print</span>;
   };
@@ -726,7 +737,12 @@ export default function PrintQueuePage() {
                   </thead>
                   <tbody>
                     {filteredPrintQueue.map((entry) => (
-                      <tr key={entry.id}>
+                      <tr
+                        key={entry.id}
+                        data-testid="print-queue-row"
+                        data-job-label={entry.designJob.jobLabel || ''}
+                        data-design-job-id={entry.designJob.id}
+                      >
                         <td className="px-2 py-2 whitespace-nowrap">
                           <div className="flex flex-row sm:flex-col gap-1">
                             {/* Print button - shows for all users but only enabled in Electron client */}
@@ -789,15 +805,10 @@ export default function PrintQueuePage() {
                           <div className="text-sm font-mono font-semibold text-link">
                             {entry.designJob.objectId || 'N/A'}
                           </div>
-                          <div className="text-xs text-muted mt-1">Job:</div>
+                          <div className="text-xs text-muted mt-1">Print Queue Label:</div>
                           <div className="text-sm text-primary">
                             {entry.designJob.jobLabel || 'N/A'}
                           </div>
-                          {entry.designJob.jobNote && (
-                            <div className="text-xs text-muted truncate max-w-[150px] mt-1">
-                              {entry.designJob.jobNote}
-                            </div>
-                          )}
                           <div className="text-xs text-muted mt-1">
                             {formatDate(entry.createdAt)}
                           </div>

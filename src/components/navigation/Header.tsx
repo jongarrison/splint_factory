@@ -78,7 +78,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
         </div>
       )}
       
-      <nav className="shadow-lg border-b bg-[var(--surface)] border-[var(--border)]">
+      <nav className="shadow-lg border-b bg-[var(--surface)] border-[var(--border)] [&_a]:cursor-pointer [&_button]:cursor-pointer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Left side - Logo and brand */}

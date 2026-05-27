@@ -425,7 +425,6 @@ export async function POST() {
         owningOrganizationId: systemOrg.id,
         inputParameters: JSON.stringify({ radius: 10, height: 10 }),
         isDebugRequest: true,
-        jobNote: 'Processor health check',
         objectId,
         objectIdGeneratedAt: new Date(),
         isEnabled: true

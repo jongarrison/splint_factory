@@ -65,7 +65,6 @@ export async function GET(
       algorithmName: job.design.algorithmName,
       inputParameterSchema: registryDesign ? JSON.stringify(registryDesign.inputParameters) : '[]',
       inputParameters: job.inputParameters,
-      jobNote: job.jobNote,
       jobLabel: job.jobLabel,
       createdAt: job.createdAt,
       processStartedAt: job.processStartedAt,

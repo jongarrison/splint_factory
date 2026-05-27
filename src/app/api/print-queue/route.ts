@@ -61,7 +61,6 @@ export async function GET(request: NextRequest) {
             id: true, // Required for print operations
             objectId: true,
             jobLabel: true,
-            jobNote: true,
             meshFileName: true,
             printFileName: true,
             createdAt: true, // Required for sorting

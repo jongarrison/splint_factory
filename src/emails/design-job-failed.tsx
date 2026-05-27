@@ -46,7 +46,7 @@ export default function DesignJobFailedEmail({
           <Section style={detailsSection}>
             <Text style={detailRow}><strong>User:</strong> {userName} ({userEmail})</Text>
             <Text style={detailRow}><strong>Object ID:</strong> {objectId || 'N/A'}</Text>
-            <Text style={detailRow}><strong>Job Label:</strong> {jobLabel || 'N/A'}</Text>
+            <Text style={detailRow}><strong>Print Queue Label:</strong> {jobLabel || 'N/A'}</Text>
             <Text style={detailRow}><strong>Design:</strong> {designName}</Text>
             <Text style={detailRow}><strong>Algorithm:</strong> {algorithmName}</Text>
           </Section>

@@ -35,7 +35,6 @@ export async function GET() {
         id: true,
         createdAt: true,
         jobLabel: true,
-        jobNote: true,
         objectId: true,
         processStartedAt: true,
         processCompletedAt: true,
@@ -103,7 +102,6 @@ export async function POST(request: NextRequest) {
     const { 
       designId, 
       inputParameters, 
-      jobNote, 
       jobLabel,
       isEnabled 
     } = body;
@@ -116,15 +114,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate field lengths per requirements
-    if (jobNote && jobNote.length > 500) {
-      return NextResponse.json({ 
-        error: 'Job Note must be 500 characters or less' 
-      }, { status: 400 });
-    }
-
     if (jobLabel && jobLabel.length > 20) {
       return NextResponse.json({ 
-        error: 'Job Label must be 20 characters or less' 
+        error: 'Print Queue Label must be 20 characters or less' 
       }, { status: 400 });
     }
 
@@ -220,7 +212,6 @@ export async function POST(request: NextRequest) {
         creatorId: session.user.id,
         owningOrganizationId: user.organizationId,
         inputParameters,
-        jobNote: jobNote || null,
         jobLabel: jobLabel || null,
         isEnabled: isEnabled !== undefined ? isEnabled : true,
         objectId,
