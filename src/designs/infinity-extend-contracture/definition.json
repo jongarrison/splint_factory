@@ -8,42 +8,42 @@
   "inputParameters": [
     {
       "InputName": "root_circumference_mm",
-      "InputDescription": "Circumference (mm) at the midpoint of the proximal phalanx.",
+      "InputDescription": "1. P1 circumference (mm) at the midpoint of the proximal phalanx.",
       "InputType": "Float",
       "NumberMin": 25,
       "NumberMax": 120
     },
     {
       "InputName": "mid_circumference_mm",
-      "InputDescription": "Circumference (mm) at the proximal interphalangeal (PIP) joint.",
+      "InputDescription": "2. PIP circumference (mm)",
       "InputType": "Float",
       "NumberMin": 25,
       "NumberMax": 120
     },
     {
       "InputName": "tip_circumference_mm",
-      "InputDescription": "Circumference (mm) at the midpoint of the middle phalanx.",
+      "InputDescription": "3. P2 circumference (mm) at the midpoint of the middle phalanx.",
       "InputType": "Float",
       "NumberMin": 25,
       "NumberMax": 120
     },
     {
       "InputName": "inter_phalanx_distance_mm",
-      "InputDescription": "Interphalangeal length (mm) - Midpoint of the proximal phalanx to midpoint of the middle phalanx.",
+      "InputDescription": "4. Interphalangeal length (mm) - Midpoint of the proximal phalanx to midpoint of the middle phalanx.",
       "InputType": "Float",
       "NumberMin": 25,
       "NumberMax": 70
     },
     {
       "InputName": "contracture_flexion_start",
-      "InputDescription": "Contracture flexion sequence start angle (degrees)",
+      "InputDescription": "5a. Contracture flexion sequence start angle (degrees) from a straight position.",
       "InputType": "Float",
       "NumberMin": -15,
       "NumberMax": 45
     },
     {
       "InputName": "contracture_flexion_end",
-      "InputDescription": "Contracture flexion sequence end angle (degrees)",
+      "InputDescription": "5b. Contracture flexion sequence end angle (degrees) from a straight position.",
       "InputType": "Float",
       "NumberMin": -15,
       "NumberMax": 45

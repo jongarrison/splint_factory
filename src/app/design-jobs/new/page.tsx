@@ -372,7 +372,7 @@ function CreateGeometryJobPage() {
                 <h3 className="text-lg font-medium text-primary mb-4">
                   Design Parameters for {selectedDesign.name}
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   {parameterSchema.map((param) => {
                     const fieldError = validation.errors[param.InputName];
                     const errClass = fieldErrorClass(fieldError);
