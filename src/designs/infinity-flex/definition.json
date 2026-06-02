@@ -40,6 +40,11 @@
       "InputType": "Float",
       "NumberMin": -45,
       "NumberMax": 45
+    },
+    {
+      "InputName": "include_slit",
+      "InputDescription": "6. Introduce a slit for fitting over a large joint.",
+      "InputType": "Boolean"
     }
   ]
 }

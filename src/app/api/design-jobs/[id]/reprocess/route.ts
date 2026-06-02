@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getBlobStorageInstance } from '@/lib/blob-storage';
 
 // POST /api/design-jobs/[id]/reprocess - Reset job state so geo processor picks it up again
 export async function POST(
@@ -31,11 +32,29 @@ export async function POST(
 
     const existingJob = await prisma.designJob.findUnique({
       where: { id },
-      select: { id: true },
+      select: {
+        id: true,
+        meshBlobPathname: true,
+        printBlobPathname: true,
+      },
     });
 
     if (!existingJob) {
       return NextResponse.json({ error: 'Design job not found' }, { status: 404 });
+    }
+
+    // Delete any previously uploaded blob files so they don't become orphans
+    const blobStorage = getBlobStorageInstance();
+    const deletePromises: Promise<void>[] = [];
+    if (existingJob.meshBlobPathname) {
+      deletePromises.push(blobStorage.delete(existingJob.meshBlobPathname));
+    }
+    if (existingJob.printBlobPathname) {
+      deletePromises.push(blobStorage.delete(existingJob.printBlobPathname));
+    }
+    if (deletePromises.length > 0) {
+      await Promise.all(deletePromises);
+      console.log(`Deleted ${deletePromises.length} blob file(s) for design job ${id} before reprocessing`);
     }
 
     // Reset processing state so the geo processor will pick it up on next poll
@@ -47,6 +66,14 @@ export async function POST(
         isProcessSuccessful: false,
         processingLog: null,
         meshMetadata: null,
+        meshBlobUrl: null,
+        meshBlobPathname: null,
+        meshFileName: null,
+        meshFileContents: null,
+        printBlobUrl: null,
+        printBlobPathname: null,
+        printFileName: null,
+        printFileContents: null,
         isEnabled: true,
       },
     });
