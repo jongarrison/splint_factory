@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 
-type AcceptanceAction = 'ACCEPTED' | 'REJECT_DESIGN' | 'REJECT_PRINT';
+type AcceptanceAction = 'ACCEPTED' | 'REJECT_DESIGN' | 'REJECT_PRINT' | 'ARCHIVED';
 
 interface PrintAcceptanceModalProps {
   printId: string;
@@ -50,6 +50,11 @@ export default function PrintAcceptanceModal({
       color: 'border-[var(--border)] hover:border-[var(--status-error-text)] hover:bg-[var(--status-error-bg)]',
       selectedColor: 'border-[var(--status-error-text)] bg-[var(--status-error-bg)]',
       ring: 'btn-danger',
+    },
+    { value: 'ARCHIVED', label: 'Archive', description: 'Move to history without a pass/fail decision',
+      color: 'border-[var(--border)] hover:border-slate-400 hover:bg-slate-700/30',
+      selectedColor: 'border-slate-400 bg-slate-700/30',
+      ring: 'bg-slate-600 hover:bg-slate-700',
     },
   ];
 

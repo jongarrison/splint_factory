@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-// POST /api/print-queue/[id]/acceptance - Accept or reject a print
-// Valid printAcceptance values: ACCEPTED, REJECT_DESIGN, REJECT_PRINT
-const VALID_ACCEPTANCE_VALUES = ['ACCEPTED', 'REJECT_DESIGN', 'REJECT_PRINT'] as const;
+// POST /api/print-queue/[id]/acceptance - Accept, reject, or archive a print
+// Valid printAcceptance values: ACCEPTED, REJECT_DESIGN, REJECT_PRINT, ARCHIVED
+const VALID_ACCEPTANCE_VALUES = ['ACCEPTED', 'REJECT_DESIGN', 'REJECT_PRINT', 'ARCHIVED'] as const;
 type PrintAcceptanceValue = typeof VALID_ACCEPTANCE_VALUES[number];
 
 export async function POST(
@@ -68,7 +68,7 @@ export async function POST(
     }
 
     // Verify print is completed (progress > 99%) before accepting
-    // Exceptions: REJECT_DESIGN can happen anytime, REJECT_PRINT can happen after print started
+    // Exceptions: REJECT_DESIGN/ARCHIVED can happen anytime, REJECT_PRINT can happen after print started
     if (printAcceptance === 'ACCEPTED' && (!printJob.progress || printJob.progress <= 99)) {
       return NextResponse.json(
         { error: 'Print must be completed (progress > 99%) before acceptance' },

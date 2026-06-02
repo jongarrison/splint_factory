@@ -305,6 +305,9 @@ export default function PrintQueuePage() {
     if (entry.printAcceptance === 'REJECTED') {
       return <span className="status-badge status-error">Rejected</span>;
     }
+    if (entry.printAcceptance === 'ARCHIVED') {
+      return <span className="status-badge status-neutral">Archived</span>;
+    }
     return null;
   };
   
@@ -547,7 +550,7 @@ export default function PrintQueuePage() {
 
       // Refresh the list
       await refreshPrintQueue();
-      const label = acceptance === 'ACCEPTED' ? 'accepted' : 'rejected';
+      const label = acceptance === 'ACCEPTED' ? 'accepted' : acceptance === 'ARCHIVED' ? 'archived' : 'rejected';
       showNotification(
         `Print ${label}`,
         'success',
