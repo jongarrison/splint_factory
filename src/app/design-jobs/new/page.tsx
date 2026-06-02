@@ -8,6 +8,8 @@ import Image from 'next/image';
 import Header from '@/components/navigation/Header';
 import ValidationSummary from '@/components/forms/ValidationSummary';
 import { useFormValidation, fieldErrorClass, type FieldErrors } from '@/lib/formValidation';
+import { getDesignHintsFn } from '@/designs/hints-registry';
+import type { DesignHint } from '@/designs/types';
 
 interface Design {
   id: string;
@@ -43,6 +45,7 @@ function CreateGeometryJobPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeHints, setActiveHints] = useState<DesignHint[]>([]);
   // Scroll target for failed-submit feedback — top of the form card,
   // so the summary alert lands well within view on mobile.
   const formCardRef = useRef<HTMLDivElement | null>(null);
@@ -119,9 +122,17 @@ function CreateGeometryJobPage() {
     }
   };
 
+  // Evaluate hints against the given values and update state.
+  // Pass merged values directly to avoid waiting on async state updates.
+  const evaluateHints = (designId: string, values: Record<string, any>) => {
+    const hintsFn = getDesignHintsFn(designId);
+    setActiveHints(hintsFn ? hintsFn(values) : []);
+  };
+
   const handleGeometryChange = (geometryId: string) => {
     const design = geometries.find(g => g.id === geometryId);
     setSelectedDesign(design || null);
+    setActiveHints([]);
     
     if (design) {
       const schema = design.inputParameters;
@@ -392,8 +403,12 @@ function CreateGeometryJobPage() {
                           onChange={(e) => handleParameterChange(param.InputName, e.target.value)}
                           onBlur={(e) => {
                             const val = e.target.value;
-                            if (val !== '' && !isNaN(parseFloat(val))) {
-                              handleParameterChange(param.InputName, parseFloat(val));
+                            const numVal = parseFloat(val);
+                            if (val !== '' && !isNaN(numVal)) {
+                              handleParameterChange(param.InputName, numVal);
+                            }
+                            if (selectedDesign) {
+                              evaluateHints(selectedDesign.id, { ...parameterValues, [param.InputName]: !isNaN(numVal) ? numVal : val });
                             }
                           }}
                           className={`mt-1 input-field ${errClass}`}
@@ -408,8 +423,12 @@ function CreateGeometryJobPage() {
                           onChange={(e) => handleParameterChange(param.InputName, e.target.value)}
                           onBlur={(e) => {
                             const val = e.target.value;
-                            if (val !== '' && !isNaN(parseInt(val))) {
-                              handleParameterChange(param.InputName, parseInt(val));
+                            const numVal = parseInt(val);
+                            if (val !== '' && !isNaN(numVal)) {
+                              handleParameterChange(param.InputName, numVal);
+                            }
+                            if (selectedDesign) {
+                              evaluateHints(selectedDesign.id, { ...parameterValues, [param.InputName]: !isNaN(numVal) ? numVal : val });
                             }
                           }}
                           className={`mt-1 input-field ${errClass}`}
@@ -441,6 +460,13 @@ function CreateGeometryJobPage() {
                           {fieldError}
                         </p>
                       )}
+                      {activeHints
+                        .filter(h => h.targetParameter === param.InputName)
+                        .map((hint, i) => (
+                          <p key={i} className="mt-1 text-xs text-[var(--accent-yellow)]" data-testid={`hint-${param.InputName}`}>
+                            {hint.message}
+                          </p>
+                        ))}
                       {(param.InputType === 'Float' || param.InputType === 'Integer') && (
                         <p className="mt-1 text-xs text-muted">
                           {param.NumberMin !== undefined && param.NumberMax !== undefined
