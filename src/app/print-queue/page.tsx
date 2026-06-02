@@ -458,32 +458,38 @@ export default function PrintQueuePage() {
     }
   };
 
-  const handleDeleteSubmit = async (printId: string, action: 'DELETE' | 'REJECT_DESIGN' | 'REJECT_PRINT') => {
+  const handleDeleteSubmit = async (printId: string, action: 'DELETE' | 'REJECT_DESIGN' | 'REJECT_PRINT' | 'ARCHIVED') => {
     try {
-      // If rejecting design or print, record that before disabling
-      if (action === 'REJECT_DESIGN' || action === 'REJECT_PRINT') {
+      // Record acceptance for reject/archive actions
+      if (action === 'REJECT_DESIGN' || action === 'REJECT_PRINT' || action === 'ARCHIVED') {
         const acceptanceResponse = await fetch(`/api/print-queue/${printId}/acceptance`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ printAcceptance: action }),
         });
         if (!acceptanceResponse.ok) {
-          throw new Error(action === 'REJECT_DESIGN' ? 'Failed to record design rejection' : 'Failed to record print rejection');
+          const errorData = await acceptanceResponse.json();
+          throw new Error(errorData.error || 'Failed to record action');
         }
       }
 
-      const response = await fetch(`/api/print-queue/${printId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isEnabled: false }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete print job');
+      // Archive moves the job to history without soft-deleting it
+      if (action !== 'ARCHIVED') {
+        const response = await fetch(`/api/print-queue/${printId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isEnabled: false }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to remove print job');
+        }
       }
 
       refreshPrintQueue();
-      const msg = action === 'REJECT_DESIGN' ? 'Design rejected and removed' : action === 'REJECT_PRINT' ? 'Print rejected and removed' : 'Print job removed';
+      const msg = action === 'REJECT_DESIGN' ? 'Design rejected and removed'
+        : action === 'REJECT_PRINT' ? 'Print rejected and removed'
+        : action === 'ARCHIVED' ? 'Print archived'
+        : 'Print job removed';
       showNotification(msg, 'success', 3000);
     } catch (err) {
       showNotification(err instanceof Error ? err.message : 'Failed to delete print job', 'error');
