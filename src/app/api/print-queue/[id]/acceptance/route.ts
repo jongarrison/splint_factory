@@ -67,9 +67,9 @@ export async function POST(
       );
     }
 
-    // Verify print is completed (progress > 99%) before accepting
-    // Exceptions: REJECT_DESIGN/ARCHIVED can happen anytime, REJECT_PRINT can happen after print started
-    if (printAcceptance === 'ACCEPTED' && (!printJob.progress || printJob.progress <= 99)) {
+    // Require print completion before accepting; support both the canonical
+    // printCompletedAt flag and legacy progress > 99 for older records
+    if (printAcceptance === 'ACCEPTED' && !printJob.printCompletedAt && (!printJob.progress || printJob.progress <= 99)) {
       return NextResponse.json(
         { error: 'Print must be completed (progress > 99%) before acceptance' },
         { status: 400 }

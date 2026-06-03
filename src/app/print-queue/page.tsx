@@ -55,6 +55,7 @@ export default function PrintQueuePage() {
   const [acceptanceModal, setAcceptanceModal] = useState<{
     printId: string;
     geometryName: string;
+    designJobId: string;
   } | null>(null);
   const [deleteModal, setDeleteModal] = useState<{
     printId: string;
@@ -242,10 +243,10 @@ export default function PrintQueuePage() {
 
 
   const isActivePrint = (entry: PrintQueueEntry) => {
-    // A print is active if it hasn't been accepted, rejected, or failed
-    if (entry.printAcceptance !== null) return false; // Accepted or rejected
-    if (entry.printCompletedAt && !entry.isPrintSuccessful) return false; // Failed
-    return true; // Otherwise active
+    // A print moves to History only after clinical review (accept/reject).
+    // Failed prints remain active so the user can retry.
+    if (entry.printAcceptance !== null) return false;
+    return true;
   };
 
   const filteredPrintQueue = printQueue
@@ -393,23 +394,13 @@ export default function PrintQueuePage() {
     try {
       setPrintingJobId(entry.id);
 
-      // Step 1: Downloading file
-      showNotification('Downloading print file from server...', 'info');
-
-      // Get the print queue ID and geometry processing queue ID
       const printQueueId = entry.id;
       const geometryJobId = entry.designJob.id;
-      
-      // Get session cookie for authentication
       const sessionCookie = document.cookie;
-      
-      // Generate a job name from the geometry and customer info
       const jobName = `${entry.designJob.design.name.replace(/\s+/g, '_')}_${entry.designJob.jobLabel || 'job'}`;
 
-      // Step 2: Uploading to printer
-      showNotification('Uploading file to printer...', 'info');
-
-      // Call the Electron API to print
+      // Download file, upload to printer, send print command, and verify print started.
+      // The client reports printStartedAt to the server once the printer enters RUNNING state.
       const electronAPI = (window as any).electronAPI;
       const result = await electronAPI.printing.printGeometryJob(
         printQueueId,
@@ -423,34 +414,16 @@ export default function PrintQueuePage() {
         throw new Error(result.error || 'Print failed');
       }
 
-      // Step 3: Loading filament
-      showNotification('Loading filament from AMS...', 'info');
-
-      // Step 4: Starting print
-      showNotification('Sending print command to printer...', 'info');
-
-      // Update the print queue entry to mark as started
-      await fetch(`/api/print-queue/${entry.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          printStartedAt: new Date().toISOString(),
-        }),
-      });
-
-      // Refresh the list
+      // Refresh so the page reflects the printStartedAt the client just wrote
       await refreshPrintQueue();
-      
-      // Success notification (stays longer - 5 seconds)
+
       showNotification(`Print started: ${entry.designJob.design.name}`, 'success', 5000);
     } catch (err) {
-      // Show error notification instead of setting error state
+      // No auto-dismiss on error — operator must see and acknowledge this
       showNotification(
         `Print failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
         'error',
-        5000
+        null
       );
       console.error('Print error:', err);
     } finally {
@@ -536,7 +509,7 @@ export default function PrintQueuePage() {
     return true;
   }, [deviceId, refreshPrintQueue]);
 
-  const handleAcceptanceSubmit = async (printId: string, acceptance: string, note: string) => {
+  const handleAcceptanceSubmit = async (printId: string, acceptance: string, note: string, shouldReprint: boolean) => {
     try {
       const response = await fetch(`/api/print-queue/${printId}/acceptance`, {
         method: 'POST',
@@ -554,11 +527,22 @@ export default function PrintQueuePage() {
         throw new Error(errorData.error || 'Failed to update print acceptance');
       }
 
-      // Refresh the list
+      if (shouldReprint && acceptanceModal?.designJobId) {
+        const reprintResponse = await fetch('/api/print-queue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ designJobId: acceptanceModal.designJobId }),
+        });
+        if (!reprintResponse.ok) {
+          const errorData = await reprintResponse.json();
+          throw new Error(errorData.error || 'Failed to queue reprint');
+        }
+      }
+
       await refreshPrintQueue();
       const label = acceptance === 'ACCEPTED' ? 'accepted' : acceptance === 'ARCHIVED' ? 'archived' : 'rejected';
       showNotification(
-        `Print ${label}`,
+        shouldReprint ? `Print ${label} — new print queued` : `Print ${label}`,
         'success',
         3000
       );
@@ -793,12 +777,13 @@ export default function PrintQueuePage() {
                               </button>
                             )}
                             
-                            {/* Review button - show for completed prints that haven't been reviewed */}
-                            {entry.progress != null && entry.progress > 99 && entry.printAcceptance === null && (
+                            {/* Review button - print is complete (canonical: printCompletedAt, fallback: progress for legacy records) and not yet reviewed */}
+                            {!!entry.printStartedAt && (!!entry.printCompletedAt || (entry.progress != null && entry.progress > 99)) && entry.printAcceptance === null && (
                                 <button
                                   onClick={() => setAcceptanceModal({
                                     printId: entry.id,
                                     geometryName: entry.designJob.design.name,
+                                    designJobId: entry.designJob.id,
                                   })}
                                   className="btn-primary px-4 py-1.5 text-sm font-semibold min-w-[80px]"
                                   title="Review print quality"

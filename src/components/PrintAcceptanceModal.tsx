@@ -8,7 +8,7 @@ interface PrintAcceptanceModalProps {
   printId: string;
   geometryName: string;
   onClose: () => void;
-  onSubmit: (printId: string, acceptance: AcceptanceAction, note: string) => Promise<void>;
+  onSubmit: (printId: string, acceptance: AcceptanceAction, note: string, shouldReprint: boolean) => Promise<void>;
 }
 
 export default function PrintAcceptanceModal({
@@ -20,13 +20,21 @@ export default function PrintAcceptanceModal({
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [selected, setSelected] = useState<AcceptanceAction | null>(null);
+  const [shouldReprint, setShouldReprint] = useState(false);
+
+  // Default reprint checkbox to checked when REJECT_PRINT is selected
+  const handleSelect = (value: AcceptanceAction) => {
+    setSelected(value);
+    if (value === 'REJECT_PRINT') setShouldReprint(true);
+    else setShouldReprint(false);
+  };
 
   const handleSubmit = async () => {
     if (!selected) return;
     setSubmitting(true);
     try {
       const note = noteRef.current?.value || '';
-      await onSubmit(printId, selected, note);
+      await onSubmit(printId, selected, note, shouldReprint);
       onClose();
     } catch (error) {
       console.error('Error submitting acceptance:', error);
@@ -85,7 +93,7 @@ export default function PrintAcceptanceModal({
           {options.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => setSelected(opt.value)}
+              onClick={() => handleSelect(opt.value)}
               disabled={submitting}
               className={`text-left px-4 py-3 rounded-lg border-2 transition-all ${
                 selected === opt.value ? opt.selectedColor : opt.color
@@ -112,6 +120,18 @@ export default function PrintAcceptanceModal({
             disabled={submitting}
           />
         </div>
+
+        {/* Queue another print checkbox */}
+        <label className="flex items-center gap-3 mb-4 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={shouldReprint}
+            onChange={(e) => setShouldReprint(e.target.checked)}
+            disabled={submitting}
+            className="h-4 w-4 rounded border-[var(--border)] accent-[var(--accent-blue)]"
+          />
+          <span className="text-sm text-secondary">Queue another print</span>
+        </label>
 
         {/* Action buttons */}
         <div className="flex gap-3">

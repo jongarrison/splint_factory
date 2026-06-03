@@ -31,7 +31,7 @@ export async function sendEmail({ to, subject, html, react, replyTo }: SendEmail
   const htmlContent = react ? await render(react) : html!;
 
   if (!resend) {
-    console.warn('[Email] RESEND_API_KEY not set, skipping email send');
+    console.warn(`[Email] RESEND_API_KEY not set — skipping "${subject}" to ${recipients.join(', ')}`);
     // In dev, extract and log any URLs from the HTML so devs can use them
     const urlMatches = htmlContent.match(/https?:\/\/[^"<\s]+/g);
     if (urlMatches) {

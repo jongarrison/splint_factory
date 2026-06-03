@@ -40,13 +40,19 @@ export async function PUT(
       return NextResponse.json({ error: 'Print queue entry not found' }, { status: 404 });
     }
 
-    // Update the progress
+    // Update progress; auto-complete when the printer reports 100%
+    const progressData: any = {
+      progress,
+      progressLastReportAt: new Date(),
+    };
+    if (progress >= 100) {
+      progressData.printCompletedAt = new Date();
+      progressData.isPrintSuccessful = true;
+    }
+
     const updatedEntry = await prisma.printJob.update({
       where: { id: printQueueEntry.id },
-      data: {
-        progress,
-        progressLastReportAt: new Date(),
-      } as any, // Type assertion needed until Prisma Client regenerates
+      data: progressData,
       include: {
         designJob: {
           include: {
