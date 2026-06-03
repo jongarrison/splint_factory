@@ -601,7 +601,7 @@ export default function PrintQueueDetailPage({
             </div>
             <div className="card-body">
               <div className="flex flex-wrap gap-3">
-                {!entry.printStartedAt && entry.hasPrintFile && (
+                {!entry.printStartedAt && !entry.printCompletedAt && entry.hasPrintFile && (
                   <div className="relative group">
                     <button
                       onClick={() => isElectronClient ? handlePrint() : null}

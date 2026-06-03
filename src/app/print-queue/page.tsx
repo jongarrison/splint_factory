@@ -739,7 +739,7 @@ export default function PrintQueuePage() {
                         <td className="px-2 py-2 whitespace-nowrap">
                           <div className="flex flex-row sm:flex-col gap-1">
                             {/* Print button - shows for all users but only enabled in Electron client */}
-                            {!entry.printStartedAt && entry.hasPrintFile && (
+                            {!entry.printStartedAt && !entry.printCompletedAt && entry.hasPrintFile && (
                           <button
                                 onClick={() => isElectronClient && !printerBusy ? setPrintConfirmModal({ entry }) : null}
                                 disabled={!isElectronClient || printingJobId === entry.id || printerBusy}
@@ -778,7 +778,7 @@ export default function PrintQueuePage() {
                             )}
                             
                             {/* Review button - print is complete (canonical: printCompletedAt, fallback: progress for legacy records) and not yet reviewed */}
-                            {!!entry.printStartedAt && (!!entry.printCompletedAt || (entry.progress != null && entry.progress > 99)) && entry.printAcceptance === null && (
+                            {(!!entry.printCompletedAt || (!!entry.printStartedAt && entry.progress != null && entry.progress > 99)) && entry.printAcceptance === null && (
                                 <button
                                   onClick={() => setAcceptanceModal({
                                     printId: entry.id,

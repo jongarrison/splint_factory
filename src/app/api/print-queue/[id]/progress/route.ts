@@ -40,11 +40,15 @@ export async function PUT(
       return NextResponse.json({ error: 'Print queue entry not found' }, { status: 404 });
     }
 
-    // Update progress; auto-complete when the printer reports 100%
+    // Update progress; set printStartedAt if not already set (covers recovery after restart);
+    // auto-complete when the printer reports 100%
     const progressData: any = {
       progress,
       progressLastReportAt: new Date(),
     };
+    if (!printQueueEntry.printStartedAt) {
+      progressData.printStartedAt = new Date();
+    }
     if (progress >= 100) {
       progressData.printCompletedAt = new Date();
       progressData.isPrintSuccessful = true;
