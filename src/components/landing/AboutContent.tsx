@@ -366,7 +366,7 @@ export default function AboutContent() {
 
           <FadeIn>
             <p className="text-[var(--text-tertiary)] mt-8 text-center text-sm">
-              Each design prints in under 20 minutes and requires only a few simple measurements
+              Most of our designs print in under 20 minutes (some as little as 10 minutes) and require only a few simple measurements
               from the clinician.
             </p>
           </FadeIn>
@@ -430,9 +430,9 @@ export default function AboutContent() {
               or try Splint Factory in your practice, we&rsquo;d love to hear from you.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
-              <ProtectedEmail user="liz" domain="splintfactory.com" label="Email Liz" />
+              <ProtectedEmail user="liz" domain="splintfactory.com" label="Clinical Support" />
               <span className="text-[var(--text-muted)] hidden sm:inline">&middot;</span>
-              <ProtectedEmail user="jon" domain="splintfactory.com" label="Email Jon" />
+              <ProtectedEmail user="jon" domain="splintfactory.com" label="Tech Support" />
             </div>
           </FadeIn>
           {!isLoggedIn && (
