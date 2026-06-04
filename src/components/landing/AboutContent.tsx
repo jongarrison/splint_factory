@@ -238,17 +238,6 @@ export default function AboutContent() {
               />
             </FadeIn>
             <FadeIn>
-              <div className="relative rounded-lg overflow-hidden h-full min-h-[200px]">
-                <Image
-                  src="/images/about/boot-crush-test-orange-splint.jpg"
-                  alt="Work boot stepping on a Splint Factory orthosis - durability test"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, 50vw"
-                />
-              </div>
-            </FadeIn>
-            <FadeIn>
               <FeatureCard
                 title="Durable"
                 description="These aren't just temporary solutions. Our orthoses are designed for long-term wear for patients managing chronic conditions who need something that holds up to daily life."
