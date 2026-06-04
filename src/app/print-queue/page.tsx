@@ -10,7 +10,10 @@ import PrintAcceptanceModal from '@/components/PrintAcceptanceModal';
 import DeletePrintModal from '@/components/DeletePrintModal';
 import PrintConfirmModal from '@/components/PrintConfirmModal';
 import DeviceAuthOverlay from '@/components/DeviceAuthOverlay';
+import PrintStatusBadge from '@/components/PrintStatusBadge';
+import PrintAcceptanceBadge from '@/components/PrintAcceptanceBadge';
 import { useSmartPolling } from '@/hooks/useSmartPolling';
+import { formatDate } from '@/lib/formatDate';
 
 interface PrintQueueEntry {
   id: string;
@@ -267,51 +270,6 @@ export default function PrintQueuePage() {
       }
     });
 
-  const getStatusBadge = (entry: PrintQueueEntry) => {
-    if (entry.printCompletedAt && entry.isPrintSuccessful) {
-      return <span className="status-badge status-success">Print Successful</span>;
-    }
-    if (entry.printCompletedAt && !entry.isPrintSuccessful) {
-      return <span className="status-badge status-error">Print Failed</span>;
-    }
-    if (entry.printStartedAt) {
-      // Integer-precision progress; floor so we don't show 100% until truly done.
-      const progress = entry.progress;
-      const progressText = progress != null ? `${Math.floor(progress)}%` : null;
-      return (
-        <span className="status-badge status-warning">
-          Printing
-          {progressText && (
-            <>
-              {'\u00A0'}
-              <span className="progress-percentage">{progressText}</span>
-            </>
-          )}
-        </span>
-      );
-    }
-    return <span className="status-badge status-pending">Ready to Print</span>;
-  };
-
-  const getAcceptanceBadge = (entry: PrintQueueEntry) => {
-    if (entry.printAcceptance === 'ACCEPTED') {
-      return <span className="status-badge status-success">Accepted</span>;
-    }
-    if (entry.printAcceptance === 'REJECT_DESIGN') {
-      return <span className="status-badge status-warning">Rejected - Design</span>;
-    }
-    if (entry.printAcceptance === 'REJECT_PRINT') {
-      return <span className="status-badge status-error">Rejected - Print</span>;
-    }
-    if (entry.printAcceptance === 'REJECTED') {
-      return <span className="status-badge status-error">Rejected</span>;
-    }
-    if (entry.printAcceptance === 'ARCHIVED') {
-      return <span className="status-badge status-neutral">Archived</span>;
-    }
-    return null;
-  };
-  
   const getProgressInfo = (entry: PrintQueueEntry) => {
     if (!entry.printStartedAt || entry.printCompletedAt) {
       return null;
@@ -332,34 +290,6 @@ export default function PrintQueuePage() {
     }
     
     return null;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  const handleMarkPrintSuccessful = async (entryId: string) => {
-    try {
-      const response = await fetch(`/api/print-queue/${entryId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isPrintSuccessful: true,
-          printCompletedAt: new Date().toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update print status');
-      }
-
-      // Refresh the list
-      refreshPrintQueue();
-    } catch (err) {
-      showNotification(err instanceof Error ? err.message : 'Failed to update print status', 'error');
-    }
   };
 
   const handleStartPrint = async (entryId: string) => {
@@ -767,16 +697,6 @@ export default function PrintQueuePage() {
                               </button>
                             )}
                             
-                            {entry.printCompletedAt && !entry.isPrintSuccessful && (
-                              <button
-                                onClick={() => handleMarkPrintSuccessful(entry.id)}
-                                className="btn-success px-2 py-1 text-xs min-w-[60px]"
-                                data-testid="mark-done-btn"
-                              >
-                                Done
-                              </button>
-                            )}
-                            
                             {/* Review button - print is complete (canonical: printCompletedAt, fallback: progress for legacy records) and not yet reviewed */}
                             {(!!entry.printCompletedAt || (!!entry.printStartedAt && entry.progress != null && entry.progress > 99)) && entry.printAcceptance === null && (
                                 <button
@@ -821,8 +741,8 @@ export default function PrintQueuePage() {
                         </td>
                         <td className="px-2 py-2">
                           <div className="print-status flex flex-wrap gap-2">
-                            {getStatusBadge(entry)}
-                            {getAcceptanceBadge(entry)}
+                            <PrintStatusBadge printStartedAt={entry.printStartedAt} printCompletedAt={entry.printCompletedAt} isPrintSuccessful={entry.isPrintSuccessful} progress={entry.progress} />
+                            <PrintAcceptanceBadge printAcceptance={entry.printAcceptance} printNote={entry.printNote} />
                           </div>
                           {entry.printStartedAt && (
                             <div className="print-started-time text-xs text-muted mt-1 hidden sm:block">

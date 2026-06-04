@@ -9,6 +9,9 @@ import ProcessingLogViewer from '@/components/ProcessingLogViewer';
 import PrintAcceptanceModal from '@/components/PrintAcceptanceModal';
 import DeletePrintModal from '@/components/DeletePrintModal';
 import DeviceAuthOverlay from '@/components/DeviceAuthOverlay';
+import PrintStatusBadge from '@/components/PrintStatusBadge';
+import PrintAcceptanceBadge from '@/components/PrintAcceptanceBadge';
+import { formatDate } from '@/lib/formatDate';
 
 interface PrintQueueEntry {
   id: string;
@@ -216,41 +219,6 @@ export default function PrintQueueDetailPage({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  const getStatusBadge = (entry: PrintQueueEntry) => {
-    if (entry.printCompletedAt && entry.isPrintSuccessful) {
-      return <span className="status-badge status-success">Print Successful</span>;
-    }
-    if (entry.printCompletedAt && !entry.isPrintSuccessful) {
-      return <span className="status-badge status-error">Print Failed</span>;
-    }
-    if (entry.printStartedAt) {
-      const progressText = entry.progress != null ? ` ${entry.progress.toFixed(1)}%` : '';
-      return <span className="status-badge status-warning">Printing{progressText}</span>;
-    }
-    return <span className="status-badge status-pending">Ready to Print</span>;
-  };
-
-  const getAcceptanceBadge = (entry: PrintQueueEntry) => {
-    if (entry.printAcceptance === 'ACCEPTED') {
-      return <span className="status-badge status-success">Accepted</span>;
-    }
-    if (entry.printAcceptance === 'REJECT_DESIGN') {
-      return <span className="status-badge status-warning">Rejected - Design</span>;
-    }
-    if (entry.printAcceptance === 'REJECT_PRINT') {
-      return <span className="status-badge status-error">Rejected - Print</span>;
-    }
-    // Legacy fallback
-    if (entry.printAcceptance === 'REJECTED') {
-      return <span className="status-badge status-error">Rejected</span>;
-    }
-    return null;
-  };
-
   const handlePrint = async () => {
     if (!entry || !isElectronClient) {
       setError('Printing is only available in the Electron client');
@@ -384,68 +352,6 @@ export default function PrintQueueDetailPage({
       await fetchEntry();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start print');
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleMarkSuccessful = async () => {
-    if (!entry) return;
-    
-    setUpdating(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`/api/print-queue/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isPrintSuccessful: true,
-          printCompletedAt: new Date().toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to mark print as successful');
-      }
-
-      // Refresh the entry
-      await fetchEntry();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to mark print as successful');
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleMarkFailed = async () => {
-    if (!entry) return;
-    
-    setUpdating(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`/api/print-queue/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isPrintSuccessful: false,
-          printCompletedAt: new Date().toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to mark print as failed');
-      }
-
-      // Refresh the entry
-      await fetchEntry();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to mark print as failed');
     } finally {
       setUpdating(false);
     }
@@ -594,8 +500,8 @@ export default function PrintQueueDetailPage({
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-medium text-primary">Print Status</h2>
                 <div className="flex items-center gap-3">
-                  {getStatusBadge(entry)}
-                  {getAcceptanceBadge(entry)}
+                  <PrintStatusBadge printStartedAt={entry.printStartedAt} printCompletedAt={entry.printCompletedAt} isPrintSuccessful={entry.isPrintSuccessful} progress={entry.progress} />
+                  <PrintAcceptanceBadge printAcceptance={entry.printAcceptance} printNote={entry.printNote} />
                 </div>
               </div>
             </div>
@@ -621,38 +527,6 @@ export default function PrintQueueDetailPage({
                       </div>
                     )}
                   </div>
-                )}
-                
-                {entry.printStartedAt && !entry.printCompletedAt && (
-                  <>
-                    <button
-                      onClick={handleMarkSuccessful}
-                      disabled={updating}
-                      className="btn-success px-4 py-2 text-sm"
-                      data-testid="mark-successful-btn"
-                    >
-                      {updating ? 'Updating...' : 'Mark Successful'}
-                    </button>
-                    <button
-                      onClick={handleMarkFailed}
-                      disabled={updating}
-                      className="btn-danger px-4 py-2 text-sm"
-                      data-testid="mark-failed-btn"
-                    >
-                      {updating ? 'Updating...' : 'Mark Failed'}
-                    </button>
-                  </>
-                )}
-
-                {entry.printCompletedAt && !entry.isPrintSuccessful && (
-                  <button
-                    onClick={handleMarkSuccessful}
-                    disabled={updating}
-                    className="btn-success px-4 py-2 text-sm"
-                    data-testid="mark-successful-btn"
-                  >
-                    {updating ? 'Updating...' : 'Mark Successful'}
-                  </button>
                 )}
                 
                 {/* Review button - show for completed prints that haven't been reviewed */}

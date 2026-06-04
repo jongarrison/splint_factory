@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import { useSmartPolling } from '@/hooks/useSmartPolling';
+import { formatDate } from '@/lib/formatDate';
 
 interface GeometryJob {
   id: string;
@@ -81,7 +82,7 @@ export default function GeometryJobsPage() {
         return <span className="status-badge status-neutral">Disabled</span>;
       }
       if (job.processCompletedAt && job.isProcessSuccessful) {
-        return <span className="status-badge status-success">Completed</span>;
+        return <span className="status-badge status-success">Generated</span>;
       }
       if (job.processCompletedAt && !job.isProcessSuccessful) {
         return <span className="status-badge status-error">Failed</span>;
@@ -115,10 +116,6 @@ export default function GeometryJobsPage() {
         {hasAwaitingReview && <span className="status-badge status-pending">Awaiting Review</span>}
       </div>
     );
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
   };
 
   if (status === 'loading' || (loading && !geometryJobs)) {

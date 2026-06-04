@@ -38,6 +38,10 @@ const nextConfig: NextConfig = {
   },
   // Configure allowedDevOrigins for cross-origin requests
   allowedDevOrigins: ['splintserver.local'],
+  experimental: {
+    // Increase body buffer limit for large file uploads via middleware (STL + 3MF can exceed default 10MB)
+    proxyClientMaxBodySize: '25mb',
+  },
   // Configure Turbopack (stable configuration)
   turbopack: {
     resolveAlias: {},

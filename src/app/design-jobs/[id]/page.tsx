@@ -7,6 +7,9 @@ import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import ProcessingLogViewer from '@/components/ProcessingLogViewer';
 import StlViewer from '@/components/StlViewer';
+import PrintStatusBadge from '@/components/PrintStatusBadge';
+import PrintAcceptanceBadge from '@/components/PrintAcceptanceBadge';
+import { formatDate } from '@/lib/formatDate';
 
 interface GeometryJob {
   id: string;
@@ -233,17 +236,13 @@ export default function GeometryJobDetailPage({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
-
   const getStatusBadge = (job: GeometryJob) => {
     // data-testid + data-status enable stable polling from E2E tests.
     if (!job.isEnabled) {
       return <span className="status-badge status-neutral" data-testid="design-job-status" data-status="disabled">Disabled</span>;
     }
     if (job.processCompletedAt && job.isProcessSuccessful) {
-      return <span className="status-badge status-success" data-testid="design-job-status" data-status="completed">Completed</span>;
+      return <span className="status-badge status-success" data-testid="design-job-status" data-status="generated">Generated</span>;
     }
     if (job.processCompletedAt && !job.isProcessSuccessful) {
       return <span className="status-badge status-error" data-testid="design-job-status" data-status="failed">Failed</span>;
@@ -268,58 +267,6 @@ export default function GeometryJobDetailPage({
     } catch {
       return [];
     }
-  };
-
-  const getPrintStatusBadge = (printJob: PrintJob) => {
-    const printStatusBadge = (() => {
-      if (printJob.printCompletedAt && printJob.isPrintSuccessful) {
-        return <span className="status-badge status-success">Print Completed</span>;
-      }
-      if (printJob.printCompletedAt && !printJob.isPrintSuccessful) {
-        return <span className="status-badge status-error">Print Failed</span>;
-      }
-      if (printJob.printStartedAt) {
-        return <span className="status-badge status-warning">Printing</span>;
-      }
-      return <span className="status-badge status-pending">Ready to Print</span>;
-    })();
-
-    const acceptanceBadge = printJob.printAcceptance === 'ACCEPTED' ? (
-      <span
-        className="status-badge status-success cursor-help"
-        title={printJob.printNote || 'Accepted'}
-      >
-        Accepted
-      </span>
-    ) : printJob.printAcceptance === 'REJECT_DESIGN' ? (
-      <span
-        className="status-badge status-warning cursor-help"
-        title={printJob.printNote || 'Rejected - Design'}
-      >
-        Rejected - Design
-      </span>
-    ) : printJob.printAcceptance === 'REJECT_PRINT' ? (
-      <span
-        className="status-badge status-error cursor-help"
-        title={printJob.printNote || 'Rejected - Print'}
-      >
-        Rejected - Print
-      </span>
-    ) : printJob.printAcceptance === 'REJECTED' ? (
-      <span
-        className="status-badge status-error cursor-help"
-        title={printJob.printNote || 'Rejected'}
-      >
-        Rejected
-      </span>
-    ) : null;
-
-    return (
-      <div className="flex flex-col gap-1">
-        {printStatusBadge}
-        {acceptanceBadge}
-      </div>
-    );
   };
 
   if (loading) {
@@ -622,7 +569,10 @@ export default function GeometryJobDetailPage({
                             </div>
                           </td>
                           <td className="whitespace-nowrap" data-testid="print-job-status-cell">
-                            {getPrintStatusBadge(printJob)}
+                            <div className="flex flex-col gap-1">
+                              <PrintStatusBadge printStartedAt={printJob.printStartedAt} printCompletedAt={printJob.printCompletedAt} isPrintSuccessful={printJob.isPrintSuccessful} />
+                              <PrintAcceptanceBadge printAcceptance={printJob.printAcceptance} printNote={printJob.printNote} />
+                            </div>
                           </td>
                           <td className="whitespace-nowrap">
                             {printJob.printStartedAt ? formatDate(printJob.printStartedAt) : '\u2014'}
