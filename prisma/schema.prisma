@@ -193,6 +193,7 @@ model SystemSettings {
   maintenanceModeEnabled    Boolean  @default(false)
   maintenanceMessage        String?
   maintenanceModeUpdatedAt  DateTime @default(now()) @updatedAt
+  lastDailyDigestSentDate   String?  // YYYY-MM-DD, persists across restarts
 }
 
 model ProcessorHeartbeat {

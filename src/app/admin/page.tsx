@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/navigation/Header';
@@ -30,6 +30,7 @@ interface Metrics {
   avgThroughputPerHour: number;
   errorBreakdown: Array<{ type: string; count: number }>;
   algorithmStats: Array<{ algorithm: string; name: string; count: number }>;
+  orgStats: Array<{ org: string; count: number }>;
   queueDepthTrend: {
     current: number;
     description: string;
@@ -45,6 +46,9 @@ interface Job {
   isDebugRequest?: boolean;
   objectId: string | null;
   design: {
+    name: string;
+  };
+  owningOrganization?: {
     name: string;
   };
 }
@@ -137,6 +141,8 @@ export default function SystemStatusPage() {
   const [testAlertResult, setTestAlertResult] = useState<string | null>(null);
   const [moreInfoRequests, setMoreInfoRequests] = useState<MoreInfoRow[]>([]);
   const [moreInfoExpanded, setMoreInfoExpanded] = useState<string | null>(null);
+  const [digestSending, setDigestSending] = useState(false);
+  const [digestResult, setDigestResult] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -265,6 +271,21 @@ export default function SystemStatusPage() {
       setError(err instanceof Error ? err.message : 'Failed to update site alert subscription');
     } finally {
       setUpdatingSiteAlertUserId(null);
+    }
+  };
+
+  const handleSendDigestNow = async () => {
+    setDigestSending(true);
+    setDigestResult(null);
+    try {
+      const response = await fetch('/api/admin/daily-digest/send', { method: 'POST' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Failed to send digest');
+      setDigestResult(`Digest sent to ${payload.recipientCount} recipient(s).`);
+    } catch (err) {
+      setDigestResult(err instanceof Error ? err.message : 'Failed to send digest');
+    } finally {
+      setDigestSending(false);
     }
   };
 
@@ -622,7 +643,7 @@ export default function SystemStatusPage() {
               </div>
               <div className="p-4 rounded-lg bg-[var(--status-success-bg)] border border-[var(--status-success-text)]">
                 <div className="text-3xl font-bold text-[var(--status-success-text)]">{queueData.summary.recentlyCompletedCount}</div>
-                <div className="text-sm text-[var(--status-success-text)]">Recently Completed</div>
+                <div className="text-sm text-[var(--status-success-text)]">Completed (24h)</div>
               </div>
             </div>
             
@@ -725,7 +746,7 @@ export default function SystemStatusPage() {
             </div>
             
             {/* Error Breakdown & Algorithm Stats */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Error Breakdown */}
               {queueData.metrics.errorBreakdown.length > 0 && (
                 <div className="card p-4">
@@ -755,6 +776,25 @@ export default function SystemStatusPage() {
                         </span>
                         <span className="status-badge status-pending ml-2">
                           {algo.count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Organization Stats */}
+              {queueData.metrics.orgStats.length > 0 && (
+                <div className="card p-4">
+                  <h3 className="text-sm font-semibold text-secondary mb-3">Jobs by Organization (7 days)</h3>
+                  <div className="space-y-2">
+                    {queueData.metrics.orgStats.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center">
+                        <span className="text-sm text-secondary truncate flex-1" title={item.org}>
+                          {item.org}
+                        </span>
+                        <span className="status-badge status-pending ml-2">
+                          {item.count}
                         </span>
                       </div>
                     ))}
@@ -857,12 +897,13 @@ export default function SystemStatusPage() {
             {/* Recently Completed */}
             {queueData.queues.recentlyCompleted.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold mb-2 text-primary">Recently Completed ({queueData.queues.recentlyCompleted.length})</h3>
+                <h3 className="text-lg font-semibold mb-2 text-primary">Recently Completed — 24h ({queueData.queues.recentlyCompleted.length})</h3>
                 <div className="card overflow-hidden">
                   <table className="data-table">
                     <thead>
                       <tr>
                         <th className="px-3 py-2">Object ID</th>
+                        <th className="px-3 py-2">Organization</th>
                         <th className="px-3 py-2">Status</th>
                         <th className="px-3 py-2">Completed</th>
                       </tr>
@@ -873,6 +914,9 @@ export default function SystemStatusPage() {
                           <td className="px-3 py-2 text-sm">
                             {job.objectId || job.id.slice(0, 8)}
                             {job.isDebugRequest && <span className="ml-1 status-badge status-neutral">Test</span>}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-secondary">
+                            {job.owningOrganization?.name ?? '—'}
                           </td>
                           <td className="px-3 py-2 text-sm">
                             <span className={`status-badge ${job.isProcessSuccessful ? 'status-success' : 'status-error'}`}>
@@ -930,8 +974,8 @@ export default function SystemStatusPage() {
                 </thead>
                 <tbody>
                   {moreInfoRequests.map((row) => (
-                    <>
-                      <tr key={row.id}>
+                    <React.Fragment key={row.id}>
+                      <tr>
                         <td className="px-3 py-2 text-sm font-medium text-primary">{row.name}</td>
                         <td className="px-3 py-2 text-sm text-secondary">{row.email}</td>
                         <td className="px-3 py-2 text-sm text-secondary">{row.data.organization}</td>
@@ -947,7 +991,7 @@ export default function SystemStatusPage() {
                         </td>
                       </tr>
                       {moreInfoExpanded === row.id && (
-                        <tr key={`${row.id}-detail`}>
+                        <tr>
                           <td colSpan={6} className="px-4 py-3 bg-[var(--surface-secondary)] text-sm text-secondary">
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                               <div><span className="text-muted">Specialty:</span> {row.data.medicalSpecialty}</div>
@@ -964,11 +1008,28 @@ export default function SystemStatusPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Daily Digest */}
+      <div className="mb-6 mt-6">
+        <h2 className="text-xl font-semibold mb-3 text-primary">Daily Digest</h2>
+        <div className="card p-4 flex items-center gap-4 flex-wrap">
+          <button
+            onClick={handleSendDigestNow}
+            disabled={digestSending}
+            className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
+          >
+            {digestSending ? 'Sending...' : 'Send Daily Digest Now'}
+          </button>
+          {digestResult && (
+            <span className="text-sm text-secondary">{digestResult}</span>
           )}
         </div>
       </div>

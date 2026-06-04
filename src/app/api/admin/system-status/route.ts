@@ -32,7 +32,8 @@ export async function GET() {
       completedLast24h,
       completedPrevious24h,
       jobsByAlgorithm,
-      recentErrors
+      recentErrors,
+      jobsByOrg
     ] = await Promise.all([
       // Never started
       prisma.designJob.findMany({
@@ -71,10 +72,10 @@ export async function GET() {
         take: 10
       }),
       
-      // Recently completed (last hour)
+      // Recently completed (last 24 hours)
       prisma.designJob.findMany({
         where: {
-          processCompletedAt: { gte: new Date(now.getTime() - 60 * 60 * 1000) },
+          processCompletedAt: { gte: oneDayAgo },
           isEnabled: true
         },
         select: {
@@ -84,11 +85,12 @@ export async function GET() {
           processCompletedAt: true,
           isProcessSuccessful: true,
           design: { select: { name: true } },
+          owningOrganization: { select: { name: true } },
           objectId: true,
           isDebugRequest: true
         },
         orderBy: { processCompletedAt: 'desc' },
-        take: 10
+        take: 50
       }),
       
       // Currently processing (started in last 10 min, not completed)
@@ -191,6 +193,17 @@ export async function GET() {
           }
         },
         take: 50
+      }),
+
+      // Jobs by organization (last 7 days, exclude test jobs)
+      prisma.designJob.groupBy({
+        by: ['owningOrganizationId'],
+        where: {
+          processCompletedAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) },
+          isEnabled: true,
+          isDebugRequest: false
+        },
+        _count: { id: true }
       })
     ]);
     
@@ -259,6 +272,17 @@ export async function GET() {
       }
     });
     
+    // Jobs by organization — look up org names
+    const orgIds = jobsByOrg.map(j => j.owningOrganizationId);
+    const orgs = orgIds.length > 0 ? await prisma.organization.findMany({
+      where: { id: { in: orgIds } },
+      select: { id: true, name: true }
+    }) : [];
+    const orgMap = new Map(orgs.map(o => [o.id, o.name]));
+    const orgStats = jobsByOrg
+      .map(item => ({ org: orgMap.get(item.owningOrganizationId) || 'Unknown', count: item._count.id }))
+      .sort((a, b) => b.count - a.count);
+
     // Jobs by algorithm
     const algorithmStats = jobsByAlgorithm.map(item => {
       const geom = geometryMap.get(item.designId);
@@ -312,6 +336,7 @@ export async function GET() {
           : 0,
         errorBreakdown: Array.from(errorBreakdown.entries()).map(([type, count]) => ({ type, count })),
         algorithmStats,
+        orgStats,
         queueDepthTrend: {
           current: neverStarted.length + stuckJobs.length + processing.length,
           description: 'Current queue depth (pending + stuck + processing)'
