@@ -7,23 +7,25 @@ import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 
 // Lifestyle images for the scrolling carousel (hero image excluded)
-// Ordered to separate similar content (two guitar shots, splint colors)
+// Order is randomized on each page load; see shuffledLifestyleImages in the component.
 const lifestyleImages = [
-  { src: '/images/about/guitar-fretboard-green-splint.jpg', alt: 'Playing guitar while wearing a finger splint' },
+  { src: '/images/about/guitar-body-green-splint.jpg', alt: 'Hand on guitar body while wearing a finger splint' },
+  { src: '/images/about/buddyring-relative-extension-dark-wood.jpg', alt: 'BuddyRing relative extension splint on a finger' },
   { src: '/images/about/kitchenaid-orange-splint-colorful-nails.jpg', alt: 'Using a kitchen mixer while wearing a finger splint' },
   { src: '/images/about/frisbee-toss-green-splint.jpg', alt: 'Tossing a frisbee outdoors while wearing a finger splint' },
   { src: '/images/about/notepad-checklist-dark-splint.jpg', alt: 'Writing a to-do list while wearing a finger splint' },
   { src: '/images/about/piano-keys-green-splint.jpg', alt: 'Playing piano while wearing a finger splint' },
   { src: '/images/about/barbell-grip-green-splint.jpg', alt: 'Gripping a barbell while wearing a finger splint' },
-  { src: '/images/about/guitar-body-green-splint.jpg', alt: 'Hand on guitar body while wearing a finger splint' },
+  { src: '/images/about/infinity-extend-green-background.jpg', alt: 'Wearing an Infinity Extend finger splint outdoors' },
+  { src: '/images/about/infinity-contracture-cad.jpg', alt: 'CAD rendering of the Infinity Contracture serial orthosis set' },
 ];
 
-// Product detail images
+// Product detail images — 2 Infinity variants, 2 BuddyRing variants
 const productImages = [
-  { src: '/images/about/orange-splint-outdoor-stone.jpg', alt: 'Orange finger splint on stone surface' },
-  { src: '/images/about/green-splint-white-surface.jpg', alt: 'Green finger splint on white surface' },
-  { src: '/images/about/white-splint-dark-fabric-close.jpg', alt: 'White finger splint close-up' },
-  { src: '/images/about/green-splint-light-fabric-close.jpg', alt: 'Green finger splint close-up on light fabric' },
+  { src: '/images/about/orange-splint-outdoor-stone.jpg', alt: 'Orange Infinity finger splint on stone surface outdoors' },
+  { src: '/images/about/buddyring-dorsal-dark-wood.jpg', alt: 'BuddyRing finger splint — dorsal view on dark wood' },
+  { src: '/images/about/white-splint-dark-fabric-close.jpg', alt: 'White Infinity finger splint close-up on dark fabric' },
+  { src: '/images/about/buddyring-volar-light-wood.jpg', alt: 'BuddyRing finger splint — palm view on light wood' },
 ];
 
 // Hook: fade-in elements when they scroll into view
@@ -123,6 +125,16 @@ function ProtectedEmail({ user, domain, label }: { user: string; domain: string;
 export default function AboutContent() {
   const { data: session, status } = useSession();
   const [carouselPaused, setCarouselPaused] = useState(false);
+  // Shuffle carousel order once on mount so each page load feels fresh
+  const [shuffledLifestyleImages, setShuffledLifestyleImages] = useState(lifestyleImages);
+  useEffect(() => {
+    const arr = [...lifestyleImages];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    setShuffledLifestyleImages(arr);
+  }, []);
 
   if (status === 'loading') {
     return (
@@ -205,7 +217,7 @@ export default function AboutContent() {
             style={{ animationPlayState: carouselPaused ? 'paused' : 'running' }}
           >
             {/* Duplicate images for seamless loop */}
-            {[...lifestyleImages, ...lifestyleImages].map((img, i) => (
+            {[...shuffledLifestyleImages, ...shuffledLifestyleImages].map((img, i) => (
               <div key={i} className="about-carousel-item">
                 <Image
                   src={img.src}
