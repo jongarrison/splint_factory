@@ -32,11 +32,10 @@ export async function sendEmail({ to, subject, html, react, replyTo }: SendEmail
 
   if (!resend) {
     console.warn(`[Email] RESEND_API_KEY not set — skipping "${subject}" to ${recipients.join(', ')}`);
-    // In dev, extract and log any URLs from the HTML so devs can use them
-    const urlMatches = htmlContent.match(/https?:\/\/[^"<\s]+/g);
-    if (urlMatches) {
-      console.log('[Email] Links from email:');
-      urlMatches.forEach(url => console.log(`  ${url}`));
+    // In dev, render a plain-text version and dump it to the console
+    if (react) {
+      const plainText = await render(react, { plainText: true });
+      console.log(`\n[Email] ---- ${subject} ----\nTo: ${recipients.join(', ')}\n\n${plainText}\n[Email] ----\n`);
     }
     logAuditEvent({
       eventType: 'EMAIL_SKIPPED',
