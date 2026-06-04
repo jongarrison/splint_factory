@@ -3,6 +3,19 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import MoreInfoRequestEmail from '@/emails/more-info-request';
 
+export interface MoreInfoFormData {
+  city: string;
+  stateProvince: string;
+  country: string;
+  phone?: string;
+  organization: string;
+  medicalSpecialty: string;
+  interestedWaitlist: boolean;
+  interestedInfo: boolean;
+  interestedUpdates: boolean;
+  notes?: string;
+}
+
 // Verify Cloudflare Turnstile token server-side
 async function verifyTurnstile(token: string, ip: string | null): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
@@ -30,36 +43,14 @@ export async function POST(req: NextRequest) {
   const body = await req.json() as {
     turnstileToken: string;
     name: string;
-    city: string;
-    stateProvince: string;
-    country: string;
     email: string;
-    phone?: string;
-    organization: string;
-    medicalSpecialty: string;
-    interestedWaitlist: boolean;
-    interestedInfo: boolean;
-    interestedUpdates: boolean;
-  };
+  } & MoreInfoFormData;
 
-  const {
-    turnstileToken,
-    name,
-    city,
-    stateProvince,
-    country,
-    email,
-    phone,
-    organization,
-    medicalSpecialty,
-    interestedWaitlist,
-    interestedInfo,
-    interestedUpdates,
-  } = body;
+  const { turnstileToken, name, email, ...rest } = body;
 
   // Basic field validation
-  if (!name?.trim() || !city?.trim() || !stateProvince?.trim() || !country?.trim()
-      || !email?.trim() || !organization?.trim() || !medicalSpecialty?.trim()) {
+  if (!name?.trim() || !email?.trim() || !rest.city?.trim() || !rest.stateProvince?.trim()
+      || !rest.country?.trim() || !rest.organization?.trim() || !rest.medicalSpecialty?.trim()) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
@@ -80,20 +71,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Captcha verification failed' }, { status: 400 });
   }
 
+  const formData: MoreInfoFormData = {
+    city: rest.city.trim(),
+    stateProvince: rest.stateProvince.trim(),
+    country: rest.country.trim(),
+    phone: rest.phone?.trim() || undefined,
+    organization: rest.organization.trim(),
+    medicalSpecialty: rest.medicalSpecialty.trim(),
+    interestedWaitlist: Boolean(rest.interestedWaitlist),
+    interestedInfo: Boolean(rest.interestedInfo),
+    interestedUpdates: Boolean(rest.interestedUpdates),
+    notes: rest.notes?.trim() || undefined,
+  };
+
   // Save to DB
   const record = await prisma.moreInfoRequest.create({
     data: {
       name: name.trim(),
-      city: city.trim(),
-      stateProvince: stateProvince.trim(),
-      country: country.trim(),
       email: email.trim().toLowerCase(),
-      phone: phone?.trim() || null,
-      organization: organization.trim(),
-      medicalSpecialty: medicalSpecialty.trim(),
-      interestedWaitlist: Boolean(interestedWaitlist),
-      interestedInfo: Boolean(interestedInfo),
-      interestedUpdates: Boolean(interestedUpdates),
+      data: formData,
     },
   });
 
@@ -105,23 +101,11 @@ export async function POST(req: NextRequest) {
 
   if (alertRecipients.length > 0) {
     const submittedAt = record.createdAt.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+    const d = record.data as MoreInfoFormData;
     await sendEmail({
       to: alertRecipients.map(u => u.email).filter((e): e is string => e !== null),
-      subject: `New More-Info Request: ${name} (${organization})`,
-      react: MoreInfoRequestEmail({
-        name: record.name,
-        city: record.city,
-        stateProvince: record.stateProvince,
-        country: record.country,
-        email: record.email,
-        phone: record.phone ?? undefined,
-        organization: record.organization,
-        medicalSpecialty: record.medicalSpecialty,
-        interestedWaitlist: record.interestedWaitlist,
-        interestedInfo: record.interestedInfo,
-        interestedUpdates: record.interestedUpdates,
-        submittedAt,
-      }),
+      subject: `New More-Info Request: ${record.name} (${d.organization})`,
+      react: MoreInfoRequestEmail({ name: record.name, email: record.email, submittedAt, data: d }),
     });
   }
 

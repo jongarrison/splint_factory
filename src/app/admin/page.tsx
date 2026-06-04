@@ -101,6 +101,25 @@ interface QueueData {
   internalTasks: InternalTaskStatus[];
 }
 
+interface MoreInfoRow {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  data: {
+    city: string;
+    stateProvince: string;
+    country: string;
+    phone?: string;
+    organization: string;
+    medicalSpecialty: string;
+    interestedWaitlist: boolean;
+    interestedInfo: boolean;
+    interestedUpdates: boolean;
+    notes?: string;
+  };
+}
+
 export default function SystemStatusPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -116,6 +135,8 @@ export default function SystemStatusPage() {
   const [updatingSiteAlertUserId, setUpdatingSiteAlertUserId] = useState<string | null>(null);
   const [testAlertLoading, setTestAlertLoading] = useState(false);
   const [testAlertResult, setTestAlertResult] = useState<string | null>(null);
+  const [moreInfoRequests, setMoreInfoRequests] = useState<MoreInfoRow[]>([]);
+  const [moreInfoExpanded, setMoreInfoExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -127,6 +148,7 @@ export default function SystemStatusPage() {
 
     fetchQueueStatus();
     fetchSiteAlertAdmins();
+    fetchMoreInfoRequests();
   }, [session, status, router]);
 
   const fetchQueueStatus = async () => {
@@ -168,6 +190,32 @@ export default function SystemStatusPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch site alert admins');
     }
+  };
+
+  const fetchMoreInfoRequests = async () => {
+    try {
+      const response = await fetch('/api/admin/more-info-requests');
+      if (!response.ok) {
+        console.error('[Admin] more-info-requests fetch failed:', response.status, await response.text());
+        return;
+      }
+      const rows = await response.json() as MoreInfoRow[];
+      setMoreInfoRequests(rows);
+    } catch (err) {
+      console.error('[Admin] more-info-requests fetch error:', err);
+    }
+  };
+
+  const handleDownloadMoreInfoCsv = async () => {
+    const response = await fetch('/api/admin/more-info-requests', { method: 'POST' });
+    if (!response.ok) return;
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `more-info-requests-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleMaintenanceToggle = async () => {
@@ -855,6 +903,75 @@ export default function SystemStatusPage() {
           </div>
         </>
       )}
+
+      {/* More-Info Form Submissions */}
+      <div className="mb-6 mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-semibold text-primary">More-Info Requests <span className="text-sm font-normal text-muted">(last 30 days)</span></h2>
+          <button onClick={handleDownloadMoreInfoCsv} className="btn-primary px-4 py-2 text-sm">
+            Download All (CSV)
+          </button>
+        </div>
+        <div className="card p-4">
+          {moreInfoRequests.length === 0 ? (
+            <p className="text-sm text-muted text-center py-4">No submissions in the last 30 days.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th className="px-3 py-2">Name</th>
+                    <th className="px-3 py-2">Email</th>
+                    <th className="px-3 py-2">Organization</th>
+                    <th className="px-3 py-2">Location</th>
+                    <th className="px-3 py-2">Submitted</th>
+                    <th className="px-3 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {moreInfoRequests.map((row) => (
+                    <>
+                      <tr key={row.id}>
+                        <td className="px-3 py-2 text-sm font-medium text-primary">{row.name}</td>
+                        <td className="px-3 py-2 text-sm text-secondary">{row.email}</td>
+                        <td className="px-3 py-2 text-sm text-secondary">{row.data.organization}</td>
+                        <td className="px-3 py-2 text-sm text-secondary">{row.data.city}, {row.data.stateProvince}, {row.data.country}</td>
+                        <td className="px-3 py-2 text-sm text-secondary whitespace-nowrap">{formatTimestamp(row.createdAt)}</td>
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={() => setMoreInfoExpanded(moreInfoExpanded === row.id ? null : row.id)}
+                            className="text-xs text-[var(--accent-blue)] hover:underline"
+                          >
+                            {moreInfoExpanded === row.id ? 'Hide' : 'Details'}
+                          </button>
+                        </td>
+                      </tr>
+                      {moreInfoExpanded === row.id && (
+                        <tr key={`${row.id}-detail`}>
+                          <td colSpan={6} className="px-4 py-3 bg-[var(--surface-secondary)] text-sm text-secondary">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              <div><span className="text-muted">Specialty:</span> {row.data.medicalSpecialty}</div>
+                              {row.data.phone && <div><span className="text-muted">Phone:</span> {row.data.phone}</div>}
+                              <div><span className="text-muted">Waitlist:</span> {row.data.interestedWaitlist ? 'Yes' : 'No'}</div>
+                              <div><span className="text-muted">Info:</span> {row.data.interestedInfo ? 'Yes' : 'No'}</div>
+                              <div><span className="text-muted">Updates:</span> {row.data.interestedUpdates ? 'Yes' : 'No'}</div>
+                            </div>
+                            {row.data.notes && (
+                              <div className="mt-2 pt-2 border-t border-[var(--border)]">
+                                <span className="text-muted">Notes:</span> {row.data.notes}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
       </div>
     </div>
   );

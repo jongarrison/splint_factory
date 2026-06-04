@@ -21,6 +21,7 @@ export default function MoreInformationContent() {
     interestedWaitlist: false,
     interestedInfo: false,
     interestedUpdates: false,
+    notes: '',
   });
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -29,7 +30,7 @@ export default function MoreInformationContent() {
   const [error, setError] = useState('');
   const turnstileRef = useRef<{ reset: () => void }>(null);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
       setForm(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
@@ -195,6 +196,20 @@ export default function MoreInformationContent() {
                     <span className="text-sm text-[var(--text-primary)]">Receiving occasional email updates from Splint Factory</span>
                   </label>
                 </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label htmlFor="notes" className={labelClass}>Anything else you&apos;d like to know? <span className="text-[var(--text-muted)] font-normal">(optional)</span></label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows={4}
+                  value={form.notes}
+                  onChange={handleChange}
+                  className={`${fieldClass} resize-none`}
+                  placeholder="Questions, use cases, anything on your mind..."
+                />
               </div>
 
               {/* Captcha */}

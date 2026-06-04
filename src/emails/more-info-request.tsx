@@ -8,45 +8,25 @@ import {
   Hr,
   Preview,
 } from '@react-email/components';
+import { type MoreInfoFormData } from '@/app/api/more-information/route';
 
 interface MoreInfoRequestEmailProps {
   name: string;
-  city: string;
-  stateProvince: string;
-  country: string;
   email: string;
-  phone?: string;
-  organization: string;
-  medicalSpecialty: string;
-  interestedWaitlist: boolean;
-  interestedInfo: boolean;
-  interestedUpdates: boolean;
   submittedAt: string;
+  data: MoreInfoFormData;
 }
 
-export default function MoreInfoRequestEmail({
-  name,
-  city,
-  stateProvince,
-  country,
-  email,
-  phone,
-  organization,
-  medicalSpecialty,
-  interestedWaitlist,
-  interestedInfo,
-  interestedUpdates,
-  submittedAt,
-}: MoreInfoRequestEmailProps) {
+export default function MoreInfoRequestEmail({ name, email, submittedAt, data }: MoreInfoRequestEmailProps) {
   const interests: string[] = [];
-  if (interestedWaitlist) interests.push('Waitlist for printing platform');
-  if (interestedInfo) interests.push('Information about our system');
-  if (interestedUpdates) interests.push('Occasional email updates');
+  if (data.interestedWaitlist) interests.push('Waitlist for printing platform');
+  if (data.interestedInfo) interests.push('Information about our system');
+  if (data.interestedUpdates) interests.push('Occasional email updates');
 
   return (
     <Html>
       <Head />
-      <Preview>New more-info request from {name} ({organization})</Preview>
+      <Preview>New more-info request from {name} ({data.organization})</Preview>
       <Body style={body}>
         <Container style={container}>
           <Text style={heading}>New More-Info Request</Text>
@@ -54,11 +34,11 @@ export default function MoreInfoRequestEmail({
 
           <Section style={detailsSection}>
             <Text style={row}><strong>Name:</strong> {name}</Text>
-            <Text style={row}><strong>Organization:</strong> {organization}</Text>
-            <Text style={row}><strong>Medical Specialty:</strong> {medicalSpecialty}</Text>
+            <Text style={row}><strong>Organization:</strong> {data.organization}</Text>
+            <Text style={row}><strong>Medical Specialty:</strong> {data.medicalSpecialty}</Text>
             <Text style={row}><strong>Email:</strong> {email}</Text>
-            {phone && <Text style={row}><strong>Phone:</strong> {phone}</Text>}
-            <Text style={row}><strong>Location:</strong> {city}, {stateProvince}, {country}</Text>
+            {data.phone && <Text style={row}><strong>Phone:</strong> {data.phone}</Text>}
+            <Text style={row}><strong>Location:</strong> {data.city}, {data.stateProvince}, {data.country}</Text>
           </Section>
 
           <Hr style={hr} />
@@ -70,6 +50,14 @@ export default function MoreInfoRequestEmail({
             ))
           ) : (
             <Text style={row}>None selected</Text>
+          )}
+
+          {data.notes && (
+            <>
+              <Hr style={hr} />
+              <Text style={sectionLabel}>Anything else?</Text>
+              <Text style={notesBlock}>{data.notes}</Text>
+            </>
           )}
 
           <Hr style={hr} />
@@ -131,6 +119,15 @@ const interestRow = {
   fontSize: '14px',
   color: '#374151',
   margin: '3px 0',
+};
+
+const notesBlock = {
+  fontSize: '14px',
+  color: '#374151',
+  backgroundColor: '#f9fafb',
+  padding: '12px',
+  borderRadius: '6px',
+  margin: '4px 0',
 };
 
 const hr = {

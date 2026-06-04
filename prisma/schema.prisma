@@ -339,20 +339,11 @@ model PrinterSnapshot {
 }
 
 model MoreInfoRequest {
-  id               String   @id @default(cuid())
-  name             String
-  city             String
-  stateProvince    String
-  country          String
-  email            String
-  phone            String?
-  organization     String
-  medicalSpecialty String
-  // Checkbox interests
-  interestedWaitlist  Boolean @default(false)
-  interestedInfo      Boolean @default(false)
-  interestedUpdates   Boolean @default(false)
-  createdAt        DateTime @default(now())
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  data      Json     // all other form fields stored as JSON blob
+  createdAt DateTime @default(now())
 
   @@index([email])
   @@index([createdAt])

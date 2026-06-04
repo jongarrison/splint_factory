@@ -167,8 +167,14 @@ export default function AboutContent() {
           {!isLoggedIn && (
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
-                href="/login"
+                href="/more-information"
                 className="px-8 py-3 rounded-lg bg-[var(--accent-blue)] hover:brightness-110 text-white font-semibold text-lg transition-all shadow-lg"
+              >
+                Get Early Access
+              </Link>
+              <Link
+                href="/login"
+                className="px-8 py-3 rounded-lg border-2 border-white/60 hover:border-white text-white font-semibold text-lg transition-all"
               >
                 Sign In
               </Link>
@@ -429,6 +435,14 @@ export default function AboutContent() {
               We&rsquo;re currently working with early adopter clinics. If you&rsquo;d like to learn more
               or try Splint Factory in your practice, we&rsquo;d love to hear from you.
             </p>
+            <div className="mb-6">
+              <Link
+                href="/more-information"
+                className="inline-flex items-center px-8 py-3 text-lg font-semibold rounded-lg bg-[var(--accent-blue)] hover:brightness-110 text-white transition-all shadow-lg"
+              >
+                Request More Information
+              </Link>
+            </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
               <ProtectedEmail user="liz" domain="splintfactory.com" label="Clinical Support" />
               <span className="text-[var(--text-muted)] hidden sm:inline">&middot;</span>
