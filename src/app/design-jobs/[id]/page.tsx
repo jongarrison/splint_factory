@@ -570,63 +570,7 @@ export default function GeometryJobDetailPage({
             </div>
           )}
 
-          {/* Output Files */}
-          {job.meshFileName && (
-            <div className="card shadow" data-testid="design-job-output-files-card">
-              <div className="card-header">
-                <h2 className="text-lg font-medium text-primary">Output Files</h2>
-              </div>
-              <div className="card-body">
-                <dl>
-                  <div>
-                    <dt className="text-sm font-medium text-muted">Mesh File</dt>
-                    <dd className="mt-1 text-sm text-primary flex items-center gap-3">
-                      <span className="font-mono truncate" title={job.meshFileName}>{job.meshFileName}</span>
-                      <a
-                        href={`/api/design-jobs/${job.id}/mesh-file`}
-                        className="btn-primary text-xs px-3 py-1.5"
-                      >
-                        Download
-                      </a>
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            </div>
-          )}
-
-          {/* Developer Info - collapsible */}
-          <details className="group">
-            <summary className="flex items-center cursor-pointer px-1 py-3 text-sm font-medium text-muted hover:text-[var(--text-secondary)]">
-              <span className="mr-2 transition-transform group-open:rotate-90">&#9654;</span>
-              Developer Info
-            </summary>
-            <div className="space-y-6">
-
-          {/* Machine Files */}
-          {job.printFileName && (
-            <div className="card shadow">
-              <div className="card-header">
-                <h2 className="text-lg font-medium text-primary">Machine Files</h2>
-              </div>
-              <div className="card-body">
-                <dl>
-                  <div>
-                    <dt className="text-sm font-medium text-muted">Printer Gcode File</dt>
-                    <dd className="mt-1 text-sm text-primary flex items-center gap-3">
-                      <span className="font-mono truncate" title={job.printFileName}>{job.printFileName}</span>
-                      <a
-                        href={`/api/design-jobs/${job.id}/print-file`}
-                        className="btn-primary text-xs px-3 py-1.5"
-                      >
-                        Download
-                      </a>
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            </div>
-          )}
+          {/* Associated Print Jobs */}
           <div className="card shadow" data-testid="design-job-print-jobs-card">
             <div className="card-header flex justify-between items-center">
               <h2 className="text-lg font-medium text-primary">Associated Print Jobs</h2>
@@ -704,6 +648,63 @@ export default function GeometryJobDetailPage({
             </div>
           </div>
 
+          {/* Output Files */}
+          {job.meshFileName && (
+            <div className="card shadow" data-testid="design-job-output-files-card">
+              <div className="card-header">
+                <h2 className="text-lg font-medium text-primary">Output Files</h2>
+              </div>
+              <div className="card-body">
+                <dl>
+                  <div>
+                    <dt className="text-sm font-medium text-muted">Mesh File</dt>
+                    <dd className="mt-1 text-sm text-primary flex items-center gap-3">
+                      <span className="font-mono truncate" title={job.meshFileName}>{job.meshFileName}</span>
+                      <a
+                        href={`/api/design-jobs/${job.id}/mesh-file`}
+                        className="btn-primary text-xs px-3 py-1.5"
+                      >
+                        Download
+                      </a>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          )}
+
+          {/* Developer Info - collapsible */}
+          <details className="group">
+            <summary className="flex items-center cursor-pointer px-1 py-3 text-sm font-medium text-muted hover:text-[var(--text-secondary)]">
+              <span className="mr-2 transition-transform group-open:rotate-90">&#9654;</span>
+              Developer Info
+            </summary>
+            <div className="space-y-6">
+
+          {/* Machine Files */}
+          {job.printFileName && (
+            <div className="card shadow">
+              <div className="card-header">
+                <h2 className="text-lg font-medium text-primary">Machine Files</h2>
+              </div>
+              <div className="card-body">
+                <dl>
+                  <div>
+                    <dt className="text-sm font-medium text-muted">Printer Gcode File</dt>
+                    <dd className="mt-1 text-sm text-primary flex items-center gap-3">
+                      <span className="font-mono truncate" title={job.printFileName}>{job.printFileName}</span>
+                      <a
+                        href={`/api/design-jobs/${job.id}/print-file`}
+                        className="btn-primary text-xs px-3 py-1.5"
+                      >
+                        Download
+                      </a>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          )}
           {/* Mesh Output Data */}
           <div className="card shadow">
             <div className="card-header">

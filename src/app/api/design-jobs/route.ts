@@ -59,7 +59,8 @@ export async function GET() {
         printJobs: {
           select: {
             id: true,
-            printAcceptance: true
+            printAcceptance: true,
+            printCompletedAt: true
           }
         }
         // Exclude: owningOrganization (not displayed in list)

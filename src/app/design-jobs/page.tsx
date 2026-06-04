@@ -27,6 +27,7 @@ interface GeometryJob {
   printJobs: Array<{
     id: string;
     printAcceptance: string | null;
+    printCompletedAt: string | null;
   }>;
 }
 
@@ -91,23 +92,27 @@ export default function GeometryJobsPage() {
       return <span className="status-badge status-pending">Pending</span>;
     })();
 
-    // Count print acceptances
-    const acceptedPrints = job.printJobs.filter(p => p.printAcceptance === 'ACCEPTED').length;
-    const rejectedPrints = job.printJobs.filter(p => p.printAcceptance && p.printAcceptance !== 'ACCEPTED').length;
+    // Collect unique review statuses across all print jobs for this design
+    const statuses = new Set(job.printJobs.map(p => p.printAcceptance));
+    const hasAccepted = statuses.has('ACCEPTED');
+    const hasRejectPrint = statuses.has('REJECT_PRINT');
+    const hasRejectDesign = statuses.has('REJECT_DESIGN');
+    const hasArchived = statuses.has('ARCHIVED');
+    const hasLegacyRejected = statuses.has('REJECTED');
+    // "Awaiting Review" if any completed print job has no review yet
+    const hasAwaitingReview = job.printJobs.some(
+      p => p.printAcceptance === null && p.printCompletedAt != null
+    );
 
     return (
       <div className="flex flex-col gap-1">
         {processingBadge}
-        {acceptedPrints > 0 && (
-          <span className="status-badge status-success">
-            {acceptedPrints} Accepted
-          </span>
-        )}
-        {rejectedPrints > 0 && (
-          <span className="status-badge status-error">
-            {rejectedPrints} Rejected
-          </span>
-        )}
+        {hasAccepted && <span className="status-badge status-success">Accepted</span>}
+        {hasRejectPrint && <span className="status-badge status-error">Rejected - Print</span>}
+        {hasRejectDesign && <span className="status-badge status-warning">Rejected - Design</span>}
+        {hasArchived && <span className="status-badge status-neutral">Archived</span>}
+        {hasLegacyRejected && <span className="status-badge status-error">Rejected</span>}
+        {hasAwaitingReview && <span className="status-badge status-pending">Awaiting Review</span>}
       </div>
     );
   };
