@@ -301,7 +301,7 @@ export default function PrintQueueDetailPage({
     return true;
   }, [deviceId]);
 
-  const handleAcceptanceSubmit = async (printId: string, acceptance: string, note: string) => {
+  const handleAcceptanceSubmit = async (printId: string, acceptance: string, note: string, shouldReprint: boolean) => {
     try {
       const response = await fetch(`/api/print-queue/${printId}/acceptance`, {
         method: 'POST',
@@ -317,6 +317,18 @@ export default function PrintQueueDetailPage({
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update print acceptance');
+      }
+
+      if (shouldReprint && entry?.designJob?.id) {
+        const reprintResponse = await fetch('/api/print-queue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ designJobId: entry.designJob.id }),
+        });
+        if (!reprintResponse.ok) {
+          const errorData = await reprintResponse.json();
+          throw new Error(errorData.error || 'Failed to queue reprint');
+        }
       }
 
       // Refresh the entry

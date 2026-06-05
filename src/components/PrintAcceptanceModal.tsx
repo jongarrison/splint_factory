@@ -22,11 +22,10 @@ export default function PrintAcceptanceModal({
   const [selected, setSelected] = useState<AcceptanceAction | null>(null);
   const [shouldReprint, setShouldReprint] = useState(false);
 
-  // Default reprint checkbox to checked when REJECT_PRINT is selected
+  // Auto-check reprint when REJECT_PRINT is selected; otherwise preserve user's choice
   const handleSelect = (value: AcceptanceAction) => {
     setSelected(value);
     if (value === 'REJECT_PRINT') setShouldReprint(true);
-    else setShouldReprint(false);
   };
 
   const handleSubmit = async () => {
@@ -130,7 +129,7 @@ export default function PrintAcceptanceModal({
             disabled={submitting}
             className="h-4 w-4 rounded border-[var(--border)] accent-[var(--accent-blue)]"
           />
-          <span className="text-sm text-secondary">Queue another print</span>
+          <span className="text-sm text-secondary">Queue another copy of this print</span>
         </label>
 
         {/* Action buttons */}
