@@ -103,7 +103,8 @@ export async function gatherDigestData(since: Date): Promise<{
       s.failed += 1;
     }
     if (print.printAcceptance === 'ACCEPTED') s.accepted += 1;
-    if (print.printAcceptance === 'REJECTED') s.rejected += 1;
+    // REJECT_PRINT and REJECT_DESIGN are the current values; REJECTED is legacy
+    if (['REJECTED', 'REJECT_PRINT', 'REJECT_DESIGN'].includes(print.printAcceptance ?? '')) s.rejected += 1;
   }
 
   // -- More-info summary --

@@ -6,11 +6,25 @@ import DailyDigestEmail from '@/emails/daily-digest';
 
 const TASK_KEY = 'daily-digest';
 
-// Hour of day (server local time) to send the digest, default 4am PT
+// Timezone for digest scheduling. Defaults to Pacific Time.
+// Set DAILY_DIGEST_TIMEZONE to any IANA timezone (e.g. 'America/New_York').
+function getDigestTimezone(): string {
+  return process.env.DAILY_DIGEST_TIMEZONE || 'America/Los_Angeles';
+}
+
+// Hour of day in the digest timezone to send, default 4am.
 function getDigestHour(): number {
   const raw = process.env.DAILY_DIGEST_HOUR;
   const parsed = raw ? parseInt(raw, 10) : NaN;
   return Number.isFinite(parsed) && parsed >= 0 && parsed <= 23 ? parsed : 4;
+}
+
+// Current hour in the digest timezone (handles DST automatically via Intl).
+function getCurrentHourInTimezone(timezone: string): number {
+  return parseInt(
+    new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: timezone }).format(new Date()),
+    10
+  );
 }
 
 // Allow retries for up to this many hours after the target hour (handles transient failures)
@@ -30,14 +44,16 @@ async function setLastSentDate(date: string): Promise<void> {
   });
 }
 
-function todayString(): string {
-  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+// Today's date string (YYYY-MM-DD) in the digest timezone.
+function todayString(timezone: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date()); // en-CA gives YYYY-MM-DD
 }
 
 
 async function sendDailyDigest(): Promise<void> {
+  const timezone = getDigestTimezone();
   const digestHour = getDigestHour();
-  const currentHour = new Date().getHours();
+  const currentHour = getCurrentHourInTimezone(timezone);
 
   // Send within the retry window: from digestHour up to digestHour + RETRY_WINDOW_HOURS
   const hoursSinceTarget = (currentHour - digestHour + 24) % 24;
@@ -45,7 +61,7 @@ async function sendDailyDigest(): Promise<void> {
     return;
   }
 
-  const today = todayString();
+  const today = todayString(timezone);
   if (await getLastSentDate() === today) {
     return; // already sent today
   }
