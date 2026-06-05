@@ -315,7 +315,7 @@ export default function PrintQueuePage() {
     }
   };
 
-  const handlePrint = async (entry: PrintQueueEntry, runCalibration: boolean) => {
+  const handlePrint = async (entry: PrintQueueEntry) => {
     if (!isElectronClient) {
       showNotification('Printing is only available in the Electron client', 'error');
       return;
@@ -337,7 +337,7 @@ export default function PrintQueuePage() {
         geometryJobId,
         sessionCookie,
         jobName,
-        { runCalibration }
+        {}
       );
 
       if (!result.success) {
@@ -819,10 +819,10 @@ export default function PrintQueuePage() {
         <PrintConfirmModal
           geometryName={printConfirmModal.entry.designJob.design.name}
           onClose={() => setPrintConfirmModal(null)}
-          onConfirm={(runCalibration) => {
+          onConfirm={() => {
             const entry = printConfirmModal.entry;
             setPrintConfirmModal(null);
-            handlePrint(entry, runCalibration);
+            handlePrint(entry);
           }}
         />
       )}

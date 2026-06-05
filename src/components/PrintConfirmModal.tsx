@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 interface PrintConfirmModalProps {
   geometryName: string;
   onClose: () => void;
-  onConfirm: (runCalibration: boolean) => void;
+  onConfirm: () => void;
 }
 
 export default function PrintConfirmModal({
@@ -13,8 +13,6 @@ export default function PrintConfirmModal({
   onClose,
   onConfirm,
 }: PrintConfirmModalProps) {
-  const [runCalibration, setRunCalibration] = useState(false);
-
   // Helper to drive the chamber light. Resolves silently — failures are
   // logged but never block the user's flow. The splint_client IPC handler
   // resolves with { success, error } rather than rejecting, so we inspect
@@ -73,24 +71,6 @@ export default function PrintConfirmModal({
           Please ensure the print bed is clean before continuing.
         </div>
 
-        {/* Calibration checkbox */}
-        <label className="flex items-start gap-3 mb-6 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={runCalibration}
-            onChange={(e) => setRunCalibration(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-          />
-          <div>
-            <span className="text-sm font-medium text-primary">
-              Run printer calibration (~5 minutes)
-            </span>
-            <p className="text-xs text-muted mt-0.5">
-              Recommended on the first print of the day
-            </p>
-          </div>
-        </label>
-
         {/* Action buttons */}
         <div className="flex gap-3">
           <button
@@ -100,10 +80,10 @@ export default function PrintConfirmModal({
             Cancel
           </button>
           <button
-            onClick={() => onConfirm(runCalibration)}
+            onClick={() => onConfirm()}
             className="btn-alt flex-1 font-semibold py-3 px-4 rounded-lg"
           >
-            {runCalibration ? 'Calibrate and Print' : 'Print'}
+            Print
           </button>
         </div>
       </div>
