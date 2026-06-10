@@ -64,6 +64,7 @@ export default function PrintQueuePage() {
     printId: string;
     geometryName: string;
     printStarted: boolean;
+    printCompleted: boolean;
   } | null>(null);
   const [printConfirmModal, setPrintConfirmModal] = useState<{
     entry: PrintQueueEntry;
@@ -153,6 +154,17 @@ export default function PrintQueuePage() {
         clearTimeout(notificationTimeoutRef.current);
       }
     };
+  }, []);
+
+  // Listen for auth-required events from the main process (e.g. 401 on a background API call)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const electronAPI = (window as any).electronAPI;
+    if (!electronAPI?.onAuthRequired) return;
+    electronAPI.onAuthRequired(() => {
+      console.warn('[Auth] Main process received 401 -- showing auth overlay');
+      setDeviceLocked(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -361,8 +373,21 @@ export default function PrintQueuePage() {
     }
   };
 
-  const handleDeleteSubmit = async (printId: string, action: 'DELETE' | 'REJECT_DESIGN' | 'REJECT_PRINT' | 'ARCHIVED') => {
+  const handleDeleteSubmit = async (printId: string, action: 'DELETE' | 'REJECT_DESIGN' | 'REJECT_PRINT' | 'ARCHIVED' | 'MARK_DONE') => {
     try {
+      if (action === 'MARK_DONE') {
+        const response = await fetch(`/api/print-queue/${printId}/progress`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ progress: 100 }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to mark print as done');
+        }
+        refreshPrintQueue();
+        showNotification('Print marked as done', 'success', 3000);
+        return;
+      }
       // Record acceptance for reject/archive actions
       if (action === 'REJECT_DESIGN' || action === 'REJECT_PRINT' || action === 'ARCHIVED') {
         const acceptanceResponse = await fetch(`/api/print-queue/${printId}/acceptance`, {
@@ -784,13 +809,16 @@ export default function PrintQueuePage() {
                               printId: entry.id,
                               geometryName: entry.designJob.design.name,
                               printStarted: !!entry.printStartedAt,
+                              printCompleted: !!entry.printCompletedAt,
                             })}
-                            className="action-delete w-10 h-10"
-                            title="Delete print job"
+                            className="action-menu w-10 h-10"
+                            title="Print job actions"
                             data-testid="delete-btn"
                           >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                              <circle cx="12" cy="5" r="1.5" />
+                              <circle cx="12" cy="12" r="1.5" />
+                              <circle cx="12" cy="19" r="1.5" />
                             </svg>
                           </button>
                         </td>
@@ -833,6 +861,7 @@ export default function PrintQueuePage() {
           printId={deleteModal.printId}
           geometryName={deleteModal.geometryName}
           printStarted={deleteModal.printStarted}
+          printCompleted={deleteModal.printCompleted}
           onClose={() => setDeleteModal(null)}
           onSubmit={handleDeleteSubmit}
         />

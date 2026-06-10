@@ -3,6 +3,7 @@ import { sendEmail } from '@/lib/email';
 import { registerInternalTask } from '@/lib/internal-task-scheduler';
 import { gatherDigestData, buildAdminUrl } from '@/lib/daily-digest';
 import DailyDigestEmail from '@/emails/daily-digest';
+import { getBlobStorageInstance } from '@/lib/blob-storage';
 
 const TASK_KEY = 'daily-digest';
 
@@ -96,6 +97,42 @@ async function sendDailyDigest(): Promise<void> {
 
   await setLastSentDate(today);
   console.log(`[DailyDigest] Sent to ${recipients.length} recipient(s) for ${today}`);
+
+  await cleanupIntermediatePrintPhotos();
+}
+
+// For successful print jobs completed >1 day ago, delete all but the final photo.
+// Failed jobs retain all photos for analysis.
+async function cleanupIntermediatePrintPhotos(): Promise<void> {
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const jobs = await prisma.printJob.findMany({
+    where: {
+      isPrintSuccessful: true,
+      printCompletedAt: { lt: yesterday },
+      photos: { some: {} },
+    },
+    include: { photos: { orderBy: { capturedAt: 'asc' } } },
+  });
+
+  let totalCleaned = 0;
+  const storage = getBlobStorageInstance();
+  for (const job of jobs) {
+    const toDelete = job.photos.slice(0, -1); // keep only the last photo
+    if (toDelete.length === 0) continue;
+    for (const photo of toDelete) {
+      if (photo.photoPathname) {
+        await storage.delete(photo.photoPathname).catch((e) =>
+          console.warn(`[DailyDigest] Failed to delete photo blob ${photo.photoPathname}:`, e)
+        );
+      }
+      await prisma.printJobPhoto.delete({ where: { id: photo.id } });
+    }
+    totalCleaned += toDelete.length;
+  }
+
+  if (totalCleaned > 0) {
+    console.log(`[DailyDigest] Cleaned up ${totalCleaned} intermediate print bed photo(s)`);
+  }
 }
 
 export function registerDailyDigestTask(): void {

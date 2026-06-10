@@ -173,8 +173,21 @@ model PrintJob {
   printedBy           User?       @relation("PrintOperator", fields: [printedByUserId], references: [id])
   acceptedBy          User?       @relation("PrintReviewer", fields: [acceptedByUserId], references: [id])
   printer             Printer?    @relation(fields: [printerSerial], references: [serial])
+  photos              PrintJobPhoto[]
 
   @@map("PrintQueue")
+}
+
+model PrintJobPhoto {
+  id            String    @id @default(cuid())
+  printJobId    String
+  photoUrl      String
+  photoPathname String?
+  progress      Float     // progress percentage at time of capture (25/50/75/100)
+  capturedAt    DateTime  @default(now())
+  printJob      PrintJob  @relation(fields: [printJobId], references: [id])
+
+  @@map("PrintJobPhoto")
 }
 
 enum UserRole {

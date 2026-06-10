@@ -39,7 +39,8 @@ export async function GET(
             creator: { select: { id: true, name: true, email: true } },
             owningOrganization: { select: { name: true } }
           }
-        }
+        },
+        photos: { orderBy: { capturedAt: 'asc' }, select: { id: true, photoUrl: true, progress: true, capturedAt: true } }
       }
     });
 
@@ -73,6 +74,7 @@ export async function GET(
 
     const response = {
       ...enrichedEntry,
+      photos: printQueueEntry.photos,
       meshFileName: gpq?.meshFileName ?? null,
       printFileName: gpq?.printFileName ?? null,
       meshFileContents: includeFiles && gpq?.meshFileContents

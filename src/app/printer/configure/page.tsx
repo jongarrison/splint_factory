@@ -18,6 +18,9 @@ interface StatusMessage {
 interface PrinterStatus {
   connected: boolean;
   state: string;
+  error?: string;
+  errorMessage?: string;
+  authError?: boolean;
   printJob: {
     active: boolean;
     filename?: string;
@@ -191,6 +194,12 @@ export default function PrinterConfigurePage() {
       setStatusDisplay({ message: 'Starting live printer stream...', type: 'info' });
       
       streamUnsubscribeRef.current = (window as any).electronAPI.printer.subscribeToStatus((status: PrinterStatus) => {
+        if (!status.connected && !status.state) {
+          // Connection-level error (auth failure, not connected) — surface it directly
+          const msg = status.errorMessage || status.error || 'Printer connection failed.';
+          setStatusDisplay({ message: msg, type: 'error' });
+          return;
+        }
         setLastUpdate(Date.now());
         setCurrentStatus(status);
         setIsStreaming(true);
@@ -215,6 +224,26 @@ export default function PrinterConfigurePage() {
     setCurrentStatus(null);
     setLastUpdate(null);
     setStatusDisplay({ message: 'Live streaming stopped', type: 'info' });
+  };
+
+  const setChamberLight = async (turnOn: boolean) => {
+    try {
+      const result = await (window as any).electronAPI.printing.setLed('chamber_light', turnOn ? 'on' : 'off');
+
+      if (result?.success) {
+        setStatusDisplay({
+          message: turnOn ? 'Chamber light turned on' : 'Chamber light turned off',
+          type: 'success',
+        });
+      } else {
+        setStatusDisplay({
+          message: `Light command failed: ${result?.error || 'Unknown error'}`,
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      setStatusDisplay({ message: `Light command error: ${(error as Error).message}`, type: 'error' });
+    }
   };
 
   // Print functions
@@ -536,6 +565,25 @@ export default function PrinterConfigurePage() {
                 </button>
               </div>
 
+              <div className="flex space-x-3 mb-4">
+                <button
+                  onClick={() => setChamberLight(true)}
+                  className="btn-primary px-4 py-2"
+                  data-testid="light-on-btn"
+                >
+                  Turn Light On
+                </button>
+                <button
+                  onClick={() => setChamberLight(false)}
+                  className="btn-primary px-4 py-2"
+                  data-testid="light-off-btn"
+                >
+                  Turn Light Off
+                </button>
+              </div>
+
+              <StatusMessage status={statusDisplay} />
+
               {isStreaming && currentStatus && (
                 <div className="space-y-4">
                   <div className="alert-success flex items-center gap-2">
@@ -573,8 +621,6 @@ export default function PrinterConfigurePage() {
                   )}
                 </div>
               )}
-
-              {!isStreaming && <StatusMessage status={statusDisplay} />}
             </div>
           </div>
         )}

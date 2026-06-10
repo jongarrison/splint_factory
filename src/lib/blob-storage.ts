@@ -150,6 +150,9 @@ class FilesystemBlobStorage implements BlobStorage {
         return 'text/plain';
       case '.gcode':
         return 'text/plain';
+      case '.jpg':
+      case '.jpeg':
+        return 'image/jpeg';
       default:
         return 'application/octet-stream';
     }

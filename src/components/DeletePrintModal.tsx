@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 
-type DeleteAction = 'DELETE' | 'REJECT_DESIGN' | 'REJECT_PRINT' | 'ARCHIVED';
+type DeleteAction = 'DELETE' | 'REJECT_DESIGN' | 'REJECT_PRINT' | 'ARCHIVED' | 'MARK_DONE';
 
 interface DeletePrintModalProps {
   printId: string;
   geometryName: string;
   printStarted?: boolean;
+  printCompleted?: boolean;
   onClose: () => void;
   onSubmit: (printId: string, action: DeleteAction) => Promise<void>;
 }
@@ -16,6 +17,7 @@ export default function DeletePrintModal({
   printId,
   geometryName,
   printStarted,
+  printCompleted,
   onClose,
   onSubmit,
 }: DeletePrintModalProps) {
@@ -49,12 +51,27 @@ export default function DeletePrintModal({
 
         {/* Title */}
         <div className="mb-5">
-          <h2 className="text-lg font-bold text-primary">Remove Print Job</h2>
+          <h2 className="text-lg font-bold text-primary">Print Job Actions</h2>
           <p className="text-sm text-muted mt-1">{geometryName}</p>
         </div>
 
         {/* Action buttons */}
         <div className="flex flex-col gap-3">
+          {printStarted && !printCompleted && (
+            <button
+              onClick={() => handleAction('MARK_DONE')}
+              disabled={submitting}
+              className="w-full btn-success font-semibold py-3 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {submitting ? (
+                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : null}
+              Mark as Done
+            </button>
+          )}
           <button
             onClick={() => handleAction('DELETE')}
             disabled={submitting}

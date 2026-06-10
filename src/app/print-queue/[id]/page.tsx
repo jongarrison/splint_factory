@@ -27,6 +27,7 @@ interface PrintQueueEntry {
   progress?: number | null;
   progressLastReportAt?: string | null;
   logs?: string | null;
+  photos?: Array<{ id: string; photoUrl: string; progress: number; capturedAt: string }>;
   designJob: {
     id: string;
     objectId?: string;
@@ -70,6 +71,8 @@ export default function PrintQueueDetailPage({
   const [deleteModal, setDeleteModal] = useState<{
     printId: string;
     geometryName: string;
+    printStarted: boolean;
+    printCompleted: boolean;
   } | null>(null);
 
   // Device auth state (Electron only)
@@ -77,6 +80,7 @@ export default function PrintQueueDetailPage({
   const [factoryUrl, setFactoryUrl] = useState('');
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [screenLockTimeoutMs, setScreenLockTimeoutMs] = useState<number | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; label: string } | null>(null);
 
   // Fetch org screen lock timeout from server
   const fetchOrgTimeout = useCallback(() => {
@@ -103,6 +107,17 @@ export default function PrintQueueDetailPage({
   useEffect(() => {
     // Detect if running in Electron client
     setIsElectronClient(typeof window !== 'undefined' && !!(window as any).electronAPI);
+  }, []);
+
+  // Listen for auth-required events from the main process (e.g. 401 on a background API call)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const electronAPI = (window as any).electronAPI;
+    if (!electronAPI?.onAuthRequired) return;
+    electronAPI.onAuthRequired(() => {
+      console.warn('[Auth] Main process received 401 -- showing auth overlay');
+      setDeviceLocked(true);
+    });
   }, []);
 
   // Initialize device auth state when running in Electron
@@ -369,11 +384,23 @@ export default function PrintQueueDetailPage({
     }
   };
 
-  const handleDeleteSubmit = async (printId: string, action: 'DELETE' | 'REJECT_DESIGN') => {
+  const handleDeleteSubmit = async (printId: string, action: 'DELETE' | 'REJECT_DESIGN' | 'MARK_DONE') => {
     setUpdating(true);
     setError(null);
     
     try {
+      if (action === 'MARK_DONE') {
+        const response = await fetch(`/api/print-queue/${printId}/progress`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ progress: 100 }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to mark print as done');
+        }
+        await fetchEntry();
+        return;
+      }
       // If rejecting design, record that before disabling
       if (action === 'REJECT_DESIGN') {
         const acceptanceResponse = await fetch(`/api/print-queue/${printId}/acceptance`, {
@@ -443,7 +470,7 @@ export default function PrintQueueDetailPage({
         <div className="page-content">
           <div className="mb-8">
             <div className="flex justify-between items-center">
-              <h1 className="page-title">Print Queue Details</h1>
+              <h1 className="page-title">Print Job Details</h1>
               <Link
                 href="/print-queue"
                 className="btn-neutral px-4 py-2 text-sm"
@@ -477,7 +504,7 @@ export default function PrintQueueDetailPage({
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="page-title">Print Queue Details</h1>
+              <h1 className="page-title">Print Job Details</h1>
               <p className="mt-2 text-secondary">
                 View details and manage this print job
               </p>
@@ -560,12 +587,14 @@ export default function PrintQueueDetailPage({
                   onClick={() => setDeleteModal({
                     printId: entry.id,
                     geometryName: entry.designJob.design.name,
+                    printStarted: !!entry.printStartedAt,
+                    printCompleted: !!entry.printCompletedAt,
                   })}
                   disabled={updating}
-                  className="btn-danger px-4 py-2 text-sm"
+                  className="btn-neutral px-4 py-2 text-sm"
                   data-testid="delete-btn"
                 >
-                  {updating ? 'Deleting...' : 'Delete'}
+                  {updating ? 'Updating...' : 'Actions'}
                 </button>
               </div>
               
@@ -874,6 +903,68 @@ export default function PrintQueueDetailPage({
               </div>
             </div>
           )}
+
+          {/* Print Bed Photos */}
+          <div className="card shadow" data-testid="print-photos-card">
+            <div className="card-header">
+              <h2 className="text-lg font-medium text-primary">
+                Print Bed Photos
+                <span className="ml-2 text-sm font-normal text-muted">({entry.photos?.length ?? 0})</span>
+              </h2>
+            </div>
+            <div className="card-body">
+              {entry.photos && entry.photos.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {entry.photos.map((photo) => {
+                    const label = photo.progress === 0 ? 'Early' : photo.progress === 100 ? 'Final' : `${photo.progress}%`;
+                    return (
+                      <div key={photo.id} className="flex flex-col gap-1">
+                        <button
+                          onClick={() => setLightboxPhoto({ url: photo.photoUrl, label })}
+                          className="block w-full rounded border border-[var(--border)] overflow-hidden hover:border-[var(--accent-blue)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent-blue)]"
+                        >
+                          <img
+                            src={photo.photoUrl}
+                            alt={`Print bed at ${label}`}
+                            className="w-full object-cover aspect-video bg-[var(--surface-secondary)]"
+                          />
+                        </button>
+                        <span className="text-xs text-muted text-center">{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted">No photos captured for this print job.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Photo lightbox */}
+          {lightboxPhoto && (
+            <div
+              className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4"
+              onClick={() => setLightboxPhoto(null)}
+            >
+              <button
+                onClick={() => setLightboxPhoto(null)}
+                className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="flex flex-col items-center gap-3 max-w-4xl w-full" onClick={e => e.stopPropagation()}>
+                <img
+                  src={lightboxPhoto.url}
+                  alt={lightboxPhoto.label}
+                  className="max-h-[80vh] w-auto rounded shadow-2xl border border-white/10"
+                />
+                <span className="text-white/80 text-sm">{lightboxPhoto.label}</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
@@ -892,6 +983,8 @@ export default function PrintQueueDetailPage({
         <DeletePrintModal
           printId={deleteModal.printId}
           geometryName={deleteModal.geometryName}
+          printStarted={deleteModal.printStarted}
+          printCompleted={deleteModal.printCompleted}
           onClose={() => setDeleteModal(null)}
           onSubmit={handleDeleteSubmit}
         />
