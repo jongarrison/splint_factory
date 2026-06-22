@@ -5,6 +5,9 @@ export const PROCESSOR_HEARTBEAT_ID = 'geo_processor';
 const DEFAULT_OFFLINE_THRESHOLD_MS = 120_000;
 const DEFAULT_OFFLINE_REMINDER_INTERVAL_MS = 60 * 60 * 1000;
 
+// Keep-warm lease: each user-triggered signal extends the cutoff by this much.
+export const PROCESSOR_KEEP_WARM_LEASE_MS = 10 * 60 * 1000;
+
 function getPositiveIntFromEnv(name: string, fallback: number): number {
   const rawValue = process.env[name];
   const parsed = rawValue ? Number(rawValue) : NaN;
@@ -30,6 +33,9 @@ export interface ProcessorStatus {
   isHealthy: boolean;
   secondsSinceLastPing: number | null;
   offlineSince: string | null;
+  // Keep-warm lease surfaced to admin UI; mirrors the value the processor sees.
+  keepWarmUntil: string | null;
+  keepWarmRemainingSeconds: number;
 }
 
 export interface ProcessorHeartbeatSnapshot {
@@ -37,6 +43,7 @@ export interface ProcessorHeartbeatSnapshot {
   lastPingAt: Date | null;
   offlineSince: Date | null;
   lastOfflineAlertSentAt: Date | null;
+  warmUntil: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -108,6 +115,14 @@ export async function getProcessorStatus(
 ): Promise<ProcessorStatus> {
   const heartbeat = await getOrCreateProcessorHeartbeat();
 
+  // Compute keep-warm lease values from the same heartbeat row.
+  const now = Date.now();
+  const warmUntilMs = heartbeat.warmUntil ? heartbeat.warmUntil.getTime() : 0;
+  const keepWarmRemainingSeconds = warmUntilMs > now
+    ? Math.ceil((warmUntilMs - now) / 1000)
+    : 0;
+  const keepWarmUntil = heartbeat.warmUntil ? heartbeat.warmUntil.toISOString() : null;
+
   if (!heartbeat.lastPingAt) {
     return {
       lastPingMs: null,
@@ -115,10 +130,11 @@ export async function getProcessorStatus(
       isHealthy: false,
       secondsSinceLastPing: null,
       offlineSince: heartbeat.offlineSince ? heartbeat.offlineSince.toISOString() : null,
+      keepWarmUntil,
+      keepWarmRemainingSeconds,
     };
   }
 
-  const now = Date.now();
   const lastPingMs = heartbeat.lastPingAt.getTime();
   const timeSinceLastPing = now - lastPingMs;
 
@@ -128,5 +144,39 @@ export async function getProcessorStatus(
     isHealthy: timeSinceLastPing < offlineThresholdMs,
     secondsSinceLastPing: Math.floor(timeSinceLastPing / 1000),
     offlineSince: heartbeat.offlineSince ? heartbeat.offlineSince.toISOString() : null,
+    keepWarmUntil,
+    keepWarmRemainingSeconds,
   };
+}
+
+// Extend the keep-warm lease so warmUntil >= now + leaseMs (never shortens an
+// existing longer lease). Called by the /design-jobs/new page on mount.
+export async function extendProcessorWarmLease(
+  leaseMs: number = PROCESSOR_KEEP_WARM_LEASE_MS,
+): Promise<Date> {
+  const now = Date.now();
+  const candidate = new Date(now + leaseMs);
+  const heartbeat = await getOrCreateProcessorHeartbeat();
+  const current = heartbeat.warmUntil;
+
+  if (current && current.getTime() >= candidate.getTime()) {
+    return current;
+  }
+
+  const updated = await prisma.processorHeartbeat.update({
+    where: { id: PROCESSOR_HEARTBEAT_ID },
+    data: { warmUntil: candidate },
+  });
+  return updated.warmUntil ?? candidate;
+}
+
+// Seconds remaining on the keep-warm lease (0 when expired or unset). The
+// processor reads this from poll responses to decide whether to keep Rhino
+// warm; relative seconds avoids any reliance on processor clock accuracy.
+export async function getProcessorKeepWarmRemainingSeconds(): Promise<number> {
+  const heartbeat = await getOrCreateProcessorHeartbeat();
+  if (!heartbeat.warmUntil) return 0;
+  const remainingMs = heartbeat.warmUntil.getTime() - Date.now();
+  if (remainingMs <= 0) return 0;
+  return Math.ceil(remainingMs / 1000);
 }

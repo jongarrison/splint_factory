@@ -214,6 +214,8 @@ model ProcessorHeartbeat {
   lastPingAt             DateTime?
   offlineSince           DateTime?
   lastOfflineAlertSentAt DateTime?
+  // Lease wall-clock cutoff: processor should keep Rhino warm while now < warmUntil.
+  warmUntil              DateTime?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 }

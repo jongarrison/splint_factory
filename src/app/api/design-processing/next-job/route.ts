@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { validateApiKey, checkApiPermission } from '@/lib/api-auth';
-import { updateProcessorPing } from '@/lib/geo-processor-health';
+import {
+  updateProcessorPing,
+  getProcessorKeepWarmRemainingSeconds,
+} from '@/lib/geo-processor-health';
 import { ensureInternalTaskRuntimeStarted } from '@/lib/internal-task-runtime';
 import { getDesignById } from '@/designs/registry';
 
@@ -73,9 +76,15 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // keepWarmForSeconds piggybacks on every poll response (200 + 404) so the
+    // processor can decide whether to launch or shut down Rhino without a
+    // separate request and without any clock-sync assumptions.
+    const keepWarmForSeconds = await getProcessorKeepWarmRemainingSeconds();
+
     if (!nextJob) {
-      return NextResponse.json({ 
-        message: 'No jobs available for processing' 
+      return NextResponse.json({
+        message: 'No jobs available for processing',
+        keepWarmForSeconds,
       }, { status: 404 });
     }
 
@@ -113,7 +122,8 @@ export async function GET(request: NextRequest) {
       meshFileName: geometryJobWithFiles.meshFileName ?? null,
       printFileName: geometryJobWithFiles.printFileName ?? null,
       creator: nextJob.creator,
-      owningOrganization: nextJob.owningOrganization
+      owningOrganization: nextJob.owningOrganization,
+      keepWarmForSeconds,
     });
 
     return response;

@@ -9,6 +9,8 @@ interface ProcessorStatus {
   isHealthy: boolean;
   secondsSinceLastPing: number | null;
   lastPingTime: string | null;
+  keepWarmUntil: string | null;
+  keepWarmRemainingSeconds: number;
 }
 
 interface QueueSummary {
@@ -399,6 +401,14 @@ export default function SystemStatusPage() {
     return `${seconds}s ago`;
   };
 
+  // Render keep-warm lease remaining as e.g. "9m 42s" or "37s".
+  const formatKeepWarmRemaining = (totalSeconds: number) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    if (minutes > 0) return `${minutes}m ${seconds}s`;
+    return `${seconds}s`;
+  };
+
   return (
     <div className="page-shell" data-testid="admin-page">
       <Header />
@@ -479,6 +489,17 @@ export default function SystemStatusPage() {
                       {' '}({queueData.processor.secondsSinceLastPing}s ago)
                     </>
                   ) : <span className="text-[var(--status-error-text)] font-semibold">Never</span>}
+                </div>
+                <div className="text-sm text-secondary mt-1">
+                  Keep-warm: {queueData.processor.keepWarmRemainingSeconds > 0 ? (
+                    <>
+                      <span className="text-[var(--status-success-text)] font-semibold">Active</span>
+                      {' — '}
+                      {formatKeepWarmRemaining(queueData.processor.keepWarmRemainingSeconds)} remaining
+                    </>
+                  ) : (
+                    <span className="text-muted">Inactive</span>
+                  )}
                 </div>
               </div>
 

@@ -65,6 +65,10 @@ function CreateGeometryJobPage() {
       return;
     }
 
+    // Extend the geo processor's keep-warm lease so Rhino is hot by the time
+    // the user submits. Fire-and-forget; failures don't block the page.
+    fetch('/api/design-processing/keep-warm', { method: 'POST' }).catch(() => {});
+
     fetchGeometries();
   }, [session, status, router, designId, templateId]);
 

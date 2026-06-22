@@ -310,7 +310,9 @@ export async function GET() {
       processor: {
         isHealthy: processorStatus.isHealthy,
         secondsSinceLastPing: processorStatus.secondsSinceLastPing,
-        lastPingTime: processorStatus.lastPingTime
+        lastPingTime: processorStatus.lastPingTime,
+        keepWarmUntil: processorStatus.keepWarmUntil,
+        keepWarmRemainingSeconds: processorStatus.keepWarmRemainingSeconds,
       },
       summary: {
         neverStartedCount: neverStarted.length,

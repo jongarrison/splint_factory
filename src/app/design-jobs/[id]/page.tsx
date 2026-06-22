@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import ProcessingLogViewer from '@/components/ProcessingLogViewer';
 import StlViewer from '@/components/StlViewer';
 import PrintStatusBadge from '@/components/PrintStatusBadge';
 import PrintAcceptanceBadge from '@/components/PrintAcceptanceBadge';
+import PrintAcceptanceModal from '@/components/PrintAcceptanceModal';
 import { formatDate } from '@/lib/formatDate';
 
 interface GeometryJob {
@@ -40,6 +41,13 @@ interface GeometryJob {
   };
 }
 
+interface PrintJobPhoto {
+  id: string;
+  photoUrl: string;
+  progress: number;
+  capturedAt: string;
+}
+
 interface PrintJob {
   id: string;
   designJobId: string;
@@ -50,6 +58,8 @@ interface PrintJob {
   printAcceptance?: string | null;
   isEnabled: boolean;
   createdAt: string;
+  progress?: number | null;
+  progressLastReportAt?: string | null;
 }
 
 interface InputParameterDefinition {
@@ -65,6 +75,8 @@ export default function GeometryJobDetailPage({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightedPrintJobId = searchParams.get('printJobId');
   const [job, setJob] = useState<GeometryJob | null>(null);
   const [printJobs, setPrintJobs] = useState<PrintJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +87,13 @@ export default function GeometryJobDetailPage({
   const [reprocessing, setReprocessing] = useState(false);
   const [id, setId] = useState<string>('');
   const pollingRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const photoRequestedRef = useRef<Set<string>>(new Set());
+  const [isElectronClient, setIsElectronClient] = useState(false);
+  const [expandedPrintJobId, setExpandedPrintJobId] = useState<string | null>(null);
+  const [printJobPhotos, setPrintJobPhotos] = useState<Record<string, PrintJobPhoto[]>>({});
+  const [loadingPhotos, setLoadingPhotos] = useState<Record<string, boolean>>({});
+  const [acceptanceModal, setAcceptanceModal] = useState<{ printId: string; geometryName: string } | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; label: string } | null>(null);
 
   useEffect(() => {
     params.then(p => setId(p.id));
@@ -106,6 +125,50 @@ export default function GeometryJobDetailPage({
     }, 3000);
     return () => clearInterval(pollingRef.current);
   }, [job?.processCompletedAt, id]);
+
+  // Detect Electron client
+  useEffect(() => {
+    setIsElectronClient(typeof window !== 'undefined' && !!(window as any).electronAPI);
+  }, []);
+
+  // Lazy-load photos for a print job row (guarded by ref to avoid duplicate requests)
+  const loadPhotosForRow = useCallback(async (printJobId: string) => {
+    if (photoRequestedRef.current.has(printJobId)) return;
+    photoRequestedRef.current.add(printJobId);
+    setLoadingPhotos(prev => ({ ...prev, [printJobId]: true }));
+    try {
+      const res = await fetch(`/api/print-queue/${printJobId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPrintJobPhotos(prev => ({ ...prev, [printJobId]: data.photos || [] }));
+      } else {
+        setPrintJobPhotos(prev => ({ ...prev, [printJobId]: [] }));
+      }
+    } catch {
+      setPrintJobPhotos(prev => ({ ...prev, [printJobId]: [] }));
+    } finally {
+      setLoadingPhotos(prev => ({ ...prev, [printJobId]: false }));
+    }
+  }, []);
+
+  // Auto-expand the highlighted print job from ?printJobId= URL param
+  useEffect(() => {
+    if (!highlightedPrintJobId || printJobs.length === 0) return;
+    const exists = printJobs.some(pj => pj.id === highlightedPrintJobId);
+    if (exists) {
+      setExpandedPrintJobId(prev => prev ?? highlightedPrintJobId);
+      loadPhotosForRow(highlightedPrintJobId);
+    }
+  }, [printJobs, highlightedPrintJobId, loadPhotosForRow]);
+
+  // Scroll expanded row into view
+  useEffect(() => {
+    if (!expandedPrintJobId) return;
+    const el = document.querySelector(`[data-print-job-id="${expandedPrintJobId}"]`);
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    }
+  }, [expandedPrintJobId]);
 
   const fetchJob = async () => {
     try {
@@ -197,6 +260,39 @@ export default function GeometryJobDetailPage({
     } finally {
       setReprocessing(false);
     }
+  };
+
+  const handleToggleExpand = (printJobId: string) => {
+    if (expandedPrintJobId === printJobId) {
+      setExpandedPrintJobId(null);
+    } else {
+      setExpandedPrintJobId(printJobId);
+      loadPhotosForRow(printJobId);
+    }
+  };
+
+  const handleAcceptanceSubmit = async (printId: string, acceptance: string, note: string, shouldReprint: boolean) => {
+    const response = await fetch(`/api/print-queue/${printId}/acceptance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ printAcceptance: acceptance, printNote: note || undefined }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to update print acceptance');
+    }
+    if (shouldReprint) {
+      const reprintRes = await fetch('/api/print-queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ designJobId: id }),
+      });
+      if (!reprintRes.ok) {
+        const errData = await reprintRes.json();
+        throw new Error(errData.error || 'Failed to queue reprint');
+      }
+    }
+    await fetchPrintJobs();
   };
 
   const getInspectCommand = () => {
@@ -348,6 +444,15 @@ export default function GeometryJobDetailPage({
               >
                 New Copy
               </Link>
+              {isElectronClient && (
+                <Link
+                  href="/print-queue"
+                  className="btn-neutral px-4 py-2 text-sm"
+                  data-testid="back-to-print-queue-link"
+                >
+                  &larr; Print Queue
+                </Link>
+              )}
               <Link
                 href="/design-jobs"
                 className="btn-neutral px-4 py-2 text-sm"
@@ -557,40 +662,117 @@ export default function GeometryJobDetailPage({
                         <th>Status</th>
                         <th>Started</th>
                         <th>Completed</th>
-                        <th>Actions</th>
+                        <th></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {printJobs.map((printJob) => (
-                        <tr key={printJob.id} data-testid="print-job-row" data-print-job-id={printJob.id}>
-                          <td className="whitespace-nowrap">
-                            <div className="text-sm font-medium text-primary font-mono">
-                              {printJob.id.substring(0, 12)}...
-                            </div>
-                          </td>
-                          <td className="whitespace-nowrap" data-testid="print-job-status-cell">
-                            <div className="flex flex-col gap-1">
-                              <PrintStatusBadge printStartedAt={printJob.printStartedAt} printCompletedAt={printJob.printCompletedAt} isPrintSuccessful={printJob.isPrintSuccessful} />
-                              <PrintAcceptanceBadge printAcceptance={printJob.printAcceptance} printNote={printJob.printNote} />
-                            </div>
-                          </td>
-                          <td className="whitespace-nowrap">
-                            {printJob.printStartedAt ? formatDate(printJob.printStartedAt) : '\u2014'}
-                          </td>
-                          <td className="whitespace-nowrap">
-                            {printJob.printCompletedAt ? formatDate(printJob.printCompletedAt) : '\u2014'}
-                          </td>
-                          <td className="whitespace-nowrap">
-                            <Link
-                              href={`/print-queue/${printJob.id}`}
-                              className="btn-primary text-xs px-3 py-1"
-                              data-testid="view-print-job-link"
+                      {printJobs.map((printJob) => {
+                        const isExpanded = expandedPrintJobId === printJob.id;
+                        const photos = printJobPhotos[printJob.id];
+                        const photosLoading = loadingPhotos[printJob.id];
+                        return (
+                          <Fragment key={printJob.id}>
+                            <tr
+                              data-testid="print-job-row"
+                              data-print-job-id={printJob.id}
+                              className="cursor-pointer hover:bg-[var(--surface-secondary)] transition-colors select-none"
+                              onClick={() => handleToggleExpand(printJob.id)}
                             >
-                              Details
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
+                              <td className="whitespace-nowrap">
+                                <div className="text-sm font-medium text-primary font-mono">
+                                  {printJob.id.substring(0, 12)}...
+                                </div>
+                              </td>
+                              <td className="whitespace-nowrap" data-testid="print-job-status-cell">
+                                <div className="flex flex-col gap-1">
+                                  <PrintStatusBadge printStartedAt={printJob.printStartedAt} printCompletedAt={printJob.printCompletedAt} isPrintSuccessful={printJob.isPrintSuccessful} />
+                                  <PrintAcceptanceBadge printAcceptance={printJob.printAcceptance} printNote={printJob.printNote} />
+                                </div>
+                              </td>
+                              <td className="whitespace-nowrap">
+                                {printJob.printStartedAt ? formatDate(printJob.printStartedAt) : '\u2014'}
+                              </td>
+                              <td className="whitespace-nowrap">
+                                {printJob.printCompletedAt ? formatDate(printJob.printCompletedAt) : '\u2014'}
+                              </td>
+                              <td className="whitespace-nowrap text-center w-8">
+                                <span className={`inline-block transition-transform duration-200 text-muted ${isExpanded ? 'rotate-90' : ''}`}>
+                                  &#9654;
+                                </span>
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr data-testid="print-job-expanded-row" data-expanded-for={printJob.id}>
+                                <td colSpan={5} className="px-4 pb-4 pt-2 bg-[var(--surface-secondary)]">
+                                  <div className="space-y-4">
+                                    {/* Summary stats */}
+                                    <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                                      <div>
+                                        <dt className="text-xs font-medium text-muted">Progress</dt>
+                                        <dd className="mt-0.5 text-primary font-semibold">
+                                          {printJob.progress != null ? `${printJob.progress.toFixed(1)}%` : <span className="italic text-muted">No data</span>}
+                                        </dd>
+                                      </div>
+                                      <div>
+                                        <dt className="text-xs font-medium text-muted">Print Note</dt>
+                                        <dd className="mt-0.5 text-primary">
+                                          {printJob.printNote || <span className="italic text-muted">None</span>}
+                                        </dd>
+                                      </div>
+                                    </dl>
+
+                                    {/* Review action */}
+                                    {printJob.progress != null && printJob.progress > 99 && printJob.printAcceptance === null && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setAcceptanceModal({ printId: printJob.id, geometryName: job!.design.name }); }}
+                                        className="btn-primary px-3 py-1.5 text-sm"
+                                        data-testid="review-print-btn"
+                                      >
+                                        Review Print
+                                      </button>
+                                    )}
+
+                                    {/* Photos */}
+                                    <div>
+                                      <h4 className="text-xs font-medium text-muted mb-2">Print Bed Photos</h4>
+                                      {photosLoading ? (
+                                        <div className="flex items-center gap-2 text-sm text-muted">
+                                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--accent-blue)]"></div>
+                                          Loading photos...
+                                        </div>
+                                      ) : photos && photos.length > 0 ? (
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                          {photos.map((photo) => {
+                                            const label = photo.progress === 0 ? 'Early' : photo.progress === 100 ? 'Final' : `${photo.progress}%`;
+                                            return (
+                                              <div key={photo.id} className="flex flex-col gap-1">
+                                                <button
+                                                  onClick={(e) => { e.stopPropagation(); setLightboxPhoto({ url: photo.photoUrl, label }); }}
+                                                  className="block w-full rounded border border-[var(--border)] overflow-hidden hover:border-[var(--accent-blue)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent-blue)]"
+                                                >
+                                                  <img
+                                                    src={photo.photoUrl}
+                                                    alt={`Print bed at ${label}`}
+                                                    loading="lazy"
+                                                    className="w-full object-cover aspect-video bg-[var(--surface-secondary)]"
+                                                  />
+                                                </button>
+                                                <span className="text-xs text-muted text-center">{label}</span>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm text-muted italic">No photos captured for this print.</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
