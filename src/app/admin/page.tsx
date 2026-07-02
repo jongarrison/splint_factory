@@ -283,7 +283,15 @@ export default function SystemStatusPage() {
       const response = await fetch('/api/admin/daily-digest/send', { method: 'POST' });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Failed to send digest');
-      setDigestResult(`Digest sent to ${payload.recipientCount} recipient(s).`);
+      const checkStatus = payload?.digestSelfCheck?.status;
+      const checkObjectId = payload?.digestSelfCheck?.objectId;
+      const checkDuration = payload?.digestSelfCheck?.durationSeconds;
+      const checkDetail = payload?.digestSelfCheck?.failurePreview;
+      const summary = checkStatus
+        ? ` Digest self-check: ${checkStatus}${checkObjectId ? ` (${checkObjectId})` : ''}${checkDuration != null ? ` in ${Number(checkDuration).toFixed(1)}s` : ''}.`
+        : '';
+      const detailSuffix = checkDetail ? ` ${checkDetail}` : '';
+      setDigestResult(`Digest sent to ${payload.recipientCount} recipient(s).${summary}${detailSuffix}`);
     } catch (err) {
       setDigestResult(err instanceof Error ? err.message : 'Failed to send digest');
     } finally {

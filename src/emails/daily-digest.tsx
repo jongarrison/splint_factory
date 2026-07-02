@@ -39,6 +39,17 @@ export interface ProcessorHealthSummary {
   wasOffline: boolean;
   offlineDurationMinutes: number | null;
   currentlyOnline: boolean;
+  digestSelfCheckStatus: 'NOT_RUN' | 'PASSED' | 'FAILED' | 'TIMEOUT' | 'ERROR';
+  digestSelfCheckObjectId: string | null;
+  digestSelfCheckDurationSeconds: number | null;
+  digestSelfCheckFailurePreview: string | null;
+  lastSelfCheckStatus: 'NONE' | 'QUEUED' | 'RUNNING' | 'PASSED' | 'FAILED';
+  lastSelfCheckSource: string | null;
+  lastSelfCheckObjectId: string | null;
+  lastSelfCheckCreatedAt: string | null;
+  lastSelfCheckCompletedAt: string | null;
+  lastSelfCheckDurationSeconds: number | null;
+  lastSelfCheckFailurePreview: string | null;
 }
 
 export interface NewUserSummary {
@@ -153,6 +164,68 @@ export default function DailyDigestEmail({
             )}
             {!processor.wasOffline && (
               <Text style={subRow}>No outages in the last 24 hours.</Text>
+            )}
+
+            {processor.digestSelfCheckStatus === 'PASSED' && (
+              <Text style={rowGood}>Pre-digest self-check: PASSED</Text>
+            )}
+            {processor.digestSelfCheckStatus === 'FAILED' && (
+              <Text style={rowBad}>Pre-digest self-check: FAILED</Text>
+            )}
+            {processor.digestSelfCheckStatus === 'TIMEOUT' && (
+              <Text style={rowWarn}>Pre-digest self-check: TIMEOUT</Text>
+            )}
+            {processor.digestSelfCheckStatus === 'ERROR' && (
+              <Text style={rowBad}>Pre-digest self-check: ERROR</Text>
+            )}
+            {processor.digestSelfCheckStatus === 'NOT_RUN' && (
+              <Text style={subRow}>Pre-digest self-check was not executed.</Text>
+            )}
+            {processor.digestSelfCheckObjectId && (
+              <Text style={subRow}>Pre-digest Object ID: {processor.digestSelfCheckObjectId}</Text>
+            )}
+            {processor.digestSelfCheckDurationSeconds !== null && (
+              <Text style={subRow}>Pre-digest duration: {processor.digestSelfCheckDurationSeconds.toFixed(1)}s</Text>
+            )}
+            {processor.digestSelfCheckFailurePreview && (
+              <Text style={subRow}>Pre-digest detail: {processor.digestSelfCheckFailurePreview}</Text>
+            )}
+
+            {processor.lastSelfCheckStatus === 'NONE' ? (
+              <Text style={subRow}>No processor self-check has run yet.</Text>
+            ) : (
+              <>
+                {processor.lastSelfCheckStatus === 'PASSED' && (
+                  <Text style={rowGood}>Last self-check: PASSED</Text>
+                )}
+                {processor.lastSelfCheckStatus === 'FAILED' && (
+                  <Text style={rowBad}>Last self-check: FAILED</Text>
+                )}
+                {processor.lastSelfCheckStatus === 'RUNNING' && (
+                  <Text style={rowWarn}>Last self-check: RUNNING</Text>
+                )}
+                {processor.lastSelfCheckStatus === 'QUEUED' && (
+                  <Text style={rowWarn}>Last self-check: QUEUED</Text>
+                )}
+                {processor.lastSelfCheckObjectId && (
+                  <Text style={subRow}>Object ID: {processor.lastSelfCheckObjectId}</Text>
+                )}
+                {processor.lastSelfCheckSource && (
+                  <Text style={subRow}>Source: {processor.lastSelfCheckSource}</Text>
+                )}
+                {processor.lastSelfCheckCreatedAt && (
+                  <Text style={subRow}>Created: {new Date(processor.lastSelfCheckCreatedAt).toLocaleString('en-US')}</Text>
+                )}
+                {processor.lastSelfCheckCompletedAt && (
+                  <Text style={subRow}>Completed: {new Date(processor.lastSelfCheckCompletedAt).toLocaleString('en-US')}</Text>
+                )}
+                {processor.lastSelfCheckDurationSeconds !== null && (
+                  <Text style={subRow}>Duration: {processor.lastSelfCheckDurationSeconds.toFixed(1)}s</Text>
+                )}
+                {processor.lastSelfCheckFailurePreview && (
+                  <Text style={subRow}>Failure detail: {processor.lastSelfCheckFailurePreview}</Text>
+                )}
+              </>
             )}
           </Section>
 

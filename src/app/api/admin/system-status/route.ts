@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getProcessorStatus } from '@/lib/geo-processor-health';
 import { ensureInternalTaskRuntimeStarted, getInternalTaskStatuses } from '@/lib/internal-task-runtime';
-import { generateObjectId } from '@/lib/objectId';
+import { createProcessorHealthCheckJob } from '@/lib/processor-health-check';
 
 // GET /api/admin/system-status - View system status including geometry processing queue (admin only)
 export async function GET() {
@@ -413,54 +413,9 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized - admin access required' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { organizationId: true }
-    });
-
-    if (!user?.organizationId) {
-      return NextResponse.json({ error: 'Admin user must be part of an organization' }, { status: 403 });
-    }
-
-    // Always associate health check jobs with "System Administration" org
-    const systemOrg = await prisma.organization.findUnique({
-      where: { name: 'System Administration' }
-    });
-
-    if (!systemOrg) {
-      return NextResponse.json({ error: '"System Administration" organization not found. Run the seed script.' }, { status: 404 });
-    }
-
-    // Find the cylinder test geometry
-    const cylinderGeometry = await prisma.design.findFirst({
-      where: { algorithmName: 'cylinder' }
-    });
-
-    if (!cylinderGeometry) {
-      return NextResponse.json(
-        { error: 'Cylinder test geometry not found. Create a Design with algorithmName "cylinder" first.' },
-        { status: 404 }
-      );
-    }
-
-    const objectId = await generateObjectId();
-
-    const job = await prisma.designJob.create({
-      data: {
-        designId: cylinderGeometry.id,
-        creatorId: session.user.id,
-        owningOrganizationId: systemOrg.id,
-        inputParameters: JSON.stringify({ radius: 10, height: 10 }),
-        isDebugRequest: true,
-        objectId,
-        objectIdGeneratedAt: new Date(),
-        isEnabled: true
-      },
-      select: {
-        id: true,
-        objectId: true,
-        createdAt: true
-      }
+    const job = await createProcessorHealthCheckJob({
+      source: 'admin-manual',
+      creatorUserId: session.user.id,
     });
 
     return NextResponse.json(job, { status: 201 });

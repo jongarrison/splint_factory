@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import { gatherDigestData, buildAdminUrl } from '@/lib/daily-digest';
 import DailyDigestEmail from '@/emails/daily-digest';
+import { runDigestProcessorHealthCheck } from '@/lib/processor-health-check';
 
 
 // POST /api/admin/daily-digest/send - Immediately send the daily digest (ignores hour/already-sent guards)
@@ -23,7 +24,8 @@ export async function POST() {
   }
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const data = await gatherDigestData(since);
+  const digestSelfCheck = await runDigestProcessorHealthCheck({ creatorUserId: session.user.id });
+  const data = await gatherDigestData(since, { digestSelfCheck });
 
   const reportDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -33,5 +35,13 @@ export async function POST() {
     react: DailyDigestEmail({ reportDate, windowHours: 24, adminUrl: buildAdminUrl(), ...data }),
   });
 
-  return NextResponse.json({ recipientCount: recipients.length });
+  return NextResponse.json({
+    recipientCount: recipients.length,
+    digestSelfCheck: {
+      status: digestSelfCheck.status,
+      objectId: digestSelfCheck.objectId,
+      durationSeconds: digestSelfCheck.durationSeconds,
+      failurePreview: digestSelfCheck.failurePreview,
+    },
+  });
 }

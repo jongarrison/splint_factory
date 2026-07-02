@@ -4,6 +4,7 @@ import { registerInternalTask } from '@/lib/internal-task-scheduler';
 import { gatherDigestData, buildAdminUrl } from '@/lib/daily-digest';
 import DailyDigestEmail from '@/emails/daily-digest';
 import { getBlobStorageInstance } from '@/lib/blob-storage';
+import { runDigestProcessorHealthCheck } from '@/lib/processor-health-check';
 
 const TASK_KEY = 'daily-digest';
 
@@ -78,7 +79,13 @@ async function sendDailyDigest(): Promise<void> {
   }
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const data = await gatherDigestData(since);
+  const digestSelfCheck = await runDigestProcessorHealthCheck();
+  console.log(
+    `[DailyDigest] Pre-send processor self-check ${digestSelfCheck.status}` +
+      `${digestSelfCheck.objectId ? ` (${digestSelfCheck.objectId})` : ''}`,
+  );
+
+  const data = await gatherDigestData(since, { digestSelfCheck });
 
   const reportDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',

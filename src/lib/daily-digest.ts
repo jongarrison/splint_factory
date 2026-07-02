@@ -6,20 +6,46 @@ import {
   type ProcessorHealthSummary,
   type NewUserSummary,
 } from '@/emails/daily-digest';
+import { HEALTH_CHECK_JOB_LABEL_PREFIX, type ProcessorHealthCheckOutcome } from '@/lib/processor-health-check';
 
 export function buildAdminUrl(): string {
   const base = process.env.NEXTAUTH_URL || 'http://localhost:3000';
   return `${base.replace(/\/$/, '')}/admin`;
 }
 
-export async function gatherDigestData(since: Date): Promise<{
+function extractSelfCheckFailurePreview(log: string | null): string | null {
+  if (!log) return null;
+  const lines = log
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length === 0) return null;
+
+  const tail = lines.slice(-6).join(' | ');
+  if (tail.length <= 240) return tail;
+  return `${tail.slice(0, 237)}...`;
+}
+
+function parseSelfCheckSource(jobLabel: string | null): string | null {
+  if (!jobLabel || !jobLabel.startsWith(HEALTH_CHECK_JOB_LABEL_PREFIX)) {
+    return null;
+  }
+  const source = jobLabel.slice(HEALTH_CHECK_JOB_LABEL_PREFIX.length).trim();
+  return source.length > 0 ? source : null;
+}
+
+export async function gatherDigestData(
+  since: Date,
+  options: { digestSelfCheck?: ProcessorHealthCheckOutcome | null } = {},
+): Promise<{
   designJobs: OrgDesignJobStats[];
   prints: OrgPrintStats[];
   moreInfo: MoreInfoSummary;
   processor: ProcessorHealthSummary;
   newUsers: NewUserSummary;
 }> {
-  const [designJobRows, printRows, moreInfoRows, heartbeat, newUserRows, totalUsers, totalOrgs] = await Promise.all([
+  const [designJobRows, printRows, moreInfoRows, heartbeat, latestSelfCheck, latestCompletedSelfCheck, newUserRows, totalUsers, totalOrgs] = await Promise.all([
     // Design jobs completed (or in-progress) in the window
     prisma.designJob.findMany({
       where: {
@@ -56,6 +82,42 @@ export async function gatherDigestData(since: Date): Promise<{
 
     // Processor heartbeat
     prisma.processorHeartbeat.findFirst({ where: { id: 'geo_processor' } }),
+
+    // Latest processor self-check job created by admin or digest automation
+    prisma.designJob.findFirst({
+      where: {
+        isDebugRequest: true,
+        jobLabel: { startsWith: HEALTH_CHECK_JOB_LABEL_PREFIX },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        objectId: true,
+        jobLabel: true,
+        createdAt: true,
+        processStartedAt: true,
+        processCompletedAt: true,
+        isProcessSuccessful: true,
+        processingLog: true,
+      },
+    }),
+
+    prisma.designJob.findFirst({
+      where: {
+        isDebugRequest: true,
+        jobLabel: { startsWith: HEALTH_CHECK_JOB_LABEL_PREFIX },
+        processCompletedAt: { not: null },
+      },
+      orderBy: { processCompletedAt: 'desc' },
+      select: {
+        objectId: true,
+        jobLabel: true,
+        createdAt: true,
+        processStartedAt: true,
+        processCompletedAt: true,
+        isProcessSuccessful: true,
+        processingLog: true,
+      },
+    }),
 
     // New user registrations
     prisma.user.findMany({
@@ -127,10 +189,42 @@ export async function gatherDigestData(since: Date): Promise<{
   if (heartbeat?.offlineSince && heartbeat.offlineSince >= since) {
     offlineDurationMinutes = Math.round((now.getTime() - heartbeat.offlineSince.getTime()) / 60000);
   }
+  const completedSelfCheckStatus = latestCompletedSelfCheck
+    ? latestCompletedSelfCheck.isProcessSuccessful
+      ? 'PASSED'
+      : 'FAILED'
+    : null;
+
+  const selfCheckReference = latestCompletedSelfCheck ?? latestSelfCheck;
+  const digestSelfCheck = options.digestSelfCheck ?? null;
+
   const processor: ProcessorHealthSummary = {
     wasOffline: Boolean(wasOffline),
     offlineDurationMinutes,
     currentlyOnline,
+    digestSelfCheckStatus: digestSelfCheck?.status ?? 'NOT_RUN',
+    digestSelfCheckObjectId: digestSelfCheck?.objectId ?? null,
+    digestSelfCheckDurationSeconds: digestSelfCheck?.durationSeconds ?? null,
+    digestSelfCheckFailurePreview: digestSelfCheck?.failurePreview ?? null,
+    lastSelfCheckStatus: completedSelfCheckStatus
+      ? completedSelfCheckStatus
+      : latestSelfCheck
+        ? latestSelfCheck.processStartedAt
+          ? 'RUNNING'
+          : 'QUEUED'
+        : 'NONE',
+    lastSelfCheckSource: parseSelfCheckSource(selfCheckReference?.jobLabel ?? null),
+    lastSelfCheckObjectId: selfCheckReference?.objectId ?? null,
+    lastSelfCheckCreatedAt: selfCheckReference?.createdAt?.toISOString() ?? null,
+    lastSelfCheckCompletedAt: selfCheckReference?.processCompletedAt?.toISOString() ?? null,
+    lastSelfCheckDurationSeconds:
+      selfCheckReference?.processStartedAt && selfCheckReference?.processCompletedAt
+        ? (selfCheckReference.processCompletedAt.getTime() - selfCheckReference.processStartedAt.getTime()) / 1000
+        : null,
+    lastSelfCheckFailurePreview:
+      selfCheckReference?.processCompletedAt && !selfCheckReference?.isProcessSuccessful
+        ? extractSelfCheckFailurePreview(selfCheckReference.processingLog ?? null)
+        : null,
   };
 
   // -- New users --
