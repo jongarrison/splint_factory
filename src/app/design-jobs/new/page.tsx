@@ -10,6 +10,7 @@ import ValidationSummary from '@/components/forms/ValidationSummary';
 import { useFormValidation, fieldErrorClass, type FieldErrors } from '@/lib/formValidation';
 import { getDesignHintsFn } from '@/designs/hints-registry';
 import type { DesignHint } from '@/designs/types';
+import { trackEvent } from '@/lib/analytics';
 
 interface Design {
   id: string;
@@ -46,6 +47,7 @@ function CreateGeometryJobPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeHints, setActiveHints] = useState<DesignHint[]>([]);
+  const hasTrackedFormOpenRef = useRef(false);
   // Scroll target for failed-submit feedback — top of the form card,
   // so the summary alert lands well within view on mobile.
   const formCardRef = useRef<HTMLDivElement | null>(null);
@@ -85,6 +87,17 @@ function CreateGeometryJobPage() {
       handleGeometryChange(designId);
     }
   }, [designId, geometries]);
+
+  useEffect(() => {
+    if (hasTrackedFormOpenRef.current) return;
+    if (status !== 'authenticated') return;
+
+    hasTrackedFormOpenRef.current = true;
+    trackEvent('design_job_form_viewed', {
+      has_design_id: Boolean(designId),
+      from_template: Boolean(templateId),
+    });
+  }, [status, designId, templateId]);
 
   const loadTemplateJob = async (jobId: string) => {
     try {
@@ -139,6 +152,12 @@ function CreateGeometryJobPage() {
     setActiveHints([]);
     
     if (design) {
+      trackEvent('design_selected', {
+        source: 'design_job_form',
+        design_id: design.id,
+        design_slug: design.slug,
+      });
+
       const schema = design.inputParameters;
       setParameterSchema(schema);
       
@@ -223,9 +242,17 @@ function CreateGeometryJobPage() {
       return collectParameterErrors();
     });
     if (!isValid || !selectedDesign) return;
+
+    trackEvent('design_job_create_submitted', {
+      design_id: selectedDesign.id,
+      parameter_count: parameterSchema.length,
+      has_job_label: jobLabel.trim().length > 0,
+    });
     
     setSubmitting(true);
     setError(null);
+
+    let responseStatus = 0;
     
     try {
       const response = await fetch('/api/design-jobs', {
@@ -240,17 +267,27 @@ function CreateGeometryJobPage() {
         }),
       });
 
+      responseStatus = response.status;
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create design job');
       }
 
       const createdJob = await response.json();
+      trackEvent('design_job_created', {
+        design_id: selectedDesign.id,
+        has_job_id: Boolean(createdJob?.id),
+      });
       
       // Navigate to job details page to track progress
       router.push(`/design-jobs/${createdJob.id}`);
       
     } catch (err) {
+      trackEvent('design_job_create_failed', {
+        design_id: selectedDesign.id,
+        status_code: responseStatus,
+      });
       setError(err instanceof Error ? err.message : 'Failed to create design job');
     } finally {
       setSubmitting(false);

@@ -2,10 +2,11 @@
 
 import { Suspense, useState, useEffect, useCallback, useRef } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Header from "@/components/navigation/Header"
 import { QRCodeSVG } from "qrcode.react"
+import { trackEvent } from "@/lib/analytics"
 
 // Wrapper to provide Suspense boundary for useSearchParams
 export default function LoginPage() {
@@ -26,7 +27,6 @@ function LoginPageInner() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isElectron, setIsElectron] = useState(false)
-  const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl")
 
@@ -151,6 +151,11 @@ function LoginPageInner() {
     setIsLoading(true)
     setError("")
 
+    trackEvent("login_submit", {
+      is_electron: isElectron,
+      has_callback_url: Boolean(callbackUrl),
+    })
+
     try {
       const result = await signIn("credentials", {
         email,
@@ -159,14 +164,30 @@ function LoginPageInner() {
       })
 
       if (result?.error) {
+        trackEvent("login_failed", {
+          method: "credentials",
+          reason: "invalid_credentials",
+          is_electron: isElectron,
+        })
         setError("Invalid credentials")
       } else {
         // callbackUrl takes priority, then Electron->print-queue, browser->design-menu
         const destination = callbackUrl || (isElectron ? "/print-queue" : "/design-menu")
+        const destinationType = callbackUrl ? "callback_url" : (isElectron ? "print_queue" : "design_menu")
+        trackEvent("login_succeeded", {
+          method: "credentials",
+          destination_type: destinationType,
+          is_electron: isElectron,
+        })
         // Use full page load so SessionProvider initializes with the new session
         window.location.href = destination
       }
     } catch (err) {
+      trackEvent("login_failed", {
+        method: "credentials",
+        reason: "exception",
+        is_electron: isElectron,
+      })
       console.error("Login error:", err)
       setError("An error occurred")
     } finally {

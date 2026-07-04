@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
+import { trackEvent } from '@/lib/analytics';
 
 // Lifestyle images for the scrolling carousel (hero image excluded)
 // Order is randomized on each page load; see shuffledLifestyleImages in the component.
@@ -181,12 +182,14 @@ export default function AboutContent() {
               <Link
                 href="/more-information"
                 className="px-8 py-3 rounded-lg bg-[var(--accent-blue)] hover:brightness-110 text-white font-semibold text-lg transition-all shadow-lg"
+                onClick={() => trackEvent('landing_get_early_access_clicked', { placement: 'hero' })}
               >
                 Get Early Access
               </Link>
               <Link
                 href="/login"
                 className="px-8 py-3 rounded-lg border-2 border-white/60 hover:border-white text-white font-semibold text-lg transition-all"
+                onClick={() => trackEvent('landing_sign_in_clicked', { placement: 'hero' })}
               >
                 Sign In
               </Link>

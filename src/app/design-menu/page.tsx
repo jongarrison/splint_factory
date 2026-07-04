@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/navigation/Header';
 import ImagePlaceholder from '@/components/ImagePlaceholder';
+import { trackEvent } from '@/lib/analytics';
 
 interface Design {
   id: string;
@@ -42,6 +43,9 @@ export default function GeoJobMenuPage() {
       }
       const data = await response.json();
       setGeometries(data);
+      trackEvent('design_menu_loaded', {
+        design_count: Array.isArray(data) ? data.length : 0,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load designs');
     } finally {
@@ -102,6 +106,13 @@ export default function GeoJobMenuPage() {
                 className="design-card rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden"
                 data-testid="design-menu-card"
                 data-design-id={design.id}
+                onClick={() => {
+                  trackEvent('design_selected', {
+                    source: 'design_menu',
+                    design_id: design.id,
+                    design_slug: design.slug,
+                  });
+                }}
               >
                 <div className="aspect-[4/3] relative bg-surface-secondary">
                   {design.hasPreviewImage ? (
