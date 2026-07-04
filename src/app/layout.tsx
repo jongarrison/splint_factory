@@ -6,6 +6,7 @@ import SettingsButton from "@/components/ReloadButton";
 import KeyboardToggleButton from "@/components/KeyboardToggleButton";
 import DevModeAlertListener from "@/components/printer/DevModeAlertModal";
 import { ensureInternalTaskRuntimeStarted } from "@/lib/internal-task-runtime";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import "./semantic.css";
 
@@ -43,6 +44,7 @@ export default function RootLayout({
           <VirtualKeyboard />
           <DevModeAlertListener />
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
