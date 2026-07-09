@@ -22,6 +22,15 @@ export interface DesignHint {
 // Function signature for per-design hint evaluation (client-safe, pure logic)
 export type HintsFn = (values: Record<string, number | boolean | string>) => DesignHint[];
 
+// Props for a design's bespoke input form. Used when a design's parameters do not fit
+// the flat scalar schema (e.g. RelativeMotion's nested per-finger data). The form owns its
+// own fields/validation and writes the full job payload up via onChange.
+export interface CustomFormProps {
+  value: Record<string, any>;
+  onChange: (next: Record<string, any>) => void;
+  onValidChange?: (valid: boolean) => void;
+}
+
 export interface DesignRegistryEntry extends DesignDefinition {
   slug: DesignSlug;
   hasPreviewImage: boolean;

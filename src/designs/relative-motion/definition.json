@@ -1,0 +1,9 @@
+{
+  "$schema": "../design-definition.schema.json",
+  "id": "c3757c8d06e4bacc3bd245c8",
+  "name": "Relative Motion",
+  "algorithmName": "RelativeMotion",
+  "shortDescription": "Relative-motion splint: rings anchor two or more fingers and support the finger(s) between them at a set elevation.",
+  "isActive": true,
+  "inputParameters": []
+}

@@ -9,6 +9,7 @@ import Header from '@/components/navigation/Header';
 import ValidationSummary from '@/components/forms/ValidationSummary';
 import { useFormValidation, fieldErrorClass, type FieldErrors } from '@/lib/formValidation';
 import { getDesignHintsFn } from '@/designs/hints-registry';
+import { getDesignCustomForm } from '@/designs/custom-form-registry';
 import type { DesignHint } from '@/designs/types';
 import { trackEvent } from '@/lib/analytics';
 
@@ -47,6 +48,8 @@ function CreateGeometryJobPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeHints, setActiveHints] = useState<DesignHint[]>([]);
+  // Validity reported by a design's bespoke form (only used when one is rendered).
+  const [customFormValid, setCustomFormValid] = useState(false);
   const hasTrackedFormOpenRef = useRef(false);
   // Scroll target for failed-submit feedback — top of the form card,
   // so the summary alert lands well within view on mobile.
@@ -150,6 +153,7 @@ function CreateGeometryJobPage() {
     const design = geometries.find(g => g.id === geometryId);
     setSelectedDesign(design || null);
     setActiveHints([]);
+    setCustomFormValid(false);
     
     if (design) {
       trackEvent('design_selected', {
@@ -243,6 +247,13 @@ function CreateGeometryJobPage() {
     });
     if (!isValid || !selectedDesign) return;
 
+    // Designs with a bespoke form validate themselves; block submit until they report valid.
+    const customForm = getDesignCustomForm(selectedDesign.id);
+    if (customForm && !customFormValid) {
+      setError('Please complete the required fields before submitting.');
+      return;
+    }
+
     trackEvent('design_job_create_submitted', {
       design_id: selectedDesign.id,
       parameter_count: parameterSchema.length,
@@ -308,10 +319,13 @@ function CreateGeometryJobPage() {
     );
   }
 
+  // Bespoke form for designs whose parameters do not fit the flat scalar schema.
+  const CustomFormComp = selectedDesign ? getDesignCustomForm(selectedDesign.id) : undefined;
+
   return (
     <div className="page-shell" data-testid="new-design-job-page">
       <Header />
-      
+
       <div className="page-content">
         <div className="mb-8">
           <div className="flex justify-between items-center">
@@ -419,7 +433,15 @@ function CreateGeometryJobPage() {
               />
             </div>
 
-            {selectedDesign && parameterSchema.length > 0 && (
+            {selectedDesign && CustomFormComp && (
+              <CustomFormComp
+                value={parameterValues}
+                onChange={setParameterValues}
+                onValidChange={setCustomFormValid}
+              />
+            )}
+
+            {selectedDesign && !CustomFormComp && parameterSchema.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium text-primary mb-4">
                   Design Parameters for {selectedDesign.name}
@@ -547,7 +569,7 @@ function CreateGeometryJobPage() {
               </Link>
               <button
                 type="submit"
-                disabled={submitting || !selectedDesign}
+                disabled={submitting || !selectedDesign || (!!CustomFormComp && !customFormValid)}
                 className="btn-primary px-4 py-2 text-sm"
                 data-testid="submit-btn"
               >

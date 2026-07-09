@@ -10,6 +10,7 @@ import infinitySplint251004Def from './infinity-splint-251004/definition.json';
 import staxSplintDef from './stax-splint/definition.json';
 import buddyRingsDuoDef from './buddy-rings-duo/definition.json';
 import sizingRingsDef from './sizing-rings/definition.json';
+import relativeMotionDef from './relative-motion/definition.json';
 
 const publicDesignsDir = join(process.cwd(), 'public', 'designs');
 
@@ -23,6 +24,7 @@ const designEntries: Array<{ slug: string; definition: DesignDefinition }> = [
   { slug: 'stax-splint', definition: staxSplintDef as DesignDefinition },
   { slug: 'buddy-rings-duo', definition: buddyRingsDuoDef as DesignDefinition },
   { slug: 'sizing-rings', definition: sizingRingsDef as DesignDefinition },
+  { slug: 'relative-motion', definition: relativeMotionDef as DesignDefinition },
 ];
 
 // Build the registry map (by ID) at module load time
