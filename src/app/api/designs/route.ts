@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
         hasPreviewImage: d.hasPreviewImage,
         hasMeasurementImage: d.hasMeasurementImage,
         hasCustomForm: d.hasCustomForm,
+        hasClinicalGuide: d.hasClinicalGuide,
         ...(includeSchema ? { inputParameters: d.inputParameters } : {}),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));

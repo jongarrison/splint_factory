@@ -15,6 +15,7 @@ interface Design {
   shortDescription: string | null;
   slug: string;
   hasPreviewImage: boolean;
+  hasClinicalGuide: boolean;
 }
 
 export default function GeoJobMenuPage() {
@@ -125,6 +126,40 @@ export default function GeoJobMenuPage() {
                     />
                   ) : (
                     <ImagePlaceholder className="w-full h-full" />
+                  )}
+                  {design.hasClinicalGuide && (
+                    <button
+                      type="button"
+                      title="Clinical Guide and User Instructions"
+                      aria-label={`Clinical Guide and User Instructions for ${design.name}`}
+                      className="clinical-guide-badge"
+                      data-testid="clinical-guide-icon"
+                      onClick={(e) => {
+                        // Stop the outer <Link> from also selecting this design.
+                        e.preventDefault();
+                        e.stopPropagation();
+                        trackEvent('clinical_guide_opened', {
+                          source: 'design_menu',
+                          design_id: design.id,
+                          design_slug: design.slug,
+                        });
+                        window.open(
+                          `/designs/${design.slug}/clinical-guide`,
+                          '_blank',
+                          'noopener,noreferrer'
+                        );
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="h-5 w-5"
+                        aria-hidden="true"
+                      >
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v.01a.75.75 0 001.5 0v-.01zM10 9a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 9z" clipRule="evenodd" />
+                      </svg>
+                    </button>
                   )}
                 </div>
                 <div className="p-4">

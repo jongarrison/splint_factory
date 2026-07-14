@@ -20,6 +20,7 @@ interface Design {
   slug: string;
   inputParameters: InputParameter[];
   hasMeasurementImage: boolean;
+  hasClinicalGuide: boolean;
 }
 
 interface InputParameter {
@@ -359,7 +360,28 @@ function CreateGeometryJobPage() {
         {selectedDesign && (
           <div className="mb-6 card shadow" data-testid="measurement-guide-card">
             <div className="card-body">
-              <h2 className="text-lg font-medium text-primary mb-4">Measurement Guide</h2>
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h2 className="text-lg font-medium text-primary">Measurement Guide</h2>
+                {selectedDesign.hasClinicalGuide && (
+                  <a
+                    href={`/designs/${selectedDesign.slug}/clinical-guide`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-link text-sm inline-flex items-center gap-1"
+                    data-testid="clinical-guide-link"
+                    onClick={() => {
+                      trackEvent('clinical_guide_opened', {
+                        source: 'new_job_page',
+                        design_id: selectedDesign.id,
+                        design_slug: selectedDesign.slug,
+                      });
+                    }}
+                  >
+                    Clinical Guide &amp; User Instructions
+                    <span aria-hidden="true">&#x2197;</span>
+                  </a>
+                )}
+              </div>
               <div className="flex justify-center">
                 <div className="relative w-full max-w-3xl">
                   {selectedDesign.hasMeasurementImage ? (

@@ -365,7 +365,7 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
           </p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-secondary">Band width (mm)</label>
+          <label className="block text-sm font-medium text-secondary">Band Width (mm)</label>
           <input
             type="text"
             inputMode="decimal"

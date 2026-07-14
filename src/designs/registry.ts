@@ -13,6 +13,7 @@ import sizingRingsDef from './sizing-rings/definition.json';
 import relativeMotionDef from './relative-motion/definition.json';
 
 const publicDesignsDir = join(process.cwd(), 'public', 'designs');
+const srcDesignsDir = join(process.cwd(), 'src', 'designs');
 
 // Each entry pairs a slug (directory name) with its definition.json
 const designEntries: Array<{ slug: string; definition: DesignDefinition }> = [
@@ -38,6 +39,7 @@ for (const { slug, definition } of designEntries) {
     hasPreviewImage: existsSync(join(publicDesignsDir, slug, 'preview.png')),
     hasMeasurementImage: existsSync(join(publicDesignsDir, slug, 'measurement.png')),
     hasCustomForm: false,
+    hasClinicalGuide: existsSync(join(srcDesignsDir, slug, 'clinical-guide.md')),
   };
   registryById.set(definition.id, entry);
   registryBySlug.set(slug, entry);

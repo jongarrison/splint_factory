@@ -31,6 +31,7 @@ export async function GET(
       hasPreviewImage: design.hasPreviewImage,
       hasMeasurementImage: design.hasMeasurementImage,
       hasCustomForm: design.hasCustomForm,
+      hasClinicalGuide: design.hasClinicalGuide,
     });
   } catch (error) {
     console.error('Error fetching design:', error);

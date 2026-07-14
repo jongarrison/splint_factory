@@ -1,8 +1,9 @@
 # Design Definitions
 
-Each splint design lives in its own subdirectory here. Two things define a design:
+Each splint design lives in its own subdirectory here. Three things define a design:
 1. `definition.json` — static schema (required)
 2. `hints.ts` — cross-field hints shown in the new-job form (optional)
+3. `clinical-guide.md` — Clinical Guide & User Instructions page content (optional)
 
 ---
 
@@ -16,6 +17,7 @@ src/designs/
   <design-slug>/
     definition.json        # required
     hints.ts               # optional, add if the design needs cross-field guidance
+    clinical-guide.md      # optional, exposes /designs/<slug>/clinical-guide
 ```
 
 ---
@@ -45,7 +47,14 @@ Fields:
 1. Create `src/designs/<slug>/definition.json` (copy an existing one as a template)
 2. Register it in `registry.ts` (two lines: import + entry in `designEntries`)
 3. If the design needs cross-field hints, add `hints.ts` and register it in `hints-registry.ts`
-4. Add a `{algorithmName}.json` dev data file in `splint_geo_processor/generators/<algo>/` for local Grasshopper testing
+4. If a Clinical Guide & User Instructions page is available, add `clinical-guide.md` (no registration needed — presence is detected automatically)
+5. Add a `{algorithmName}.json` dev data file in `splint_geo_processor/generators/<algo>/` for local Grasshopper testing
+
+---
+
+## Clinical Guide (clinical-guide.md)
+
+Optional Markdown file rendered at `/designs/<slug>/clinical-guide`. Uses GitHub Flavored Markdown (tables, task lists, strikethrough). When present, an info icon appears on the design's card in `/design-menu` and a "Clinical Guide & User Instructions" link appears in the header of the Measurement Guide card on `/design-jobs/new`. No registry entry is required — the file's existence is checked in `registry.ts` at load time and exposed as `hasClinicalGuide` on the API.
 
 ---
 

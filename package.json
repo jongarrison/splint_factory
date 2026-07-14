@@ -36,6 +36,8 @@
     "react": "19.2.2",
     "react-dom": "19.2.2",
     "react-email": "^5.2.10",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "resend": "^6.10.0",
     "simple-keyboard": "^3.8.92",
     "three": "^0.180.0"

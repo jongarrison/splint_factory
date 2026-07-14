@@ -36,4 +36,7 @@ export interface DesignRegistryEntry extends DesignDefinition {
   hasPreviewImage: boolean;
   hasMeasurementImage: boolean;
   hasCustomForm: boolean;
+  // True when a clinical-guide.md file lives alongside definition.json.
+  // Controls the "Clinical Guide & User Instructions" link in the UI.
+  hasClinicalGuide: boolean;
 }
