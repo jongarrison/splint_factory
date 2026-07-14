@@ -235,9 +235,9 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
               <th className="py-2 pr-3 font-medium">Finger</th>
               <th className="py-2 px-3 font-medium">Include</th>
               <th className="py-2 px-3 font-medium">Role</th>
-              <th className="py-2 px-3 font-medium">P1 Circ (mm)</th>
+              <th className="py-2 px-3 font-medium">P1 Middle Circumference (mm)</th>
               <th className="py-2 px-3 font-medium">P1 Length (mm)</th>
-              <th className="py-2 px-3 font-medium">Fwd Offset (mm)</th>
+              <th className="py-2 px-3 font-medium">PIP Fwd Offset (mm)</th>
               <th className="py-2 px-3 font-medium">Slit</th>
             </tr>
           </thead>

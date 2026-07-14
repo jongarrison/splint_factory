@@ -11,6 +11,7 @@ import PrintStatusBadge from '@/components/PrintStatusBadge';
 import PrintAcceptanceBadge from '@/components/PrintAcceptanceBadge';
 import PrintAcceptanceModal from '@/components/PrintAcceptanceModal';
 import { formatDate } from '@/lib/formatDate';
+import { formatBytes } from '@/lib/formatBytes';
 
 interface GeometryJob {
   id: string;
@@ -792,6 +793,18 @@ export default function GeometryJobDetailPage({
                     <dt className="text-sm font-medium text-muted">Mesh File</dt>
                     <dd className="mt-1 text-sm text-primary flex items-center gap-3">
                       <span className="font-mono truncate" title={job.meshFileName}>{job.meshFileName}</span>
+                      {(() => {
+                        // file_size_bytes is written by splintmeshes.py save_mesh() into the
+                        // job's meshMetadata JSON - the real on-disk size of the exported mesh.
+                        let sizeBytes: number | undefined;
+                        try {
+                          const meta = job.meshMetadata ? JSON.parse(job.meshMetadata) : null;
+                          sizeBytes = typeof meta?.file_size_bytes === 'number' ? meta.file_size_bytes : undefined;
+                        } catch { /* meshMetadata not valid JSON; omit size */ }
+                        return sizeBytes !== undefined ? (
+                          <span className="text-muted">({formatBytes(sizeBytes)})</span>
+                        ) : null;
+                      })()}
                       <a
                         href={`/api/design-jobs/${job.id}/mesh-file`}
                         className="btn-primary text-xs px-3 py-1.5"
