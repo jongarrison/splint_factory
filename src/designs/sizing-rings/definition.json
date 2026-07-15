@@ -5,5 +5,7 @@
   "algorithmName": "SizingRings",
   "shortDescription": "Set of sizing rings for fitting (no input parameters)",
   "isActive": true,
+  "category": "tool",
+  "generatorVersion": "1",
   "inputParameters": []
 }

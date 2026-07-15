@@ -145,6 +145,10 @@ model DesignJob {
   printBlobPathname     String?
   processingLog         String?
   meshMetadata          String?
+  // For 'tool' category designs (no per-patient inputs): the design's generatorVersion
+  // at the time this job was processed/cloned. Used to detect stale tool geometry after
+  // a .gh/.py update, and to find a same-version job to clone from for other orgs.
+  generatorVersionSnapshot String?
   owningOrganization    Organization  @relation(fields: [owningOrganizationId], references: [id])
   creator               User          @relation("CreatedDesignJobs", fields: [creatorId], references: [id])
   design                Design        @relation("DesignJobs", fields: [designId], references: [id])

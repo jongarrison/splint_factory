@@ -40,6 +40,8 @@ for (const { slug, definition } of designEntries) {
     hasMeasurementImage: existsSync(join(publicDesignsDir, slug, 'measurement.png')),
     hasCustomForm: false,
     hasClinicalGuide: existsSync(join(srcDesignsDir, slug, 'clinical-guide.md')),
+    category: definition.category ?? 'splint',
+    generatorVersion: definition.generatorVersion ?? '1',
   };
   registryById.set(definition.id, entry);
   registryBySlug.set(slug, entry);

@@ -29,6 +29,16 @@
       "type": "boolean",
       "description": "Whether this design is available for new jobs."
     },
+    "category": {
+      "type": "string",
+      "enum": ["splint", "tool"],
+      "default": "splint",
+      "description": "'splint' (default) shows in the main design-menu grid. 'tool' groups the design into the Tools section and enables the quick-run flow (no per-job input form; reuses/clones a completed job instead of reprocessing)."
+    },
+    "generatorVersion": {
+      "type": "string",
+      "description": "Bump when the .gh/.py generator file changes for a 'tool' design. Invalidates cached/cloned jobs so the next use reprocesses. Ignored for 'splint' designs."
+    },
     "inputParameters": {
       "type": "array",
       "description": "Input fields collected from the user to parameterize the algorithm.",

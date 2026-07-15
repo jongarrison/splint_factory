@@ -7,6 +7,10 @@ export interface DesignDefinition {
   shortDescription: string | null;
   isActive: boolean;
   inputParameters: InputParameter[];
+  // 'splint' (default) = main design-menu grid. 'tool' = Tools section + quick-run flow.
+  category?: 'splint' | 'tool';
+  // Bump when the tool's .gh/.py generator changes; invalidates cached/cloned jobs.
+  generatorVersion?: string;
 }
 
 // Slug is the directory name under src/designs/, used for image paths and routing
@@ -39,4 +43,8 @@ export interface DesignRegistryEntry extends DesignDefinition {
   // True when a clinical-guide.md file lives alongside definition.json.
   // Controls the "Clinical Guide & User Instructions" link in the UI.
   hasClinicalGuide: boolean;
+  // Normalized (defaulted) versions of the optional DesignDefinition fields above,
+  // so registry consumers don't need to handle undefined.
+  category: 'splint' | 'tool';
+  generatorVersion: string;
 }

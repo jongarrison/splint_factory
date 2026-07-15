@@ -29,6 +29,8 @@ Fields:
 - `name` — user-facing label, must be unique
 - `algorithmName` — maps to `{algorithmName}.gh` in `splint_geo_processor/generators/`
 - `isActive` — controls visibility on the design menu
+- `category` — `"splint"` (default, omit) or `"tool"` (see below)
+- `generatorVersion` — string, only meaningful for `"tool"` designs (see below)
 - `inputParameters` — array of parameter definitions (see below)
 
 ### Input parameter types
@@ -49,6 +51,30 @@ Fields:
 3. If the design needs cross-field hints, add `hints.ts` and register it in `hints-registry.ts`
 4. If a Clinical Guide & User Instructions page is available, add `clinical-guide.md` (no registration needed — presence is detected automatically)
 5. Add a `{algorithmName}.json` dev data file in `splint_geo_processor/generators/<algo>/` for local Grasshopper testing
+
+---
+
+## Tool designs (category: "tool")
+
+Some designs are really fitting tools (e.g. Sizing Rings) rather than per-patient splints:
+they have no `inputParameters`, and their geometry never varies. Setting `"category": "tool"`
+changes how a design behaves:
+
+- On `/design-menu`, it's grouped into a separate "Tools" section instead of the main grid
+  (hidden entirely if an org has no visible tools — visibility still comes from the existing
+  `OrganizationDesign` table, same as splint designs).
+- Clicking it skips the new-job input form entirely and calls
+  `POST /api/designs/[id]/quick-run`, which:
+  1. Reuses this org's own completed job for the design, if one already exists, or
+  2. Clones the file references (blob URLs, not the underlying files — nothing is
+     re-uploaded or reprocessed) from *any* other org's completed job at the same
+     `generatorVersion`, or
+  3. Falls back to a normal geo-processor run only if nobody has produced this
+     `generatorVersion` yet anywhere.
+
+Bump `generatorVersion` (a plain string, e.g. `"2"`) whenever you edit the design's
+`.gh`/`.py` generator file. That invalidates every org's cached/cloned job at once, so the
+very next click (from any org) transparently reprocesses instead of reusing stale geometry.
 
 ---
 
