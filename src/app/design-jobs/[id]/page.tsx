@@ -627,9 +627,11 @@ export default function GeometryJobDetailPage({
           <div className="card shadow" data-testid="design-job-print-jobs-card">
             <div className="card-header flex justify-between items-center">
               <h2 className="text-lg font-medium text-primary">Associated Print Jobs</h2>
-              {job && !job.isProcessSuccessful ? (
+              {isFailed ? (
                 <span className="text-sm text-error">Processing failed</span>
-              ) : job && !job.printFileName ? (
+              ) : isProcessing ? (
+                <span className="text-sm text-muted">Processing...</span>
+              ) : !job.printFileName ? (
                 <span className="text-sm text-muted">No print file available</span>
               ) : (
                 <button
