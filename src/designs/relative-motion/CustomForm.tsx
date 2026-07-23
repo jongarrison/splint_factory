@@ -26,6 +26,7 @@ interface FormModel {
   all_splint_finger_circ: string;
   relative_elevation_angle: string;
   longitudinal_band_width_mm: string;
+  enable_support_path_ramp: boolean;
 }
 
 const FINGER_LABELS: Record<FingerAbbr, string> = {
@@ -60,6 +61,7 @@ function defaultModel(): FormModel {
     all_splint_finger_circ: '',
     relative_elevation_angle: '',
     longitudinal_band_width_mm: '10',
+    enable_support_path_ramp: true,
   };
 }
 
@@ -86,6 +88,7 @@ function modelFromValue(value: Record<string, any> | undefined): FormModel | nul
     all_splint_finger_circ: str(rmd.all_splint_finger_circ),
     relative_elevation_angle: str(rmd.relative_elevation_angle),
     longitudinal_band_width_mm: str(rmd.longitudinal_band_width_mm) || '10',
+    enable_support_path_ramp: rmd.enable_support_path_ramp !== false,
   };
 }
 
@@ -132,6 +135,7 @@ function buildRawData(model: FormModel) {
     all_splint_finger_circ: toNum(model.all_splint_finger_circ),
     relative_elevation_angle: toNum(model.relative_elevation_angle),
     longitudinal_band_width_mm: toNum(model.longitudinal_band_width_mm),
+    enable_support_path_ramp: model.enable_support_path_ramp,
   };
 }
 
@@ -251,7 +255,7 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
                   className="border-t border-[var(--border)]"
                   data-testid={`finger-row-${f.finger_abbr}`}
                 >
-                  <td className="py-2 pr-3 text-secondary whitespace-nowrap">
+                  <td className={`py-2 pr-3 whitespace-nowrap ${disabled ? 'text-muted opacity-50' : 'text-secondary'}`}>
                     {FINGER_LABELS[f.finger_abbr]} <span className="text-muted">({f.finger_abbr})</span>
                   </td>
                   <td className="py-2 px-3">
@@ -376,6 +380,25 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
           />
           <p className="mt-1 text-xs text-muted">Width of the splint band along the finger.</p>
         </div>
+      </div>
+
+      {/* Options */}
+      <div>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={model.enable_support_path_ramp}
+            onChange={(e) => setField({ enable_support_path_ramp: e.target.checked })}
+            className="h-5 w-5 rounded border-[var(--border)] accent-[var(--accent-blue)]"
+            data-testid="enable-support-path-ramp"
+          />
+          <div>
+            <span className="text-sm font-medium text-secondary">Enable Finger Support Ramps</span>
+            <p className="text-xs text-muted">
+              Support Ramps distribute pressure more evenly on supported fingers.
+            </p>
+          </div>
+        </label>
       </div>
 
       {errors.length > 0 && (

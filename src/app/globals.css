@@ -87,6 +87,11 @@ select:disabled {
   background-color: #f3f4f6; /* bg-gray-100 */
 }
 
+input[type="checkbox"]:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* ============================================================================
    SEMANTIC UTILITY CLASSES
    ============================================================================
