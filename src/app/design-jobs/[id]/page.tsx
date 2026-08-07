@@ -177,6 +177,8 @@ export default function GeometryJobDetailPage({
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Design job not found');
+        } else if (response.status === 401) {
+          throw new Error('Unauthorized');
         }
         throw new Error('Failed to fetch design job');
       }
