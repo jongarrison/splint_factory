@@ -5,5 +5,58 @@
   "algorithmName": "RelativeMotion",
   "shortDescription": "Relative-motion splint: rings anchor two or more fingers and support the finger(s) between them at a set elevation.",
   "isActive": true,
-  "inputParameters": []
+  "inputParameters": [],
+  "inputSchema": {
+    "type": "object",
+    "required": ["relative_motion_data"],
+    "additionalProperties": false,
+    "properties": {
+      "relative_motion_data": {
+        "type": "object",
+        "required": [
+          "is_right_hand",
+          "finger_data",
+          "all_splint_finger_circ",
+          "relative_elevation_angle",
+          "longitudinal_band_width_mm",
+          "enable_support_path_ramp"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "is_right_hand": { "type": "boolean" },
+          "finger_data": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "required": [
+                "finger_abbr",
+                "is_included",
+                "is_anchor_finger",
+                "p1_mid_circ",
+                "p1_length",
+                "pip_neighbor_fwd_offset",
+                "is_slitted"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "finger_abbr": { "type": "string", "enum": ["if", "mf", "rf", "sf"] },
+                "is_included": { "type": "boolean" },
+                "is_anchor_finger": { "type": "boolean" },
+                "p1_mid_circ": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+                "p1_length": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+                "pip_neighbor_fwd_offset": { "type": ["number", "null"] },
+                "is_slitted": { "type": ["boolean", "null"] }
+              }
+            }
+          },
+          "all_splint_finger_circ": { "type": "number", "exclusiveMinimum": 0 },
+          "relative_elevation_angle": { "type": "number", "minimum": -50, "maximum": 50 },
+          "longitudinal_band_width_mm": { "type": "number", "exclusiveMinimum": 0 },
+          "enable_support_path_ramp": { "type": "boolean" }
+        }
+      }
+    }
+  }
 }

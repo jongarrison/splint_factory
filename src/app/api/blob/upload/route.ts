@@ -81,7 +81,20 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
       }
 
-      const formData = await request.formData();
+      let formData: FormData;
+      try {
+        formData = await request.formData();
+      } catch (error) {
+        const cause = error instanceof Error ? error.cause : undefined;
+        console.error('Failed to parse local blob multipart request', {
+          contentType,
+          contentLength: request.headers.get('content-length'),
+          transferEncoding: request.headers.get('transfer-encoding'),
+          error: error instanceof Error ? error.message : String(error),
+          cause: cause instanceof Error ? cause.message : cause,
+        });
+        throw error;
+      }
       const files = formData.getAll('files') as File[];
       
       if (!files || files.length === 0) {

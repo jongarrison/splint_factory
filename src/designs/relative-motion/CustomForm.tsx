@@ -37,8 +37,8 @@ const FINGER_LABELS: Record<FingerAbbr, string> = {
 };
 
 const FINGER_ORDER: FingerAbbr[] = ['if', 'mf', 'rf', 'sf'];
-const ELEVATION_MIN = -120;
-const ELEVATION_MAX = 45;
+const ELEVATION_MIN = -50;
+const ELEVATION_MAX = 50;
 
 // Default: index + ring anchor the middle finger; small finger excluded.
 function defaultModel(): FormModel {
@@ -236,8 +236,8 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-muted">
-              <th className="py-2 pr-3 font-medium">Finger</th>
-              <th className="py-2 px-3 font-medium">Include</th>
+              <th className="py-2 pr-3 font-medium">Include</th>
+              <th className="py-2 px-3 font-medium">Finger</th>
               <th className="py-2 px-3 font-medium">Role</th>
               <th className="py-2 px-3 font-medium">P1 Middle Circumference (mm)</th>
               <th className="py-2 px-3 font-medium">P1 Length (mm)</th>
@@ -255,10 +255,7 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
                   className="border-t border-[var(--border)]"
                   data-testid={`finger-row-${f.finger_abbr}`}
                 >
-                  <td className={`py-2 pr-3 whitespace-nowrap ${disabled ? 'text-muted opacity-50' : 'text-secondary'}`}>
-                    {FINGER_LABELS[f.finger_abbr]} <span className="text-muted">({f.finger_abbr})</span>
-                  </td>
-                  <td className="py-2 px-3">
+                  <td className="py-2 pr-3">
                     <input
                       type="checkbox"
                       checked={f.is_included}
@@ -271,6 +268,9 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
                       className="h-5 w-5 rounded border-[var(--border)] accent-[var(--accent-blue)]"
                       data-testid={`include-${f.finger_abbr}`}
                     />
+                  </td>
+                  <td className={`py-2 px-3 whitespace-nowrap ${disabled ? 'text-muted opacity-50' : 'text-secondary'}`}>
+                    {FINGER_LABELS[f.finger_abbr]} <span className="text-muted">({f.finger_abbr})</span>
                   </td>
                   <td className="py-2 px-3">
                     <select
@@ -357,8 +357,10 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
         <div>
           <label className="block text-sm font-medium text-secondary">Relative elevation angle (deg)</label>
           <input
-            type="text"
-            inputMode="decimal"
+            type="number"
+            min={ELEVATION_MIN}
+            max={ELEVATION_MAX}
+            step="any"
             value={model.relative_elevation_angle}
             onChange={(e) => setField({ relative_elevation_angle: e.target.value })}
             className="mt-1 input-field"

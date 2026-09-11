@@ -7,6 +7,8 @@ export interface DesignDefinition {
   shortDescription: string | null;
   isActive: boolean;
   inputParameters: InputParameter[];
+  // Optional JSON Schema for designs whose payload cannot be represented by inputParameters.
+  inputSchema?: Record<string, unknown>;
   // 'splint' (default) = main design-menu grid. 'tool' = Tools section + quick-run flow.
   category?: 'splint' | 'tool';
   // Bump when the tool's .gh/.py generator changes; invalidates cached/cloned jobs.

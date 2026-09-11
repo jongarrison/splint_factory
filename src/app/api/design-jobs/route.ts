@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateObjectId } from '@/lib/objectId';
 import { getDesignById } from '@/designs/registry';
+import { validateDesignInput } from '@/designs/validate-input';
 
 // GET /api/design-jobs - List geometry processing queue entries for user's organization
 export async function GET() {
@@ -139,65 +140,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Design definition not found in registry' }, { status: 404 });
     }
 
-    // Validate inputParameters against schema
+    // Validate inputParameters against the design's flat or nested schema.
     try {
-      const schema = registryDesign.inputParameters;
       const inputData = JSON.parse(inputParameters);
-      
-      // Basic validation that required parameters are present
-      if (!Array.isArray(schema)) {
-        throw new Error('Invalid geometry schema format');
-      }
-      
-      if (typeof inputData !== 'object') {
-        throw new Error('inputParameters must be a JSON object');
-      }
-
-      // Validate each required parameter is provided
-      for (const param of schema) {
-        if (!(param.InputName in inputData)) {
-          throw new Error(`Missing required parameter: ${param.InputName}`);
-        }
-
-        const value = inputData[param.InputName];
-        
-        // Type validation
-        if (param.InputType === 'Boolean') {
-          if (typeof value !== 'boolean') {
-            throw new Error(`Parameter ${param.InputName} must be true or false`);
-          }
-        } else if (param.InputType === 'Float') {
-          if (typeof value !== 'number') {
-            throw new Error(`Parameter ${param.InputName} must be a number`);
-          }
-          if (param.NumberMin !== undefined && value < param.NumberMin) {
-            throw new Error(`Parameter ${param.InputName} must be >= ${param.NumberMin}`);
-          }
-          if (param.NumberMax !== undefined && value > param.NumberMax) {
-            throw new Error(`Parameter ${param.InputName} must be <= ${param.NumberMax}`);
-          }
-        } else if (param.InputType === 'Integer') {
-          if (!Number.isInteger(value)) {
-            throw new Error(`Parameter ${param.InputName} must be an integer`);
-          }
-          if (param.NumberMin !== undefined && value < param.NumberMin) {
-            throw new Error(`Parameter ${param.InputName} must be >= ${param.NumberMin}`);
-          }
-          if (param.NumberMax !== undefined && value > param.NumberMax) {
-            throw new Error(`Parameter ${param.InputName} must be <= ${param.NumberMax}`);
-          }
-        } else if (param.InputType === 'Text') {
-          if (typeof value !== 'string') {
-            throw new Error(`Parameter ${param.InputName} must be a string`);
-          }
-          if (param.TextMinLen !== undefined && value.length < param.TextMinLen) {
-            throw new Error(`Parameter ${param.InputName} must be at least ${param.TextMinLen} characters`);
-          }
-          if (param.TextMaxLen !== undefined && value.length > param.TextMaxLen) {
-            throw new Error(`Parameter ${param.InputName} must be no more than ${param.TextMaxLen} characters`);
-          }
-        }
-      }
+      validateDesignInput(registryDesign, inputData);
     } catch (validationError) {
       return NextResponse.json({ 
         error: `Invalid geometry input parameters: ${validationError}` 

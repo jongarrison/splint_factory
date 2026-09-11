@@ -90,6 +90,10 @@
           }
         ]
       }
+    },
+    "inputSchema": {
+      "type": "object",
+      "description": "JSON Schema for validating a custom form's complete nested input payload."
     }
   }
 }
