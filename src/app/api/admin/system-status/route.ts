@@ -313,6 +313,7 @@ export async function GET() {
         lastPingTime: processorStatus.lastPingTime,
         keepWarmUntil: processorStatus.keepWarmUntil,
         keepWarmRemainingSeconds: processorStatus.keepWarmRemainingSeconds,
+        version: processorStatus.version,
       },
       summary: {
         neverStartedCount: neverStarted.length,

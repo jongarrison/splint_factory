@@ -24,7 +24,8 @@ export async function GET(request: NextRequest) {
       }
 
       // Only processor API-key traffic should advance heartbeat recency.
-      await updateProcessorPing();
+      const processorVersion = request.headers.get('x-processor-version') || undefined;
+      await updateProcessorPing(new Date(), processorVersion);
       console.log(`API key access: ${apiAuth.apiKey?.name} requesting next job`);
     } else {
       // Fall back to session authentication

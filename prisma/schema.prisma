@@ -220,6 +220,8 @@ model ProcessorHeartbeat {
   lastOfflineAlertSentAt DateTime?
   // Lease wall-clock cutoff: processor should keep Rhino warm while now < warmUntil.
   warmUntil              DateTime?
+  // Short git commit hash reported by splint_geo_processor on each poll.
+  version                String?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 }

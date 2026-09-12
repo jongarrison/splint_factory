@@ -11,6 +11,7 @@ interface ProcessorStatus {
   lastPingTime: string | null;
   keepWarmUntil: string | null;
   keepWarmRemainingSeconds: number;
+  version: string | null;
 }
 
 interface QueueSummary {
@@ -508,6 +509,9 @@ export default function SystemStatusPage() {
                   ) : (
                     <span className="text-muted">Inactive</span>
                   )}
+                </div>
+                <div className="text-sm text-secondary mt-1">
+                  Version: {queueData.processor.version || <span className="text-muted">Unknown</span>}
                 </div>
               </div>
 

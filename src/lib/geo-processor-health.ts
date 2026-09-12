@@ -36,6 +36,8 @@ export interface ProcessorStatus {
   // Keep-warm lease surfaced to admin UI; mirrors the value the processor sees.
   keepWarmUntil: string | null;
   keepWarmRemainingSeconds: number;
+  // Short git commit hash of splint_geo_processor, reported on each poll.
+  version: string | null;
 }
 
 export interface ProcessorHeartbeatSnapshot {
@@ -44,6 +46,7 @@ export interface ProcessorHeartbeatSnapshot {
   offlineSince: Date | null;
   lastOfflineAlertSentAt: Date | null;
   warmUntil: Date | null;
+  version: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,17 +59,19 @@ export async function getOrCreateProcessorHeartbeat(): Promise<ProcessorHeartbea
   });
 }
 
-export async function updateProcessorPing(pingTime: Date = new Date()): Promise<void> {
+export async function updateProcessorPing(pingTime: Date = new Date(), version?: string): Promise<void> {
   await prisma.processorHeartbeat.upsert({
     where: { id: PROCESSOR_HEARTBEAT_ID },
     update: {
       lastPingAt: pingTime,
       offlineSince: null,
       lastOfflineAlertSentAt: null,
+      ...(version ? { version } : {}),
     },
     create: {
       id: PROCESSOR_HEARTBEAT_ID,
       lastPingAt: pingTime,
+      ...(version ? { version } : {}),
     },
   });
 }
@@ -132,6 +137,7 @@ export async function getProcessorStatus(
       offlineSince: heartbeat.offlineSince ? heartbeat.offlineSince.toISOString() : null,
       keepWarmUntil,
       keepWarmRemainingSeconds,
+      version: heartbeat.version,
     };
   }
 
@@ -146,6 +152,7 @@ export async function getProcessorStatus(
     offlineSince: heartbeat.offlineSince ? heartbeat.offlineSince.toISOString() : null,
     keepWarmUntil,
     keepWarmRemainingSeconds,
+    version: heartbeat.version,
   };
 }
 
