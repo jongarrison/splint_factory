@@ -4,12 +4,14 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { validatePassword, PASSWORD_REQUIREMENTS_TEXT } from "@/lib/password"
+import { REGISTRATION_ACKNOWLEDGMENT_TEXT } from "@/lib/registration-acknowledgment"
 
 function RegisterForm() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [responsibilityAcknowledged, setResponsibilityAcknowledged] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [invitationToken, setInvitationToken] = useState<string | null>(null)
@@ -52,6 +54,7 @@ function RegisterForm() {
           email,
           password,
           invitationToken,
+          responsibilityAcknowledged,
         }),
       })
 
@@ -195,6 +198,23 @@ function RegisterForm() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
+              </div>
+
+              {/* Future registration UIs must include this acknowledgment. */}
+              <div className="rounded-md border border-[var(--border)] p-3">
+                <label htmlFor="responsibilityAcknowledged" className="flex items-start gap-3 text-sm text-secondary">
+                  <input
+                    id="responsibilityAcknowledged"
+                    name="responsibilityAcknowledged"
+                    type="checkbox"
+                    required
+                    className="mt-1 h-4 w-4 rounded border-[var(--border)]"
+                    data-testid="responsibility-acknowledgment-checkbox"
+                    checked={responsibilityAcknowledged}
+                    onChange={(e) => setResponsibilityAcknowledged(e.target.checked)}
+                  />
+                  <span>{REGISTRATION_ACKNOWLEDGMENT_TEXT}</span>
+                </label>
               </div>
 
               {error && (
