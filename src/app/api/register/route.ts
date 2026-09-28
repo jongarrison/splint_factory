@@ -6,10 +6,14 @@ import { logAuditEvent } from "@/lib/audit"
 import { validatePassword } from "@/lib/password"
 import { sendEmail } from "@/lib/email"
 import EmailVerificationEmail from "@/emails/email-verification"
+import {
+  REGISTRATION_ACKNOWLEDGMENT_TEXT,
+  REGISTRATION_ACKNOWLEDGMENT_VERSION,
+} from "@/lib/registration-acknowledgment"
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, invitationToken } = await request.json()
+    const { name, email, password, invitationToken, responsibilityAcknowledged } = await request.json()
 
     // Validate input
     if (!name || !email || !password) {
@@ -33,6 +37,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "An invitation is required to create an account" },
         { status: 403 }
+      )
+    }
+
+    if (responsibilityAcknowledged !== true) {
+      return NextResponse.json(
+        { error: "You must acknowledge responsibility before creating an account" },
+        { status: 400 }
       )
     }
 
@@ -81,26 +92,38 @@ export async function POST(request: NextRequest) {
     const emailPreVerified = invitationData.email && invitationData.email === email;
 
     // Create user with organization association from invitation
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        organizationId: invitationData.organizationId,
-        role: UserRole.MEMBER,
-        invitedByUserId: invitationData.createdByUserId,
-        invitationAcceptedAt: new Date(),
-        ...(emailPreVerified ? { emailVerified: new Date() } : {}),
-      },
-    })
+    // Future registration handlers must persist this acknowledgment snapshot too.
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          organizationId: invitationData.organizationId,
+          role: UserRole.MEMBER,
+          invitedByUserId: invitationData.createdByUserId,
+          invitationAcceptedAt: new Date(),
+          ...(emailPreVerified ? { emailVerified: new Date() } : {}),
+        },
+      })
 
-    // Mark invitation as used
-    await prisma.invitationLink.update({
-      where: { id: invitationData.id },
-      data: {
-        usedAt: new Date(),
-        usedByUserId: user.id
-      }
+      await tx.userRegistrationAcknowledgment.create({
+        data: {
+          userId: createdUser.id,
+          acknowledgmentVersion: REGISTRATION_ACKNOWLEDGMENT_VERSION,
+          acknowledgmentText: REGISTRATION_ACKNOWLEDGMENT_TEXT,
+        },
+      })
+
+      await tx.invitationLink.update({
+        where: { id: invitationData.id },
+        data: {
+          usedAt: new Date(),
+          usedByUserId: createdUser.id
+        }
+      })
+
+      return createdUser
     })
 
     // Remove password from response
@@ -120,6 +143,7 @@ export async function POST(request: NextRequest) {
         invitationToken: invitationData.token,
         userEmail: user.email,
         userName: user.name,
+        acknowledgmentVersion: REGISTRATION_ACKNOWLEDGMENT_VERSION,
       },
     });
 

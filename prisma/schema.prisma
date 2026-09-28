@@ -63,6 +63,19 @@ model User {
   targetEvents         AuditEvent[]              @relation("AuditTarget")
   passwordResetTokens  PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  registrationAcknowledgments UserRegistrationAcknowledgment[]
+}
+
+model UserRegistrationAcknowledgment {
+  id                    String   @id @default(cuid())
+  userId                String
+  acknowledgmentVersion String
+  acknowledgmentText    String
+  acknowledgedAt        DateTime @default(now())
+  user                  User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([acknowledgedAt])
 }
 
 model InvitationLink {
