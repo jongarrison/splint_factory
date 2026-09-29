@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
   try {
     const { name, email, password, invitationToken, responsibilityAcknowledged } = await request.json()
 
-    // Validate input
-    if (!name || !email || !password) {
+    // Validate input that does not come from the invitation.
+    if (!name || !password) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -47,18 +47,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "User already exists" },
-        { status: 400 }
-      )
-    }
-
     // Validate invitation token
     const invitationData = await prisma.invitationLink.findUnique({
       where: { 
@@ -76,10 +64,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If invitation has a specific email, validate it matches
-    if (invitationData.email && invitationData.email !== email) {
+    const registrationEmail = invitationData.email || email
+
+    if (!registrationEmail) {
       return NextResponse.json(
-        { error: "Invitation is for a different email address" },
+        { error: "Missing required fields" },
+        { status: 400 }
+      )
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: registrationEmail }
+    })
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "User already exists" },
         { status: 400 }
       )
     }
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     // If invitation had a specific email, the user proved inbox access by clicking
     // the emailed link, so pre-verify their email. Otherwise send verification email.
-    const emailPreVerified = invitationData.email && invitationData.email === email;
+    const emailPreVerified = Boolean(invitationData.email);
 
     // Create user with organization association from invitation
     // Future registration handlers must persist this acknowledgment snapshot too.
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
       const createdUser = await tx.user.create({
         data: {
           name,
-          email,
+          email: registrationEmail,
           password: hashedPassword,
           organizationId: invitationData.organizationId,
           role: UserRole.MEMBER,

@@ -9,21 +9,56 @@ import { REGISTRATION_ACKNOWLEDGMENT_TEXT } from "@/lib/registration-acknowledgm
 function RegisterForm() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [invitedEmail, setInvitedEmail] = useState<string | null>(null)
+  const [organizationName, setOrganizationName] = useState("")
+  const [invitationStatus, setInvitationStatus] = useState<"loading" | "valid" | "invalid">("loading")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [responsibilityAcknowledged, setResponsibilityAcknowledged] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [invitationToken, setInvitationToken] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const invitationToken = searchParams.get("invitation")
 
   useEffect(() => {
-    const invitation = searchParams.get('invitation')
-    if (invitation) {
-      setInvitationToken(invitation)
+    if (!invitationToken) {
+      setInvitationStatus("invalid")
+      return
     }
-  }, [searchParams])
+
+    let cancelled = false
+
+    const loadInvitation = async () => {
+      setInvitationStatus("loading")
+
+      try {
+        const response = await fetch(`/api/invitations/validate?token=${encodeURIComponent(invitationToken)}`, {
+          cache: "no-store",
+        })
+        const data = await response.json()
+
+        if (cancelled) return
+
+        if (!response.ok) {
+          setInvitationStatus("invalid")
+          return
+        }
+
+        setInvitedEmail(data.email)
+        setOrganizationName(data.organizationName)
+        setInvitationStatus("valid")
+      } catch {
+        if (!cancelled) setInvitationStatus("invalid")
+      }
+    }
+
+    loadInvitation()
+
+    return () => {
+      cancelled = true
+    }
+  }, [invitationToken])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,7 +86,7 @@ function RegisterForm() {
         },
         body: JSON.stringify({
           name,
-          email,
+          ...(!invitedEmail ? { email } : {}),
           password,
           invitationToken,
           responsibilityAcknowledged,
@@ -72,8 +107,18 @@ function RegisterForm() {
     }
   }
 
-  // Show message if no invitation token
-  if (!invitationToken) {
+  if (invitationToken && invitationStatus === "loading") {
+    return (
+      <div className="h-screen page-shell flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-blue)] mx-auto"></div>
+          <p className="mt-2 text-sm text-muted">Loading invitation...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!invitationToken || invitationStatus === "invalid") {
     return (
       <div className="h-screen overflow-hidden flex flex-col page-shell" data-testid="register-no-token">
         <div className="flex-1 flex items-center justify-center p-4">
@@ -113,7 +158,7 @@ function RegisterForm() {
                 Join Organization
               </h2>
               <p className="mt-2 text-center text-sm text-secondary">
-                You&apos;ve been invited to join an organization
+                You&apos;ve been invited to join {organizationName || "an organization"}
               </p>
               <p className="mt-2 text-center text-sm text-muted">
                 Already have an account?{" "}
@@ -145,23 +190,32 @@ function RegisterForm() {
                 />
               </div>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-secondary mb-1">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="input-field"
-                  data-testid="email-input"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
+              {invitedEmail ? (
+                <div>
+                  <span className="block text-sm font-medium text-secondary mb-1">Email</span>
+                  <p className="input-field" data-testid="invited-email">
+                    {invitedEmail}
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-secondary mb-1">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    className="input-field"
+                    data-testid="email-input"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              )}
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-secondary mb-1">
