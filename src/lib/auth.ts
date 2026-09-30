@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "./prisma"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
+import { logAuditEvent } from "./audit"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -32,13 +33,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         }
 
-        const email = credentials.email as string
+        const email = (credentials.email as string).trim()
         const password = credentials.password as string
 
         console.log('[Auth] Login attempt for:', email)
 
-        const user = await prisma.user.findUnique({
-          where: { email },
+        const user = await prisma.user.findFirst({
+          where: { email: { equals: email, mode: 'insensitive' } },
           include: { organization: { select: { name: true } } },
         })
 
@@ -51,10 +52,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!isPasswordValid) {
           console.log('[Auth] Invalid password for:', email)
+          logAuditEvent({
+            eventType: 'LOGIN_FAILED',
+            channel: 'AUTH',
+            targetUserId: user.id,
+            organizationId: user.organizationId,
+            metadata: { email: user.email, reason: 'invalid_password' },
+          })
           return null
         }
 
         console.log('[Auth] Login successful for:', email)
+        logAuditEvent({
+          eventType: 'LOGIN_SUCCEEDED',
+          channel: 'AUTH',
+          actorId: user.id,
+          targetUserId: user.id,
+          organizationId: user.organizationId,
+          metadata: { email: user.email },
+        })
         return {
           id: user.id,
           email: user.email,

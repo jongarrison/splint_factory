@@ -342,6 +342,11 @@ export default function UsersPage() {
                       </td>
                       
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
+                        {session?.user.role === 'SYSTEM_ADMIN' && (
+                          <Link href={`/admin/users/${user.id}`} className="text-link hover:underline">
+                            View details
+                          </Link>
+                        )}
                         {updating === user.id && (
                           <div className="flex items-center">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--accent-blue)]"></div>

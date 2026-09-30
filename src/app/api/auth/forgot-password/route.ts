@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
 
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return NextResponse.json(
         { error: 'Email is required' },
         { status: 400 }
@@ -20,7 +20,9 @@ export async function POST(request: NextRequest) {
       message: 'If an account with that email exists, a password reset link has been sent.',
     });
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: email.trim(), mode: 'insensitive' } },
+    });
     if (!user) {
       return successResponse;
     }
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
     const resetUrl = `${baseUrl}/reset-password?token=${resetToken.token}`;
 
     await sendEmail({
-      to: email,
+      to: user.email,
       subject: 'Reset your Splint Factory password',
       react: PasswordResetEmail({ resetUrl }),
     });
@@ -53,7 +55,7 @@ export async function POST(request: NextRequest) {
       eventType: 'PASSWORD_RESET_REQUESTED',
       channel: 'AUTH',
       targetUserId: user.id,
-      metadata: { email },
+      metadata: { email: user.email },
     });
 
     return successResponse;
