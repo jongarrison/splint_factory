@@ -82,6 +82,9 @@ model InvitationLink {
   id              String       @id @default(cuid())
   token           String       @unique @default(cuid())
   email           String?
+  emailAcceptedAt DateTime?
+  emailProviderId String?
+  emailLastError  String?
   expiresAt       DateTime
   usedAt          DateTime?
   organizationId  String

@@ -10,6 +10,9 @@ interface InvitationLink {
   id: string;
   token: string;
   email: string | null;
+  emailAcceptedAt: string | null;
+  emailProviderId: string | null;
+  emailLastError: string | null;
   expiresAt: string;
   usedAt: string | null;
   organizationId: string;
@@ -38,6 +41,7 @@ export default function InvitationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [creating, setCreating] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAll, setShowAll] = useState(false);
   
@@ -103,7 +107,7 @@ export default function InvitationsPage() {
         throw new Error(data.error || 'Failed to create invitation');
       }
 
-      setInvitations([data, ...invitations]);
+      setInvitations(current => [data, ...current]);
       setShowCreateForm(false);
             // Reset form
       setSelectedOrgId('');
@@ -114,6 +118,36 @@ export default function InvitationsPage() {
       setError(err instanceof Error ? err.message : 'Failed to create invitation');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleResendInvitation = async (invitationId: string) => {
+    setResendingId(invitationId);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/invitations/${invitationId}/resend`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      const updatedInvitation = data.invitation || data;
+
+      if (updatedInvitation.id) {
+        setInvitations(current => current.map(invitation =>
+          invitation.id === invitationId
+            ? { ...invitation, ...updatedInvitation }
+            : invitation
+        ));
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resend invitation email');
+      }
+    } catch (err: unknown) {
+      console.error('Error resending invitation:', err);
+      setError(err instanceof Error ? err.message : 'Failed to resend invitation email');
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -361,8 +395,24 @@ export default function InvitationsPage() {
                         </div>
                         
                         {invitation.email ? (
-                          <div className="mt-3 text-sm text-muted">
-                            Invitation sent by email
+                          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                            <span className={invitation.emailAcceptedAt ? 'text-[var(--status-success-text)]' : invitation.emailLastError ? 'text-[var(--status-error-text)]' : 'text-muted'}>
+                              {invitation.emailAcceptedAt
+                                ? `Accepted by Resend: ${formatDate(invitation.emailAcceptedAt)}`
+                                : invitation.emailLastError
+                                  ? `Email not accepted: ${invitation.emailLastError}`
+                                  : 'Email delivery not confirmed'}
+                            </span>
+                            {!isUsed && !isExpired && (
+                              <button
+                                onClick={() => handleResendInvitation(invitation.id)}
+                                disabled={resendingId === invitation.id}
+                                className="btn-neutral px-3 py-2 text-sm"
+                                data-testid="resend-invitation-btn"
+                              >
+                                {resendingId === invitation.id ? 'Sending...' : 'Resend email'}
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <div className="mt-3 flex items-center gap-2">

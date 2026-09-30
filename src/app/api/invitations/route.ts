@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { randomBytes } from 'crypto'
-import { sendEmail } from '@/lib/email'
-import InvitationEmail from '@/emails/invitation-email'
+import { sendInvitationEmail } from '@/lib/send-invitation-email'
 
 // GET /api/invitations - List invitations for current user's organization
 export async function GET() {
@@ -118,16 +117,18 @@ export async function POST(request: NextRequest) {
     // Send invitation email if email was provided
     if (email) {
       const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
-      const registerUrl = `${baseUrl}/register?invitation=${token}`;
-      sendEmail({
-        to: email,
-        subject: `You're invited to join ${organization.name} on Splint Factory`,
-        react: InvitationEmail({
-          registerUrl,
-          organizationName: organization.name,
-          invitedByName: user.name || user.email,
-        }),
-      });
+      const emailResult = await sendInvitationEmail({
+        invitationId: invitation.id,
+        email,
+        token,
+        organizationName: organization.name,
+        invitedByName: user.name || user.email,
+        baseUrl,
+      })
+
+      invitation.emailAcceptedAt = emailResult.emailAcceptedAt
+      invitation.emailProviderId = emailResult.emailProviderId
+      invitation.emailLastError = emailResult.emailLastError
     }
 
     return NextResponse.json(invitation, { status: 201 })
