@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateObjectId } from '@/lib/objectId';
+import { logAuditEvent } from '@/lib/audit';
 import { getDesignById } from '@/designs/registry';
 import { validateDesignInput } from '@/designs/validate-input';
 
@@ -187,6 +188,23 @@ export async function POST(request: NextRequest) {
     });
 
     console.log(`Created geometry processing job for ${geometryJob.design.name} by user ${session.user.id}`);
+
+    logAuditEvent({
+      eventType: 'DESIGN_JOB_CREATED',
+      channel: 'PROCESSING',
+      actorId: session.user.id,
+      organizationId: user.organizationId,
+      metadata: {
+        designJobId: geometryJob.id,
+        objectId: geometryJob.objectId,
+        designId: geometryJob.designId,
+        designName: geometryJob.design.name,
+        algorithmName: geometryJob.design.algorithmName,
+        creationMode: 'standard',
+        isEnabled: geometryJob.isEnabled,
+      },
+    });
+
     return NextResponse.json(geometryJob, { status: 201 });
 
   } catch (error) {

@@ -319,6 +319,21 @@ export async function POST(request: NextRequest) {
     
     console.log(logMessage);
 
+    const processedJob = result.updatedGeometryJob;
+    const processingDurationMs = Math.max(
+      0,
+      currentTime.getTime() - geometryJob.processStartedAt.getTime(),
+    );
+    const processingMetadata = {
+      designJobId,
+      objectId: processedJob.objectId,
+      designId: processedJob.designId,
+      designName: processedJob.design.name,
+      algorithmName: processedJob.design.algorithmName,
+      generatorVersion: processedJob.generatorVersionSnapshot,
+      processingDurationMs,
+    };
+
     if (!isSuccess) {
       logAuditEvent({
         eventType: 'DESIGN_PROCESSING_FAILED',
@@ -326,18 +341,32 @@ export async function POST(request: NextRequest) {
         targetUserId: geometryJob.creatorId,
         organizationId: geometryJob.owningOrganizationId,
         metadata: {
-          designJobId,
+          ...processingMetadata,
           error: errorMessage?.slice(0, 1000) || 'No error message provided',
         },
       });
-    } else if (geometryJob.processCompletedAt && !geometryJob.isProcessSuccessful) {
+    } else {
+      const recoveredFromFailure = Boolean(
+        geometryJob.processCompletedAt && !geometryJob.isProcessSuccessful,
+      );
+
       logAuditEvent({
-        eventType: 'DESIGN_PROCESSING_RECOVERED',
+        eventType: 'DESIGN_PROCESSING_SUCCEEDED',
         channel: 'PROCESSING',
         targetUserId: geometryJob.creatorId,
         organizationId: geometryJob.owningOrganizationId,
-        metadata: { designJobId },
+        metadata: { ...processingMetadata, recoveredFromFailure },
       });
+
+      if (recoveredFromFailure) {
+        logAuditEvent({
+          eventType: 'DESIGN_PROCESSING_RECOVERED',
+          channel: 'PROCESSING',
+          targetUserId: geometryJob.creatorId,
+          organizationId: geometryJob.owningOrganizationId,
+          metadata: processingMetadata,
+        });
+      }
     }
     
     // Log error message if processing failed

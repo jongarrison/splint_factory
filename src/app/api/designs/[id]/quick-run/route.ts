@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateObjectId } from '@/lib/objectId';
 import { getDesignById } from '@/designs/registry';
+import { logAuditEvent } from '@/lib/audit';
 
 // POST /api/designs/[id]/quick-run - Entry point for 'tool' category designs (no input form).
 //
@@ -121,6 +122,24 @@ export async function POST(
         },
       });
 
+      logAuditEvent({
+        eventType: 'DESIGN_JOB_CREATED',
+        channel: 'PROCESSING',
+        actorId: session.user.id,
+        organizationId: user.organizationId,
+        metadata: {
+          designJobId: cloned.id,
+          objectId: cloned.objectId,
+          designId,
+          designName: design.name,
+          algorithmName: design.algorithmName,
+          generatorVersion,
+          creationMode: 'cloned-tool',
+          sourceDesignJobId: template.id,
+          isEnabled: cloned.isEnabled,
+        },
+      });
+
       const printJob = await prisma.printJob.create({ data: { designJobId: cloned.id } });
       return NextResponse.json({ mode: 'print', printJobId: printJob.id }, { status: 201 });
     }
@@ -139,6 +158,23 @@ export async function POST(
         objectId,
         objectIdGeneratedAt: new Date(),
         generatorVersionSnapshot: generatorVersion,
+      },
+    });
+
+    logAuditEvent({
+      eventType: 'DESIGN_JOB_CREATED',
+      channel: 'PROCESSING',
+      actorId: session.user.id,
+      organizationId: user.organizationId,
+      metadata: {
+        designJobId: designJob.id,
+        objectId: designJob.objectId,
+        designId,
+        designName: design.name,
+        algorithmName: design.algorithmName,
+        generatorVersion,
+        creationMode: 'queued-tool',
+        isEnabled: designJob.isEnabled,
       },
     });
 
