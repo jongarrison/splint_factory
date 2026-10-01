@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
         thresholdSeconds: Math.floor(getProcessorOfflineThresholdMs() / 1000),
         reminderMinutes: Math.floor(getProcessorOfflineReminderIntervalMs() / 60_000),
       }),
+      auditContext: { actorId: session.user.id },
     });
 
     logAuditEvent({

@@ -60,6 +60,11 @@ export async function POST(request: NextRequest) {
       to: user.email,
       subject: 'Verify your Splint Factory email',
       react: EmailVerificationEmail({ verifyUrl }),
+      auditContext: {
+        actorId: user.id,
+        targetUserId: user.id,
+        organizationId: user.organizationId,
+      },
     });
 
     return NextResponse.json({ message: 'Verification email sent' });

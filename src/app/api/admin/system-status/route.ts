@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getProcessorStatus } from '@/lib/geo-processor-health';
 import { ensureInternalTaskRuntimeStarted, getInternalTaskStatuses } from '@/lib/internal-task-runtime';
 import { createProcessorHealthCheckJob } from '@/lib/processor-health-check';
+import { logAuditEvent } from '@/lib/audit';
 
 // GET /api/admin/system-status - View system status including geometry processing queue (admin only)
 export async function GET() {
@@ -376,6 +377,11 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { maintenanceModeEnabled, maintenanceMessage } = body;
 
+    const previous = await prisma.systemSettings.findUnique({
+      where: { id: 'system_settings' },
+      select: { maintenanceModeEnabled: true, maintenanceMessage: true },
+    });
+
     // Upsert maintenance settings
     const updated = await prisma.systemSettings.upsert({
       where: { id: 'system_settings' },
@@ -390,6 +396,23 @@ export async function PUT(request: NextRequest) {
         maintenanceMessage
       }
     });
+
+    if (
+      previous?.maintenanceModeEnabled !== updated.maintenanceModeEnabled
+      || previous?.maintenanceMessage !== updated.maintenanceMessage
+    ) {
+      logAuditEvent({
+        eventType: 'MAINTENANCE_SETTINGS_CHANGED',
+        channel: 'SYSTEM',
+        actorId: session.user.id,
+        metadata: {
+          previousEnabled: previous?.maintenanceModeEnabled ?? false,
+          newEnabled: updated.maintenanceModeEnabled,
+          previousMessage: previous?.maintenanceMessage ?? null,
+          newMessage: updated.maintenanceMessage,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,

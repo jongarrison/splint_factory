@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getDesignById } from '@/designs/registry';
+import { logAuditEvent } from '@/lib/audit';
 
 // GET /api/print-queue/[id] - Get specific print queue entry
 export async function GET(
@@ -236,6 +237,25 @@ export async function PUT(
     });
 
     console.log(`Updated print queue entry ${id} by user ${session.user.id}`);
+
+    const completedAsFailed = isPrintSuccessful === false
+      && existingEntry.printCompletedAt === null
+      && updatedEntry.printCompletedAt !== null;
+    const reversedSuccess = isPrintSuccessful === false && existingEntry.isPrintSuccessful;
+
+    if (completedAsFailed || reversedSuccess) {
+      logAuditEvent({
+        eventType: 'PRINT_FAILED',
+        channel: 'PRINTING',
+        actorId: session.user.id,
+        organizationId: existingEntry.designJob.owningOrganizationId,
+        metadata: {
+          printJobId: id,
+          designJobId: existingEntry.designJobId,
+          printNote: updatedEntry.printNote,
+        },
+      });
+    }
     
     // Return without binary data
     const gpqUpdate: any = (updatedEntry as any).designJob;

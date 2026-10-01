@@ -1,3 +1,5 @@
+import { logAuditEvent } from '@/lib/audit';
+
 type TaskRunner = () => Promise<void> | void;
 
 export interface InternalTaskDefinition {
@@ -122,6 +124,9 @@ class InternalTaskScheduler {
       task.lastRunStartedAt = new Date();
       task.lastErrorMessage = null;
 
+      const previousRunFailed = task.lastErrorAt !== null
+        && (task.lastSuccessAt === null || task.lastErrorAt > task.lastSuccessAt);
+
       try {
         await task.definition.task();
         task.successCount += 1;
@@ -131,6 +136,18 @@ class InternalTaskScheduler {
         task.lastErrorAt = new Date();
         task.lastErrorMessage = error instanceof Error ? error.message : String(error);
         console.error(`[InternalTaskScheduler] Task ${task.definition.key} failed:`, error);
+
+        if (!previousRunFailed) {
+          logAuditEvent({
+            eventType: 'INTERNAL_TASK_FAILED',
+            channel: 'SYSTEM',
+            metadata: {
+              taskKey: task.definition.key,
+              taskLabel: task.definition.label,
+              error: task.lastErrorMessage.slice(0, 1000),
+            },
+          });
+        }
       } finally {
         task.isRunning = false;
         task.lastRunCompletedAt = new Date();

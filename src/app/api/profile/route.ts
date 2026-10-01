@@ -200,6 +200,11 @@ export async function PUT(request: NextRequest) {
         to: email,
         subject: 'Verify your new Splint Factory email',
         react: EmailVerificationEmail({ verifyUrl }),
+        auditContext: {
+          actorId: updatedUser.id,
+          targetUserId: updatedUser.id,
+          organizationId: updatedUser.organizationId,
+        },
       });
     }
 

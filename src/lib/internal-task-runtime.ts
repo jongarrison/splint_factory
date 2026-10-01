@@ -4,6 +4,7 @@ import {
 } from '@/lib/internal-task-scheduler';
 import { registerProcessorOfflineMonitorTask } from '@/lib/processor-offline-monitor';
 import { registerDailyDigestTask } from '@/lib/daily-digest-task';
+import { registerAuditLogCleanupTask } from '@/lib/audit-log-cleanup-task';
 
 function internalTasksEnabled(): boolean {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
@@ -20,6 +21,7 @@ export function ensureInternalTaskRuntimeStarted(): void {
 
   registerProcessorOfflineMonitorTask();
   registerDailyDigestTask();
+  registerAuditLogCleanupTask();
   ensureInternalTaskSchedulerStarted();
 }
 

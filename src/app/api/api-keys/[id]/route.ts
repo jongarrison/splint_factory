@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { logAuditEvent } from '@/lib/audit';
 
 // GET /api/api-keys/[id] - Get specific API key (SYSTEM_ADMIN only)
 export async function GET(
@@ -155,6 +156,25 @@ export async function PUT(
       }
     });
 
+    const wasRevoked = existingKey.isActive && !updatedApiKey.isActive;
+    logAuditEvent({
+      eventType: wasRevoked ? 'API_KEY_REVOKED' : 'API_KEY_UPDATED',
+      channel: 'SYSTEM',
+      actorId: session.user.id,
+      organizationId: updatedApiKey.organizationId,
+      metadata: {
+        apiKeyId: updatedApiKey.id,
+        previousName: existingKey.name,
+        newName: updatedApiKey.name,
+        previousOrganizationId: existingKey.organizationId,
+        newOrganizationId: updatedApiKey.organizationId,
+        previousPermissions: JSON.parse(existingKey.permissions),
+        newPermissions: JSON.parse(updatedApiKey.permissions),
+        previousIsActive: existingKey.isActive,
+        newIsActive: updatedApiKey.isActive,
+      },
+    });
+
     return NextResponse.json({
       ...updatedApiKey,
       permissions: JSON.parse(updatedApiKey.permissions)
@@ -201,6 +221,19 @@ export async function DELETE(
 
     await prisma.apiKey.delete({
       where: { id }
+    });
+
+    logAuditEvent({
+      eventType: 'API_KEY_REVOKED',
+      channel: 'SYSTEM',
+      actorId: session.user.id,
+      organizationId: existingKey.organizationId,
+      metadata: {
+        apiKeyId: existingKey.id,
+        name: existingKey.name,
+        permissions: JSON.parse(existingKey.permissions),
+        deletion: true,
+      },
     });
 
     return NextResponse.json({ 

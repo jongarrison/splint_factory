@@ -141,7 +141,6 @@ export async function POST(request: NextRequest) {
       targetUserId: user.id,
       organizationId: invitationData.organizationId,
       metadata: {
-        invitationToken: invitationData.token,
         userEmail: user.email,
         userName: user.name,
         acknowledgmentVersion: REGISTRATION_ACKNOWLEDGMENT_VERSION,
@@ -159,10 +158,15 @@ export async function POST(request: NextRequest) {
         });
         const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
         const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken.token}`;
-        sendEmail({
+        await sendEmail({
           to: user.email,
           subject: 'Verify your Splint Factory email',
           react: EmailVerificationEmail({ verifyUrl }),
+          auditContext: {
+            actorId: invitationData.createdByUserId,
+            targetUserId: user.id,
+            organizationId: invitationData.organizationId,
+          },
         });
       } catch (emailErr) {
         console.error('Failed to send verification email:', emailErr);

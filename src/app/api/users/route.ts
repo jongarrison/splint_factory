@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logAuditEvent } from '@/lib/audit'
 
 // GET /api/users - List users with role-based filtering
 export async function GET() {
@@ -160,6 +161,31 @@ export async function PATCH(request: NextRequest) {
         invitedBy: { select: { id: true, name: true, email: true } }
       }
     })
+
+    if (role !== undefined && role !== targetUser.role) {
+      logAuditEvent({
+        eventType: 'USER_ROLE_CHANGED',
+        channel: 'AUTH',
+        actorId: currentUser.id,
+        targetUserId: targetUser.id,
+        organizationId: updatedUser.organizationId,
+        metadata: { previousRole: targetUser.role, newRole: updatedUser.role },
+      })
+    }
+
+    if (organizationId !== undefined && updatedUser.organizationId !== targetUser.organizationId) {
+      logAuditEvent({
+        eventType: 'USER_ORGANIZATION_CHANGED',
+        channel: 'AUTH',
+        actorId: currentUser.id,
+        targetUserId: targetUser.id,
+        organizationId: updatedUser.organizationId,
+        metadata: {
+          previousOrganizationId: targetUser.organizationId,
+          newOrganizationId: updatedUser.organizationId,
+        },
+      })
+    }
 
     return NextResponse.json(updatedUser)
   } catch (error) {

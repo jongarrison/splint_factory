@@ -262,6 +262,17 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                   System Status
                                 </Link>
                               )}
+
+                              {/* Audit Log - SYSTEM_ADMIN only */}
+                              {session?.user?.role === 'SYSTEM_ADMIN' && (
+                                <Link
+                                  href="/admin/audit-log"
+                                  onClick={() => setShowAdminDropdown(false)}
+                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                >
+                                  Audit Log
+                                </Link>
+                              )}
                               
                               {/* Printer Fleet - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (

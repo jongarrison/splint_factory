@@ -21,9 +21,14 @@ interface SendEmailParams {
   html?: string;
   react?: ReactElement;
   replyTo?: string;
+  auditContext?: {
+    actorId?: string | null;
+    targetUserId?: string | null;
+    organizationId?: string | null;
+  };
 }
 
-export async function sendEmail({ to, subject, html, react, replyTo }: SendEmailParams) {
+export async function sendEmail({ to, subject, html, react, replyTo, auditContext }: SendEmailParams) {
   const recipients = Array.isArray(to) ? to : [to];
   const resend = getResend();
 
@@ -40,34 +45,42 @@ export async function sendEmail({ to, subject, html, react, replyTo }: SendEmail
     logAuditEvent({
       eventType: 'EMAIL_SKIPPED',
       channel: 'EMAIL',
+      ...auditContext,
       metadata: { to: recipients, subject },
     });
     return null;
   }
 
-  const { data, error } = await resend.emails.send({
-    from: FROM_ADDRESS,
-    to: recipients,
-    subject,
-    html: htmlContent,
-    replyTo,
-  });
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: recipients,
+      subject,
+      html: htmlContent,
+      replyTo,
+    });
 
-  if (error) {
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    logAuditEvent({
+      eventType: 'EMAIL_SENT',
+      channel: 'EMAIL',
+      ...auditContext,
+      metadata: { to: recipients, subject },
+    });
+
+    return data;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('[Email] Failed to send:', error);
     logAuditEvent({
       eventType: 'EMAIL_FAILED',
       channel: 'EMAIL',
-      metadata: { to: recipients, subject, error: error.message },
+      ...auditContext,
+      metadata: { to: recipients, subject, error: message.slice(0, 1000) },
     });
-    throw new Error(`Email send failed: ${error.message}`);
+    throw new Error(`Email send failed: ${message}`);
   }
-
-  logAuditEvent({
-    eventType: 'EMAIL_SENT',
-    channel: 'EMAIL',
-    metadata: { to: recipients, subject },
-  });
-
-  return data;
 }

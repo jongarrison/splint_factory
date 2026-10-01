@@ -56,6 +56,9 @@ export async function POST(
       organizationName: invitation.organization.name,
       invitedByName: invitation.createdBy.name || invitation.createdBy.email,
       baseUrl,
+      actorId: session.user.id,
+      organizationId: invitation.organizationId,
+      action: 'resend',
     })
 
     if (updatedInvitation.emailLastError) {

@@ -1,4 +1,5 @@
 import InvitationEmail from '@/emails/invitation-email'
+import { logAuditEvent } from '@/lib/audit'
 import { sendEmail } from '@/lib/email'
 import { prisma } from '@/lib/prisma'
 
@@ -9,6 +10,9 @@ interface SendInvitationEmailParams {
   organizationName: string
   invitedByName: string
   baseUrl: string
+  actorId: string
+  organizationId: string
+  action: 'create' | 'resend'
 }
 
 export async function sendInvitationEmail({
@@ -18,6 +22,9 @@ export async function sendInvitationEmail({
   organizationName,
   invitedByName,
   baseUrl,
+  actorId,
+  organizationId,
+  action,
 }: SendInvitationEmailParams) {
   try {
     const result = await sendEmail({
@@ -28,6 +35,7 @@ export async function sendInvitationEmail({
         organizationName,
         invitedByName,
       }),
+      auditContext: { actorId, organizationId },
     })
 
     if (!result) {
@@ -44,6 +52,19 @@ export async function sendInvitationEmail({
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown email error'
+
+    logAuditEvent({
+      eventType: 'INVITATION_EMAIL_FAILED',
+      channel: 'EMAIL',
+      actorId,
+      organizationId,
+      metadata: {
+        invitationId,
+        recipientEmail: email,
+        action,
+        error: message.slice(0, 500),
+      },
+    })
 
     return prisma.invitationLink.update({
       where: { id: invitationId },

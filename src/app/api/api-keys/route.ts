@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
+import { logAuditEvent } from '@/lib/audit';
 
 // GET /api/api-keys - List all API keys (SYSTEM_ADMIN only)
 export async function GET() {
@@ -140,6 +141,18 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+    });
+
+    logAuditEvent({
+      eventType: 'API_KEY_CREATED',
+      channel: 'SYSTEM',
+      actorId: session.user.id,
+      organizationId: newApiKey.organizationId,
+      metadata: {
+        apiKeyId: newApiKey.id,
+        name: newApiKey.name,
+        permissions,
+      },
     });
 
     // Return the new key with the plain text API key (only time it's shown)

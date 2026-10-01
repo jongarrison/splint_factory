@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       to,
       subject,
       html: body,
+      auditContext: { actorId: session.user.id },
     });
 
     logAuditEvent({

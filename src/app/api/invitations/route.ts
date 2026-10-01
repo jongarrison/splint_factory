@@ -124,6 +124,9 @@ export async function POST(request: NextRequest) {
         organizationName: organization.name,
         invitedByName: user.name || user.email,
         baseUrl,
+        actorId: user.id,
+        organizationId,
+        action: 'create',
       })
 
       invitation.emailAcceptedAt = emailResult.emailAcceptedAt

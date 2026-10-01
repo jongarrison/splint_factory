@@ -49,6 +49,10 @@ export async function POST(request: NextRequest) {
       to: user.email,
       subject: 'Reset your Splint Factory password',
       react: PasswordResetEmail({ resetUrl }),
+      auditContext: {
+        targetUserId: user.id,
+        organizationId: user.organizationId,
+      },
     });
 
     logAuditEvent({

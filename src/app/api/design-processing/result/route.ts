@@ -5,6 +5,7 @@ import { validateApiKey, checkApiPermission } from '@/lib/api-auth';
 import { getBlobStorageInstance } from '@/lib/blob-storage';
 import { sendEmail } from '@/lib/email';
 import DesignJobFailedEmail from '@/emails/design-job-failed';
+import { logAuditEvent } from '@/lib/audit';
 
 function fileExt(name: string | undefined): string {
   if (!name) return '';
@@ -108,7 +109,10 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         processStartedAt: true,
-        isProcessSuccessful: true
+        processCompletedAt: true,
+        isProcessSuccessful: true,
+        creatorId: true,
+        owningOrganizationId: true,
       }
     });
 
@@ -314,6 +318,27 @@ export async function POST(request: NextRequest) {
       : `Failed to process geometry job ${designJobId} (${result.updatedGeometryJob.design.name}): ${errorMessage || 'No error message provided'}`;
     
     console.log(logMessage);
+
+    if (!isSuccess) {
+      logAuditEvent({
+        eventType: 'DESIGN_PROCESSING_FAILED',
+        channel: 'PROCESSING',
+        targetUserId: geometryJob.creatorId,
+        organizationId: geometryJob.owningOrganizationId,
+        metadata: {
+          designJobId,
+          error: errorMessage?.slice(0, 1000) || 'No error message provided',
+        },
+      });
+    } else if (geometryJob.processCompletedAt && !geometryJob.isProcessSuccessful) {
+      logAuditEvent({
+        eventType: 'DESIGN_PROCESSING_RECOVERED',
+        channel: 'PROCESSING',
+        targetUserId: geometryJob.creatorId,
+        organizationId: geometryJob.owningOrganizationId,
+        metadata: { designJobId },
+      });
+    }
     
     // Log error message if processing failed
     if (!isSuccess && errorMessage) {
@@ -358,6 +383,10 @@ export async function POST(request: NextRequest) {
               jobUrl,
               debugCommand,
             }),
+            auditContext: {
+              targetUserId: job.creatorId,
+              organizationId: job.owningOrganizationId,
+            },
           });
         })
         .catch((err) => console.error('[Email] Failed to send job failure notification:', err));
