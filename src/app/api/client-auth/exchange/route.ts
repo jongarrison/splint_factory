@@ -23,7 +23,14 @@ export async function POST(request: NextRequest) {
       where: { id: challengeId },
       include: {
         authorizedBy: {
-          select: { id: true, name: true, email: true, role: true }
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            organizationId: true,
+            organization: { select: { name: true } },
+          }
         },
         device: {
           select: { id: true }
@@ -78,6 +85,8 @@ export async function POST(request: NextRequest) {
         email: user.email,
         name: user.name,
         role: user.role,
+        organizationId: user.organizationId,
+        organizationName: user.organization?.name,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days
       },
