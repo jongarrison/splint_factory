@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
+import Link from 'next/link';
 
 export default function VerifyEmailPage() {
   return (
@@ -24,11 +25,13 @@ export default function VerifyEmailPage() {
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
+  const { data: session, update } = useSession();
 
   const [status, setStatus] = useState<'idle' | 'verifying' | 'verified' | 'error'>('idle');
   const [error, setError] = useState('');
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
+  const [requiresPasswordSetup, setRequiresPasswordSetup] = useState(false);
 
   const verifyToken = useCallback(async (t: string) => {
     setStatus('verifying');
@@ -44,12 +47,14 @@ function VerifyEmailContent() {
         setStatus('error');
         return;
       }
+      setRequiresPasswordSetup(Boolean(data.requiresPasswordSetup));
+      await update();
       setStatus('verified');
     } catch {
       setError('Something went wrong');
       setStatus('error');
     }
-  }, []);
+  }, [update]);
 
   useEffect(() => {
     if (token) {
@@ -102,15 +107,37 @@ function VerifyEmailContent() {
                 </svg>
                 <h2 className="text-2xl font-bold text-primary mb-2">Email verified!</h2>
                 <p className="text-muted mb-6">
-                  Your email has been verified. Please sign in again to continue.
+                  {session?.user
+                    ? 'Your email has been verified. You can continue using Splint Factory.'
+                    : requiresPasswordSetup
+                      ? 'Your email has been verified. Set a password to sign in to your account.'
+                      : 'Your email has been verified. Please sign in to continue.'}
                 </p>
-                <button
-                  onClick={() => signOut({ callbackUrl: '/login' })}
-                  className="btn-primary px-6 py-2 text-sm"
-                  data-testid="sign-in-btn"
-                >
-                  Sign In
-                </button>
+                {session?.user ? (
+                  <button
+                    onClick={() => { window.location.href = '/design-menu'; }}
+                    className="btn-primary px-6 py-2 text-sm"
+                    data-testid="continue-btn"
+                  >
+                    Continue
+                  </button>
+                ) : requiresPasswordSetup ? (
+                  <Link
+                    href="/forgot-password"
+                    className="btn-primary inline-flex px-6 py-2 text-sm"
+                    data-testid="set-password-btn"
+                  >
+                    Set Password
+                  </Link>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="btn-primary inline-flex px-6 py-2 text-sm"
+                    data-testid="sign-in-btn"
+                  >
+                    Sign In
+                  </Link>
+                )}
               </>
             )}
             {status === 'error' && (

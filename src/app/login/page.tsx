@@ -29,6 +29,7 @@ function LoginPageInner() {
   const [isElectron, setIsElectron] = useState(false)
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl")
+  const message = searchParams.get("message")
 
   // Device auth state (Electron only)
   const [deviceId, setDeviceId] = useState<string | null>(null)
@@ -207,6 +208,12 @@ function LoginPageInner() {
               Sign in to your account
             </h2>
           </div>
+
+          {message && (
+            <div className="alert-warning text-sm" data-testid="login-message">
+              {message}
+            </div>
+          )}
 
           {/* QR code section -- Electron only */}
           {isElectron && (

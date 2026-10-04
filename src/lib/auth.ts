@@ -76,9 +76,79 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
-          organizationId: user.organizationId,
+          organizationId: user.organizationId ?? undefined,
           organizationName: user.organization?.name,
-          emailVerified: user.emailVerified?.toISOString() ?? null,
+          emailVerified: user.emailVerified,
+        }
+      }
+    }),
+    Credentials({
+      id: "conference-registration",
+      name: "conference-registration",
+      credentials: {
+        token: { label: "Token", type: "text" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.token) return null
+
+        const loginToken = await prisma.conferenceLoginToken.findUnique({
+          where: { token: credentials.token as string },
+          include: {
+            user: { include: { organization: { select: { name: true } } } },
+          },
+        })
+
+        if (!loginToken || loginToken.usedAt || loginToken.expiresAt <= new Date()) {
+          if (loginToken) {
+            logAuditEvent({
+              eventType: 'CONFERENCE_INITIAL_LOGIN_FAILED',
+              channel: 'AUTH',
+              targetUserId: loginToken.user.id,
+              organizationId: loginToken.user.organizationId,
+              metadata: { reason: loginToken.usedAt ? 'token_used' : 'token_expired' },
+            })
+          }
+          return null
+        }
+
+        const consumed = await prisma.conferenceLoginToken.updateMany({
+          where: {
+            id: loginToken.id,
+            usedAt: null,
+            expiresAt: { gt: new Date() },
+          },
+          data: { usedAt: new Date() },
+        })
+
+        if (consumed.count !== 1) {
+          logAuditEvent({
+            eventType: 'CONFERENCE_INITIAL_LOGIN_FAILED',
+            channel: 'AUTH',
+            targetUserId: loginToken.user.id,
+            organizationId: loginToken.user.organizationId,
+            metadata: { reason: 'token_already_consumed' },
+          })
+          return null
+        }
+
+        const user = loginToken.user
+        logAuditEvent({
+          eventType: 'CONFERENCE_INITIAL_LOGIN_SUCCEEDED',
+          channel: 'AUTH',
+          actorId: user.id,
+          targetUserId: user.id,
+          organizationId: user.organizationId,
+          metadata: { email: user.email },
+        })
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          organizationId: user.organizationId ?? undefined,
+          organizationName: user.organization?.name,
+          emailVerified: user.emailVerified,
+          emailVerificationGraceExpiresAt: user.emailVerificationGraceExpiresAt?.toISOString() ?? null,
         }
       }
     })
@@ -93,6 +163,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.organizationId = token.organizationId as string | undefined
         session.user.organizationName = token.organizationName as string | undefined
         session.user.emailVerified = token.emailVerified as string | null | undefined
+        session.user.emailVerificationGraceExpiresAt = token.emailVerificationGraceExpiresAt as string | null | undefined
       }
       return session
     },
@@ -104,7 +175,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = user.role
         token.organizationId = user.organizationId
         token.organizationName = user.organizationName
-        token.emailVerified = user.emailVerified
+        token.emailVerified = user.emailVerified instanceof Date
+          ? user.emailVerified.toISOString()
+          : user.emailVerified
+        token.emailVerificationGraceExpiresAt = user.emailVerificationGraceExpiresAt
       }
 
       // Keep header/user-menu identity fields fresh without forcing logout.
@@ -122,6 +196,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.organizationId = refreshedUser.organizationId
             token.organizationName = refreshedUser.organization?.name
             token.emailVerified = refreshedUser.emailVerified?.toISOString() ?? null
+            token.emailVerificationGraceExpiresAt = refreshedUser.emailVerificationGraceExpiresAt?.toISOString() ?? null
           }
         } catch (error) {
           console.error("[Auth] Failed to refresh JWT user fields:", error)

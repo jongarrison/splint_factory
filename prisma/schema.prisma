@@ -30,6 +30,7 @@ model Organization {
   users           User[]
   visibleDesigns  OrganizationDesign[]
   clientDevices   ClientDevice[]
+  conferenceSettings SystemSettings[]               @relation("ConferenceOrganization")
 }
 
 model User {
@@ -64,6 +65,35 @@ model User {
   passwordResetTokens  PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   registrationAcknowledgments UserRegistrationAcknowledgment[]
+  emailVerificationGraceExpiresAt DateTime?
+  conferenceLoginTokens ConferenceLoginToken[]
+}
+
+model ConferenceLoginToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ConferenceAccessRequest {
+  id                  String   @id @default(cuid())
+  name                String
+  email               String
+  phone               String?
+  registrationEnabled Boolean
+  organizationId      String?
+  userId              String?
+  createdAt           DateTime @default(now())
+
+  @@index([email])
+  @@index([createdAt])
 }
 
 model UserRegistrationAcknowledgment {
@@ -227,6 +257,9 @@ model SystemSettings {
   maintenanceMessage        String?
   maintenanceModeUpdatedAt  DateTime @default(now()) @updatedAt
   lastDailyDigestSentDate   String?  // YYYY-MM-DD, persists across restarts
+  conferenceRegistrationEnabled Boolean @default(false)
+  conferenceOrganizationId String?
+  conferenceOrganization Organization? @relation("ConferenceOrganization", fields: [conferenceOrganizationId], references: [id], onDelete: SetNull)
 }
 
 model ProcessorHeartbeat {

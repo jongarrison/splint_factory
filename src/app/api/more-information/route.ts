@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import MoreInfoRequestEmail from '@/emails/more-info-request';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 export interface MoreInfoFormData {
   city: string;
@@ -14,29 +15,6 @@ export interface MoreInfoFormData {
   interestedInfo: boolean;
   interestedUpdates: boolean;
   notes?: string;
-}
-
-// Verify Cloudflare Turnstile token server-side
-async function verifyTurnstile(token: string, ip: string | null): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) {
-    console.warn('[MoreInfo] TURNSTILE_SECRET_KEY not set — skipping captcha verification in dev');
-    return true;
-  }
-
-  const formData = new URLSearchParams();
-  formData.append('secret', secret);
-  formData.append('response', token);
-  if (ip) formData.append('remoteip', ip);
-
-  const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formData.toString(),
-  });
-
-  const data = await res.json() as { success: boolean };
-  return data.success === true;
 }
 
 export async function POST(req: NextRequest) {

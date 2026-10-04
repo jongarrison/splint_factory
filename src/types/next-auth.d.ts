@@ -7,9 +7,10 @@ declare module "next-auth" {
       email: string
       name?: string | null
       role?: string
-      organizationId?: string
+      organizationId?: string | null
       organizationName?: string
-      emailVerified?: string | null
+      emailVerified?: string | Date | null
+      emailVerificationGraceExpiresAt?: string | null
     }
   }
 
@@ -18,9 +19,10 @@ declare module "next-auth" {
     email: string
     name?: string | null
     role?: string
-    organizationId?: string
+    organizationId?: string | null
     organizationName?: string
-    emailVerified?: string | null
+    emailVerified?: string | Date | null
+    emailVerificationGraceExpiresAt?: string | null
   }
 }
 
@@ -30,8 +32,9 @@ declare module "next-auth/jwt" {
     email: string
     name?: string | null
     role?: string
-    organizationId?: string
+    organizationId?: string | null
     organizationName?: string
-    emailVerified?: string | null
+    emailVerified?: string | Date | null
+    emailVerificationGraceExpiresAt?: string | null
   }
 }

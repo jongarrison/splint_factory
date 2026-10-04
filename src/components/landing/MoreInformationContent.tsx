@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import Header from '@/components/navigation/Header';
 
@@ -28,7 +28,12 @@ export default function MoreInformationContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const turnstileRef = useRef<{ reset: () => void }>(null);
+
+  useEffect(() => {
+    setNotice(new URLSearchParams(window.location.search).get('message') || '');
+  }, []);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value, type } = e.target;
@@ -83,6 +88,7 @@ export default function MoreInformationContent() {
       <Header />
 
       <main className="max-w-2xl mx-auto px-4 py-16 sm:px-6">
+        {notice && <div className="alert-warning mb-6">{notice}</div>}
         {submitted ? (
           <div className="text-center py-16">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--status-success-bg)] mb-6">

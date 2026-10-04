@@ -84,4 +84,20 @@ test.describe('invitation registration', () => {
     await expect(page.getByTestId('register-no-token')).toBeVisible();
     await expect(page.getByTestId('submit-btn')).toHaveCount(0);
   });
+
+  test('verified invitation users retain the existing sign-in path', async ({ page }) => {
+    await page.route('**/api/auth/verify-email', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        message: 'Email verified successfully',
+        requiresPasswordSetup: false,
+      }),
+    }));
+
+    await page.goto('/verify-email?token=invitation-verification-token');
+
+    await expect(page.getByTestId('sign-in-btn')).toBeVisible();
+    await expect(page.getByTestId('set-password-btn')).toHaveCount(0);
+  });
 });

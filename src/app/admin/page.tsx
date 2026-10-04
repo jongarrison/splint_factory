@@ -127,6 +127,17 @@ interface MoreInfoRow {
   };
 }
 
+interface ConferenceOrganization {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface ConferenceUrl {
+  label: string;
+  href: string;
+}
+
 export default function SystemStatusPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -146,6 +157,11 @@ export default function SystemStatusPage() {
   const [moreInfoExpanded, setMoreInfoExpanded] = useState<string | null>(null);
   const [digestSending, setDigestSending] = useState(false);
   const [digestResult, setDigestResult] = useState<string | null>(null);
+  const [conferenceEnabled, setConferenceEnabled] = useState(false);
+  const [conferenceOrganizationId, setConferenceOrganizationId] = useState('');
+  const [conferenceOrganizations, setConferenceOrganizations] = useState<ConferenceOrganization[]>([]);
+  const [savingConference, setSavingConference] = useState(false);
+  const [conferenceUrls, setConferenceUrls] = useState<ConferenceUrl[]>([]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -158,7 +174,30 @@ export default function SystemStatusPage() {
     fetchQueueStatus();
     fetchSiteAlertAdmins();
     fetchMoreInfoRequests();
+    fetchConferenceSettings();
   }, [session, status, router]);
+
+  useEffect(() => {
+    const path = '/conference';
+    const productionUrl = `https://splintfactory.com${path}`;
+    const isLocal = ['localhost', '127.0.0.1', 'splintserver.local'].includes(window.location.hostname);
+
+    if (isLocal) {
+      const port = window.location.port || '3000';
+      setConferenceUrls([
+        { label: 'Local development (this Mac)', href: `http://localhost:${port}${path}` },
+        { label: 'Local network / mobile QR', href: `http://splintserver.local:${port}${path}` },
+        { label: 'Production', href: productionUrl },
+      ]);
+      return;
+    }
+
+    const currentUrl = `${window.location.origin}${path}`;
+    setConferenceUrls([
+      ...(currentUrl !== productionUrl ? [{ label: 'Current deployment', href: currentUrl }] : []),
+      { label: 'Production', href: productionUrl },
+    ]);
+  }, []);
 
   const fetchQueueStatus = async () => {
     try {
@@ -215,6 +254,19 @@ export default function SystemStatusPage() {
     }
   };
 
+  const fetchConferenceSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/conference-settings');
+      if (!response.ok) throw new Error('Failed to fetch conference settings');
+      const data = await response.json();
+      setConferenceEnabled(Boolean(data.conferenceRegistrationEnabled));
+      setConferenceOrganizationId(data.conferenceOrganizationId || '');
+      setConferenceOrganizations(data.organizations || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch conference settings');
+    }
+  };
+
   const handleDownloadMoreInfoCsv = async () => {
     const response = await fetch('/api/admin/more-info-requests', { method: 'POST' });
     if (!response.ok) return;
@@ -244,6 +296,28 @@ export default function SystemStatusPage() {
       setError(err instanceof Error ? err.message : 'Failed to update maintenance mode');
     } finally {
       setSavingMaintenance(false);
+    }
+  };
+
+  const handleConferenceSettingsSave = async () => {
+    setSavingConference(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/admin/conference-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conferenceRegistrationEnabled: conferenceEnabled,
+          conferenceOrganizationId: conferenceOrganizationId || null,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to save conference settings');
+      await fetchConferenceSettings();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save conference settings');
+    } finally {
+      setSavingConference(false);
     }
   };
 
@@ -432,6 +506,62 @@ export default function SystemStatusPage() {
 
       {queueData && (
         <>
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-3 text-primary">Conference Registration</h2>
+            <div className="card p-4 space-y-4" data-testid="conference-settings-card">
+              <div>
+                <h3 className="text-sm font-medium text-secondary mb-2">Conference URLs</h3>
+                <div className="space-y-2" data-testid="conference-urls">
+                  {conferenceUrls.map((url) => (
+                    <div key={url.href} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3 text-sm">
+                      <span className="text-muted sm:w-48 flex-shrink-0">{url.label}</span>
+                      <a href={url.href} target="_blank" rel="noreferrer" className="text-link break-all">
+                        {url.href}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label htmlFor="conferenceOrganization" className="block text-sm font-medium text-secondary mb-1">
+                  Conference Organization
+                </label>
+                <select
+                  id="conferenceOrganization"
+                  value={conferenceOrganizationId}
+                  onChange={(event) => setConferenceOrganizationId(event.target.value)}
+                  className="input-field"
+                  data-testid="conference-organization-select"
+                >
+                  <option value="">Select Organization</option>
+                  {conferenceOrganizations.map((organization) => (
+                    <option key={organization.id} value={organization.id} disabled={!organization.isActive}>
+                      {organization.name}{organization.isActive ? '' : ' (inactive)'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <label className="flex items-center gap-3 text-sm font-medium text-secondary">
+                <input
+                  type="checkbox"
+                  checked={conferenceEnabled}
+                  onChange={(event) => setConferenceEnabled(event.target.checked)}
+                  className="w-5 h-5 rounded"
+                  data-testid="conference-enabled-checkbox"
+                />
+                Enable conference registration at /conference
+              </label>
+              <button
+                onClick={handleConferenceSettingsSave}
+                disabled={savingConference || (conferenceEnabled && !conferenceOrganizationId)}
+                className="btn-primary px-4 py-2 disabled:opacity-50"
+                data-testid="save-conference-settings"
+              >
+                {savingConference ? 'Saving...' : 'Save Conference Settings'}
+              </button>
+            </div>
+          </div>
+
           {/* Maintenance Mode Control */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-3 text-primary">Maintenance Mode</h2>

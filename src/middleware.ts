@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 
 // Define public routes that don't require authentication
 // Include '/api' so API routes rely on route-level auth (API keys or session) instead of middleware redirects
-const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/api', '/api/auth', '/api/register', '/l', '/client-auth', '/about', '/verify-email', '/more-information']
+const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/api', '/api/auth', '/api/register', '/l', '/client-auth', '/about', '/verify-email', '/more-information', '/conference']
 
 // Define routes that should redirect to home if already authenticated
 const authRoutes = ['/login', '/register']
@@ -80,9 +80,18 @@ export default async function middleware(request: NextRequest) {
     // (unless already on /verify-email or a public route)
     // Use === null to distinguish unverified users from old JWTs where field is undefined
     if (session && session.user.emailVerified === null && !isPublicRoute && pathname !== '/verify-email') {
-      console.log(`REDIRECT: Unverified user trying to access ${pathname}`)
-      const verifyUrl = new URL('/verify-email', request.url)
-      return NextResponse.redirect(verifyUrl)
+      const graceExpiresAt = session.user.emailVerificationGraceExpiresAt
+      const hasActiveGracePeriod = graceExpiresAt && new Date(graceExpiresAt) > new Date()
+
+      if (!hasActiveGracePeriod) {
+        console.log(`REDIRECT: Unverified user trying to access ${pathname}`)
+        const destination = graceExpiresAt ? '/more-information' : '/verify-email'
+        const verifyUrl = new URL(destination, request.url)
+        if (graceExpiresAt) {
+          verifyUrl.searchParams.set('message', 'Your conference access has expired. Please contact us for continued access.')
+        }
+        return NextResponse.redirect(verifyUrl)
+      }
     }
     
     // If user is authenticated and trying to access home page, redirect to design-menu

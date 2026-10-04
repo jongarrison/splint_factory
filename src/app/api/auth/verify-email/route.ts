@@ -60,7 +60,10 @@ export async function POST(request: NextRequest) {
       metadata: { email: verificationToken.user.email },
     });
 
-    return NextResponse.json({ message: 'Email verified successfully' });
+    return NextResponse.json({
+      message: 'Email verified successfully',
+      requiresPasswordSetup: Boolean(verificationToken.user.emailVerificationGraceExpiresAt),
+    });
   } catch (error) {
     console.error('Verify email error:', error);
     return NextResponse.json(
