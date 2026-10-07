@@ -52,6 +52,10 @@ interface Job {
   design: {
     name: string;
   };
+  creator?: {
+    name: string | null;
+    email: string;
+  };
   owningOrganization?: {
     name: string;
   };
@@ -502,6 +506,22 @@ export default function SystemStatusPage() {
     return `${seconds}s ago`;
   };
 
+  const getCompletedTimeDiff = (timestamp: string) => {
+    const totalMinutes = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000));
+    if (totalMinutes < 1) return 'Less than 1m ago';
+
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+    const minutes = totalMinutes % 60;
+    const parts = [
+      days > 0 ? `${days}d` : null,
+      hours > 0 ? `${hours}h` : null,
+      minutes > 0 ? `${minutes}m` : null,
+    ].filter(Boolean);
+
+    return `${parts.join(' ')} ago`;
+  };
+
   // Render keep-warm lease remaining as e.g. "9m 42s" or "37s".
   const formatKeepWarmRemaining = (totalSeconds: number) => {
     const minutes = Math.floor(totalSeconds / 60);
@@ -791,10 +811,22 @@ export default function SystemStatusPage() {
                   <tbody>
                     {queueData.auditSummary.eventTypes.map(event => {
                       const maxBucketCount = Math.max(1, ...event.buckets);
+                      const auditLogUrl = `/admin/audit-log?eventType=${encodeURIComponent(event.eventType)}`;
                       return (
-                        <tr key={event.eventType}>
+                        <tr
+                          key={event.eventType}
+                          className="cursor-pointer"
+                          onClick={() => router.push(auditLogUrl)}
+                          title={`View ${formatAuditEventType(event.eventType).toLowerCase()} events`}
+                        >
                           <td className="px-3 py-2 text-sm font-medium text-primary whitespace-nowrap">
-                            {formatAuditEventType(event.eventType)}
+                            <Link
+                              href={auditLogUrl}
+                              className="text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-blue)]"
+                              onClick={clickEvent => clickEvent.stopPropagation()}
+                            >
+                              {formatAuditEventType(event.eventType)}
+                            </Link>
                           </td>
                           <td className="px-3 py-2 text-sm text-secondary">{event.channel}</td>
                           <td className={`px-3 py-2 text-sm text-right font-semibold ${isAuditFailure(event.eventType) ? 'text-[var(--status-error-text)]' : 'text-primary'}`}>
@@ -1163,11 +1195,12 @@ export default function SystemStatusPage() {
             {queueData.queues.recentlyCompleted.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-primary">Recently Completed — 7 days ({queueData.queues.recentlyCompleted.length})</h3>
-                <div className="card overflow-hidden">
+                <div className="card overflow-x-auto">
                   <table className="data-table">
                     <thead>
                       <tr>
                         <th className="px-3 py-2">Object ID</th>
+                        <th className="px-3 py-2">Name</th>
                         <th className="px-3 py-2">Organization</th>
                         <th className="px-3 py-2">Status</th>
                         <th className="px-3 py-2">Completed</th>
@@ -1175,10 +1208,24 @@ export default function SystemStatusPage() {
                     </thead>
                     <tbody>
                       {queueData.queues.recentlyCompleted.map((job) => (
-                        <tr key={job.id}>
+                        <tr
+                          key={job.id}
+                          className="cursor-pointer"
+                          onClick={() => router.push(`/design-jobs/${job.id}`)}
+                          title="View design job details"
+                        >
                           <td className="px-3 py-2 text-sm">
-                            {job.objectId || job.id.slice(0, 8)}
-                            {job.isDebugRequest && <span className="ml-1 status-badge status-neutral">Test</span>}
+                            <Link
+                              href={`/design-jobs/${job.id}`}
+                              className="text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-blue)]"
+                              onClick={clickEvent => clickEvent.stopPropagation()}
+                            >
+                              {job.objectId || job.id.slice(0, 8)}
+                              {job.isDebugRequest && <span className="ml-1 status-badge status-neutral">Test</span>}
+                            </Link>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-secondary">
+                            {job.creator?.name || job.creator?.email || 'Unknown'}
                           </td>
                           <td className="px-3 py-2 text-sm text-secondary">
                             {job.owningOrganization?.name ?? '—'}
@@ -1189,7 +1236,7 @@ export default function SystemStatusPage() {
                             </span>
                           </td>
                           <td className="px-3 py-2 text-sm text-muted">
-                            {job.processCompletedAt ? getTimeDiff(job.processCompletedAt) : 'N/A'}
+                            {job.processCompletedAt ? getCompletedTimeDiff(job.processCompletedAt) : 'N/A'}
                           </td>
                         </tr>
                       ))}

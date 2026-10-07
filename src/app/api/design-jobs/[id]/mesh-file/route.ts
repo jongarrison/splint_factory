@@ -43,10 +43,11 @@ export async function GET(
       where: { id: session.user.id },
       select: {
         organizationId: true,
+        role: true,
       },
     });
 
-    if (!user?.organizationId) {
+    if (!user || (user.role !== 'SYSTEM_ADMIN' && !user.organizationId)) {
       return NextResponse.json({ error: 'User must be part of an organization' }, { status: 403 });
     }
 
@@ -59,7 +60,7 @@ export async function GET(
       return NextResponse.json({ error: 'Geometry job not found' }, { status: 404 });
     }
 
-    if (job.owningOrganizationId !== user.organizationId) {
+    if (user.role !== 'SYSTEM_ADMIN' && job.owningOrganizationId !== user.organizationId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    if (!user?.organizationId) {
+    if (!user || (user.role !== 'SYSTEM_ADMIN' && !user.organizationId)) {
       return NextResponse.json({ error: 'User must be part of an organization' }, { status: 403 });
     }
 
@@ -30,12 +30,13 @@ export async function GET(request: NextRequest) {
     const geometryJobId = searchParams.get('geometryJobId');
 
     // Build where clause
-    const whereClause: any = {
-      isEnabled: true, // Only show enabled (non-deleted) entries
-      designJob: {
-        owningOrganizationId: user.organizationId
-      }
-    };
+    const whereClause: any = { isEnabled: true };
+
+    // Keep the general queue organization-scoped. System admins may inspect a specific
+    // cross-organization design job from its details page.
+    if (user.role !== 'SYSTEM_ADMIN' || !geometryJobId) {
+      whereClause.designJob = { owningOrganizationId: user.organizationId };
+    }
 
     // Add geometry job filter if provided
     if (geometryJobId) {

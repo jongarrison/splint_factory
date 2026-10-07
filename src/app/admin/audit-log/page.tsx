@@ -49,9 +49,17 @@ export default function AuditLogPage() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [filtersReady, setFiltersReady] = useState(false)
 
   useEffect(() => {
-    if (status === 'loading') return
+    const query = new URLSearchParams(window.location.search)
+    setChannel(query.get('channel') || '')
+    setEventType(query.get('eventType') || '')
+    setFiltersReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (!filtersReady || status === 'loading') return
     if (!session?.user || session.user.role !== 'SYSTEM_ADMIN') {
       router.push('/')
       return
@@ -78,7 +86,7 @@ export default function AuditLogPage() {
       })
 
     return () => controller.abort()
-  }, [channel, eventType, page, router, session, status])
+  }, [channel, eventType, filtersReady, page, router, session, status])
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1
 

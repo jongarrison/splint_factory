@@ -88,6 +88,7 @@ export async function GET() {
           processCompletedAt: true,
           isProcessSuccessful: true,
           design: { select: { name: true } },
+          creator: { select: { name: true, email: true } },
           owningOrganization: { select: { name: true } },
           objectId: true,
           isDebugRequest: true

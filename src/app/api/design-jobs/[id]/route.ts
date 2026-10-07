@@ -26,7 +26,7 @@ export async function GET(
       }
     });
 
-    if (!user?.organizationId) {
+    if (!user || (user.role !== 'SYSTEM_ADMIN' && !user.organizationId)) {
       return NextResponse.json({ error: 'User must be part of an organization' }, { status: 403 });
     }
 
@@ -58,8 +58,8 @@ export async function GET(
       return NextResponse.json({ error: 'Geometry job not found' }, { status: 404 });
     }
 
-    // Verify user has access to this job (same organization)
-    if (geometryJob.owningOrganizationId !== user.organizationId) {
+    // System admins may inspect jobs across organizations; other users remain organization-scoped.
+    if (user.role !== 'SYSTEM_ADMIN' && geometryJob.owningOrganizationId !== user.organizationId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
