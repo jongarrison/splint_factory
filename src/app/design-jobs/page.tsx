@@ -36,6 +36,7 @@ export default function GeometryJobsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [searchObjectId, setSearchObjectId] = useState('');
+  const [submittedObjectId, setSubmittedObjectId] = useState('');
   const [searchError, setSearchError] = useState('');
   
   // Use smart polling hook for real-time updates
@@ -62,19 +63,19 @@ export default function GeometryJobsPage() {
   const handleSearchByObjectId = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchError('');
-    
-    if (!searchObjectId.trim()) {
+
+    const normalizedObjectId = searchObjectId.trim().toUpperCase();
+    if (!normalizedObjectId) {
       setSearchError('Please enter an Object ID');
       return;
     }
-    
-    const job = geometryJobs?.find(j => j.objectId === searchObjectId.trim());
-    if (job) {
-      router.push(`/design-jobs/${job.id}`);
-    } else {
-      setSearchError(`No job found with Object ID: ${searchObjectId}`);
-    }
+
+    setSubmittedObjectId(normalizedObjectId);
   };
+
+  const displayedGeometryJobs = submittedObjectId
+    ? geometryJobs?.filter(job => job.objectId?.toUpperCase().includes(submittedObjectId))
+    : geometryJobs;
 
   const getStatusBadge = (job: GeometryJob) => {
     const processingBadge = (() => {
@@ -221,17 +222,25 @@ export default function GeometryJobsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            {!geometryJobs || geometryJobs.length === 0 ? (
+            {!displayedGeometryJobs || displayedGeometryJobs.length === 0 ? (
               <div className="text-center py-12" data-testid="design-jobs-empty">
-                <div className="text-muted text-lg">No design jobs found</div>
-                <p className="text-muted mt-2">Create your first design job to get started.</p>
-                <Link
-                  href="/design-jobs/new"
-                  className="btn-primary inline-flex mt-4 py-2 px-4"
-                  data-testid="create-first-job-btn"
-                >
-                  Create New Job
-                </Link>
+                {submittedObjectId ? (
+                  <div className="text-muted text-lg">
+                    No design jobs found matching Object ID: {submittedObjectId}
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-muted text-lg">No design jobs found</div>
+                    <p className="text-muted mt-2">Create your first design job to get started.</p>
+                    <Link
+                      href="/design-jobs/new"
+                      className="btn-primary inline-flex mt-4 py-2 px-4"
+                      data-testid="create-first-job-btn"
+                    >
+                      Create New Job
+                    </Link>
+                  </>
+                )}
               </div>
             ) : (
               <table className="data-table min-w-full" data-testid="design-jobs-table">
@@ -245,7 +254,7 @@ export default function GeometryJobsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {geometryJobs.map((job) => (
+                  {displayedGeometryJobs.map((job) => (
                     <tr
                       key={job.id}
                       className="cursor-pointer"

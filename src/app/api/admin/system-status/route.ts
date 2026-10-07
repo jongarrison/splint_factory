@@ -21,6 +21,7 @@ export async function GET() {
     const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     // Get jobs in various states
     const [
@@ -34,7 +35,8 @@ export async function GET() {
       completedPrevious24h,
       jobsByAlgorithm,
       recentErrors,
-      jobsByOrg
+      jobsByOrg,
+      auditEventsLast24h
     ] = await Promise.all([
       // Never started
       prisma.designJob.findMany({
@@ -73,10 +75,10 @@ export async function GET() {
         take: 10
       }),
       
-      // Recently completed (last 24 hours)
+      // Recently completed (last 7 days)
       prisma.designJob.findMany({
         where: {
-          processCompletedAt: { gte: oneDayAgo },
+          processCompletedAt: { gte: sevenDaysAgo },
           isEnabled: true
         },
         select: {
@@ -90,8 +92,7 @@ export async function GET() {
           objectId: true,
           isDebugRequest: true
         },
-        orderBy: { processCompletedAt: 'desc' },
-        take: 50
+        orderBy: { processCompletedAt: 'desc' }
       }),
       
       // Currently processing (started in last 10 min, not completed)
@@ -205,6 +206,19 @@ export async function GET() {
           isDebugRequest: false
         },
         _count: { id: true }
+      }),
+
+      // Audit activity shape for the last 24 hours
+      prisma.auditEvent.findMany({
+        where: {
+          timestamp: { gte: oneDayAgo }
+        },
+        select: {
+          timestamp: true,
+          eventType: true,
+          channel: true
+        },
+        orderBy: { timestamp: 'asc' }
       })
     ]);
     
@@ -294,6 +308,45 @@ export async function GET() {
       };
     }).sort((a, b) => b.count - a.count);
 
+    const auditBucketDurationMs = 2 * 60 * 60 * 1000;
+    const auditBucketStarts = Array.from(
+      { length: 12 },
+      (_, index) => new Date(oneDayAgo.getTime() + index * auditBucketDurationMs).toISOString()
+    );
+    const auditEventTypes = new Map<string, {
+      eventType: string;
+      channel: string;
+      count: number;
+      lastSeenAt: Date;
+      buckets: number[];
+    }>();
+
+    auditEventsLast24h.forEach(event => {
+      const existing = auditEventTypes.get(event.eventType) ?? {
+        eventType: event.eventType,
+        channel: event.channel,
+        count: 0,
+        lastSeenAt: event.timestamp,
+        buckets: Array(12).fill(0)
+      };
+      const bucketIndex = Math.min(
+        11,
+        Math.max(0, Math.floor((event.timestamp.getTime() - oneDayAgo.getTime()) / auditBucketDurationMs))
+      );
+
+      existing.count += 1;
+      existing.lastSeenAt = event.timestamp;
+      existing.buckets[bucketIndex] += 1;
+      auditEventTypes.set(event.eventType, existing);
+    });
+
+    const auditEventTypeSummary = Array.from(auditEventTypes.values())
+      .sort((a, b) => b.count - a.count || a.eventType.localeCompare(b.eventType))
+      .map(item => ({
+        ...item,
+        lastSeenAt: item.lastSeenAt.toISOString()
+      }));
+
     const processorStatus = await getProcessorStatus();
     const internalTasks = getInternalTaskStatuses();
 
@@ -355,6 +408,13 @@ export async function GET() {
       maintenance: {
         maintenanceModeEnabled: maintenanceSettings?.maintenanceModeEnabled || false,
         maintenanceMessage: maintenanceSettings?.maintenanceMessage || null
+      },
+      auditSummary: {
+        totalEvents: auditEventsLast24h.length,
+        channelCount: new Set(auditEventsLast24h.map(event => event.channel)).size,
+        eventTypeCount: auditEventTypeSummary.length,
+        bucketStarts: auditBucketStarts,
+        eventTypes: auditEventTypeSummary
       },
       internalTasks
     });

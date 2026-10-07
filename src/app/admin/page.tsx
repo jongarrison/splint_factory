@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 
 interface ProcessorStatus {
@@ -78,6 +79,22 @@ interface InternalTaskStatus {
   nextRunAt: string | null;
 }
 
+interface AuditEventTypeSummary {
+  eventType: string;
+  channel: string;
+  count: number;
+  lastSeenAt: string;
+  buckets: number[];
+}
+
+interface AuditSummary {
+  totalEvents: number;
+  channelCount: number;
+  eventTypeCount: number;
+  bucketStarts: string[];
+  eventTypes: AuditEventTypeSummary[];
+}
+
 interface SiteAlertAdmin {
   id: string;
   name: string | null;
@@ -105,6 +122,7 @@ interface QueueData {
     recentlyCompleted: Job[];
   };
   maintenance: MaintenanceSettings;
+  auditSummary: AuditSummary;
   internalTasks: InternalTaskStatus[];
 }
 
@@ -492,6 +510,19 @@ export default function SystemStatusPage() {
     return `${seconds}s`;
   };
 
+  const formatAuditEventType = (eventType: string) => {
+    return eventType.replaceAll('_', ' ');
+  };
+
+  const formatAuditLastSeen = (timestamp: string) => {
+    const totalMinutes = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000));
+    if (totalMinutes < 1) return 'Just now';
+    if (totalMinutes < 60) return `${totalMinutes}m ago`;
+    return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m ago`;
+  };
+
+  const isAuditFailure = (eventType: string) => eventType.includes('FAILED');
+
   return (
     <div className="page-shell" data-testid="admin-page">
       <Header />
@@ -723,6 +754,77 @@ export default function SystemStatusPage() {
                       <tr>
                         <td colSpan={3} className="px-3 py-4 text-sm text-muted text-center">
                           No SYSTEM_ADMIN users found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Audit Activity */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between gap-4 mb-3">
+              <h2 className="text-xl font-semibold text-primary">Audit Activity — Last 24 Hours</h2>
+              <Link href="/admin/audit-log" className="text-link text-sm whitespace-nowrap">
+                View Full Audit Log
+              </Link>
+            </div>
+            <div className="card overflow-hidden" data-testid="audit-summary-card">
+              <div className="px-4 py-3 border-b border-[var(--border)] text-sm text-secondary">
+                {queueData.auditSummary.totalEvents.toLocaleString()} total events
+                {' · '}{queueData.auditSummary.channelCount} channels
+                {' · '}{queueData.auditSummary.eventTypeCount} event types
+              </div>
+              <div className="overflow-x-auto">
+                <table className="data-table" data-testid="audit-summary-table">
+                  <thead>
+                    <tr>
+                      <th className="px-3 py-2">Event</th>
+                      <th className="px-3 py-2">Channel</th>
+                      <th className="px-3 py-2 text-right">Count</th>
+                      <th className="px-3 py-2">Last Seen</th>
+                      <th className="px-3 py-2">Activity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {queueData.auditSummary.eventTypes.map(event => {
+                      const maxBucketCount = Math.max(1, ...event.buckets);
+                      return (
+                        <tr key={event.eventType}>
+                          <td className="px-3 py-2 text-sm font-medium text-primary whitespace-nowrap">
+                            {formatAuditEventType(event.eventType)}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-secondary">{event.channel}</td>
+                          <td className={`px-3 py-2 text-sm text-right font-semibold ${isAuditFailure(event.eventType) ? 'text-[var(--status-error-text)]' : 'text-primary'}`}>
+                            {event.count.toLocaleString()}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-secondary whitespace-nowrap" title={formatTimestamp(event.lastSeenAt)}>
+                            {formatAuditLastSeen(event.lastSeenAt)}
+                          </td>
+                          <td className="px-3 py-2">
+                            <div
+                              className="flex items-end gap-1 h-7 min-w-36"
+                              aria-label={`${event.count} ${formatAuditEventType(event.eventType).toLowerCase()} events over the last 24 hours`}
+                            >
+                              {event.buckets.map((count, index) => (
+                                <div
+                                  key={queueData.auditSummary.bucketStarts[index]}
+                                  className={`w-2 rounded-sm ${count > 0 ? (isAuditFailure(event.eventType) ? 'bg-[var(--status-error-text)]' : 'bg-[var(--accent-blue)]') : 'bg-[var(--border)]'}`}
+                                  style={{ height: count > 0 ? `${Math.max(4, Math.round((count / maxBucketCount) * 28))}px` : '2px' }}
+                                  title={`${new Date(queueData.auditSummary.bucketStarts[index]).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}: ${count}`}
+                                />
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {queueData.auditSummary.eventTypes.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-3 py-8 text-sm text-muted text-center">
+                          No audit events recorded in the last 24 hours.
                         </td>
                       </tr>
                     )}
@@ -1060,7 +1162,7 @@ export default function SystemStatusPage() {
             {/* Recently Completed */}
             {queueData.queues.recentlyCompleted.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold mb-2 text-primary">Recently Completed — 24h ({queueData.queues.recentlyCompleted.length})</h3>
+                <h3 className="text-lg font-semibold mb-2 text-primary">Recently Completed — 7 days ({queueData.queues.recentlyCompleted.length})</h3>
                 <div className="card overflow-hidden">
                   <table className="data-table">
                     <thead>
