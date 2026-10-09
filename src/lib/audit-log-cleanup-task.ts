@@ -5,6 +5,11 @@ import { prisma } from '@/lib/prisma';
 const TASK_KEY = 'audit-log-cleanup';
 const RETENTION_MONTHS = 12;
 const CLEANUP_EVENT_TYPE = 'AUDIT_LOG_CLEANUP_COMPLETED';
+const PERSISTENT_EVENT_TYPES = [
+  'CLIENT_DEVICE_ORGANIZATION_CHANGED',
+  'PRINTER_DEVICE_CHANGED',
+  'PRINTER_ORGANIZATION_CHANGED',
+];
 
 async function cleanupAuditLog(): Promise<void> {
   const startOfTodayUtc = new Date();
@@ -26,7 +31,10 @@ async function cleanupAuditLog(): Promise<void> {
   cutoff.setUTCMonth(cutoff.getUTCMonth() - RETENTION_MONTHS);
 
   const result = await prisma.auditEvent.deleteMany({
-    where: { timestamp: { lt: cutoff } },
+    where: {
+      timestamp: { lt: cutoff },
+      eventType: { notIn: PERSISTENT_EVENT_TYPES },
+    },
   });
 
   await writeAuditEvent({
@@ -36,6 +44,7 @@ async function cleanupAuditLog(): Promise<void> {
       retentionMonths: RETENTION_MONTHS,
       cutoff: cutoff.toISOString(),
       rowsRemoved: result.count,
+      persistentEventTypes: PERSISTENT_EVENT_TYPES,
     },
   });
 

@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
     // Upsert device -- create with null org if new, just touch lastSeenAt if existing
     await prisma.clientDevice.upsert({
       where: { id: deviceId },
-      update: { lastSeenAt: new Date() },
+      update: {
+        lastSeenAt: new Date(),
+        ...(deviceName ? { name: deviceName } : {}),
+      },
       create: {
         id: deviceId,
         name: deviceName || 'Unknown Device',

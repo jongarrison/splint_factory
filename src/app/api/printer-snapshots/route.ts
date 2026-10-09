@@ -22,42 +22,100 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'serial, model, and firmware are required' }, { status: 400 });
     }
 
-    // Upsert the Printer record
-    await prisma.printer.upsert({
-      where: { serial },
-      update: {
-        model,
-        deviceId,
-        lastSnapshotAt: new Date(),
-      },
-      create: {
-        serial,
-        model,
-        deviceId,
-        lastSnapshotAt: new Date(),
-      },
+    const capturedAt = new Date();
+
+    const snapshot = await prisma.$transaction(async (tx) => {
+      const existingPrinter = await tx.printer.findUnique({
+        where: { serial },
+        include: {
+          device: {
+            select: {
+              id: true,
+              name: true,
+              organizationId: true,
+              organization: { select: { name: true } },
+            },
+          },
+        },
+      });
+      const device = await tx.clientDevice.findUnique({
+        where: { id: deviceId },
+        select: {
+          id: true,
+          name: true,
+          organizationId: true,
+          organization: { select: { name: true } },
+        },
+      });
+
+      if (!device) return null;
+
+      const associationChanged = existingPrinter?.deviceId !== deviceId;
+      await tx.printer.upsert({
+        where: { serial },
+        update: {
+          model,
+          deviceId,
+          lastSnapshotAt: capturedAt,
+        },
+        create: {
+          serial,
+          model,
+          deviceId,
+          lastSnapshotAt: capturedAt,
+        },
+      });
+
+      const createdSnapshot = await tx.printerSnapshot.create({
+        data: {
+          printerSerial: serial,
+          deviceId,
+          firmware,
+          modules: modules ?? undefined,
+          amsConfig: amsConfig ?? undefined,
+          networkIp: networkIp ?? undefined,
+          activeHmsErrors: activeHmsErrors ?? undefined,
+          funField: funField ?? undefined,
+          rawReport: rawReport ?? undefined,
+          capturedAt,
+        },
+      });
+
+      await tx.clientDevice.update({
+        where: { id: deviceId },
+        data: { lastSeenAt: capturedAt },
+      });
+
+      if (associationChanged) {
+        await tx.auditEvent.create({
+          data: {
+            eventType: 'PRINTER_DEVICE_CHANGED',
+            channel: 'DEVICE',
+            actorId: session.user.id,
+            organizationId: device.organizationId,
+            metadata: {
+              printerSerial: serial,
+              printerModel: model,
+              previousDeviceId: existingPrinter?.deviceId ?? null,
+              previousDeviceName: existingPrinter?.device?.name ?? null,
+              previousOrganizationId: existingPrinter?.device?.organizationId ?? null,
+              previousOrganizationName: existingPrinter?.device?.organization?.name ?? null,
+              newDeviceId: device.id,
+              newDeviceName: device.name,
+              newOrganizationId: device.organizationId,
+              newOrganizationName: device.organization?.name ?? null,
+              source: 'PRINTER_SNAPSHOT',
+            },
+          },
+        });
+      }
+
+      return createdSnapshot;
     });
 
-    // Create the snapshot
-    const snapshot = await prisma.printerSnapshot.create({
-      data: {
-        printerSerial: serial,
-        deviceId,
-        firmware,
-        modules: modules ?? undefined,
-        amsConfig: amsConfig ?? undefined,
-        networkIp: networkIp ?? undefined,
-        activeHmsErrors: activeHmsErrors ?? undefined,
-        funField: funField ?? undefined,
-        rawReport: rawReport ?? undefined,
-      },
-    });
-
-    // Update device lastSeenAt
-    await prisma.clientDevice.update({
-      where: { id: deviceId },
-      data: { lastSeenAt: new Date() },
-    }).catch(() => {}); // non-critical
+    if (!snapshot) {
+      return NextResponse.json({ error: 'Client device not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ id: snapshot.id, capturedAt: snapshot.capturedAt }, { status: 201 });
   } catch (error) {
@@ -93,7 +151,25 @@ export async function GET(request: NextRequest) {
         orderBy: { capturedAt: 'desc' },
         take: 50,
       });
-      return NextResponse.json(snapshots);
+      const deviceIds = [...new Set(snapshots.map(snapshot => snapshot.deviceId))];
+      const devices = await prisma.clientDevice.findMany({
+        where: { id: { in: deviceIds } },
+        select: {
+          id: true,
+          name: true,
+          organization: { select: { name: true } },
+        },
+      });
+      const devicesById = new Map(devices.map(device => [device.id, device]));
+
+      return NextResponse.json(snapshots.map(snapshot => {
+        const device = devicesById.get(snapshot.deviceId);
+        return {
+          ...snapshot,
+          deviceName: device?.name ?? null,
+          organizationName: device?.organization?.name ?? null,
+        };
+      }));
     }
 
     // Otherwise return fleet overview: all printers with device + org info

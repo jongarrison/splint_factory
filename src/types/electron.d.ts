@@ -30,6 +30,13 @@ interface SystemInfo {
   timezone?: string;
 }
 
+interface EnvironmentInfo extends SystemInfo {
+  environment: string;
+  environmentName: string;
+  factoryUrl: string;
+  deviceId: string;
+}
+
 interface CommandResult {
   success: boolean;
   stdout?: string;
@@ -44,7 +51,7 @@ interface ElectronAPI {
   
   // System information
   getSystemInfo: () => Promise<SystemInfo>;
-  getEnvironmentInfo: () => Promise<SystemInfo>;
+  getEnvironmentInfo: () => Promise<EnvironmentInfo>;
   
   // Bambu printer operations
   getPrinterStatusInfo: (printerConfig?: PrinterConfig) => Promise<PrinterStatus>;

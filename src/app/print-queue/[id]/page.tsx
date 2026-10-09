@@ -79,6 +79,7 @@ export default function PrintQueueDetailPage({
   const [deviceLocked, setDeviceLocked] = useState(false);
   const [factoryUrl, setFactoryUrl] = useState('');
   const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [deviceHostname, setDeviceHostname] = useState<string | null>(null);
   const [screenLockTimeoutMs, setScreenLockTimeoutMs] = useState<number | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; label: string } | null>(null);
 
@@ -130,6 +131,7 @@ export default function PrintQueueDetailPage({
       try {
         const envInfo = await electronAPI.getEnvironmentInfo();
         if (envInfo.deviceId) setDeviceId(envInfo.deviceId);
+        setDeviceHostname(envInfo.hostname || null);
         // Use the FACTORY_URL from Electron env so QR codes have the network-visible hostname
         setFactoryUrl(envInfo.factoryUrl || window.location.origin);
       } catch (err) {
@@ -147,10 +149,10 @@ export default function PrintQueueDetailPage({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         deviceId,
-        name: `Splint Client (${deviceId.substring(0, 8)})`,
+        name: deviceHostname || `Splint Client (${deviceId.substring(0, 8)})`,
       }),
     }).catch(err => console.error('Device registration failed:', err));
-  }, [deviceId, session]);
+  }, [deviceHostname, deviceId, session]);
 
   // Fetch org screen lock timeout on mount
   useEffect(() => {

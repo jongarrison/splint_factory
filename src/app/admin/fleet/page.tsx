@@ -15,6 +15,8 @@ interface PrinterSnapshot {
   funField: string | null;
   capturedAt: string;
   deviceId: string;
+  deviceName?: string | null;
+  organizationName?: string | null;
 }
 
 interface FleetPrinter {
@@ -57,10 +59,14 @@ function SnapshotHistory({ serial }: { serial: string }) {
   return (
     <div className="mt-2 space-y-2">
       {snapshots.map(s => (
-        <div key={s.id} className="bg-[var(--surface)] rounded px-3 py-2 text-sm">
+        <div key={s.id} className="border-t border-[var(--border)] px-1 py-3 text-sm first:border-t-0">
           <div className="flex justify-between text-secondary">
             <span>FW: {s.firmware}</span>
             <span>{new Date(s.capturedAt).toLocaleDateString()} {new Date(s.capturedAt).toLocaleTimeString()}</span>
+          </div>
+          <div className="text-secondary mt-1">
+            Splintbot: <span className="text-primary">{s.deviceName || s.deviceId}</span>
+            {s.organizationName && <span className="ml-3">Current org: {s.organizationName}</span>}
           </div>
           {s.modules && (
             <div className="text-secondary mt-1">
@@ -157,7 +163,15 @@ export default function FleetPage() {
             No printers registered yet. Printers appear here once a client device reports a snapshot.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div>
+            <div className="hidden md:grid md:grid-cols-[5rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_7rem] gap-4 px-4 pb-2 text-xs font-medium uppercase text-secondary">
+              <span>Status</span>
+              <span>Printer</span>
+              <span>Splintbot</span>
+              <span>Organization</span>
+              <span>Last snapshot</span>
+            </div>
+            <div className="space-y-3">
             {fleet.map(printer => {
               const statusInfo = getStatusIndicator(printer);
               const isExpanded = expandedPrinter === printer.serial;
@@ -166,28 +180,31 @@ export default function FleetPage() {
                 <div key={printer.serial} className="bg-[var(--surface-secondary)] rounded-lg overflow-hidden">
                   <button
                     onClick={() => setExpandedPrinter(isExpanded ? null : printer.serial)}
-                    className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-[var(--surface)]"
+                    className="w-full px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-3 text-left hover:bg-[var(--surface)] md:grid-cols-[5rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_7rem] md:items-center"
                   >
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="flex-shrink-0">
-                        <span className={`font-mono text-sm ${statusInfo.color}`}>
-                          {statusInfo.label}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-medium text-primary">
-                          {printer.name || printer.serial}
-                          <span className="text-secondary text-sm ml-2">{printer.model}</span>
-                        </div>
-                        <div className="text-secondary text-sm">
-                          {printer.device?.name ?? 'No device'}
-                          {printer.device?.organizationName && (
-                            <span className="ml-2">({printer.device.organizationName})</span>
-                          )}
-                        </div>
-                      </div>
+                    <div>
+                      <div className="text-xs text-secondary md:hidden">Status</div>
+                      <span className={`font-mono text-sm ${statusInfo.color}`}>
+                        {statusInfo.label}
+                      </span>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-4">
+                    <div className="min-w-0">
+                      <div className="text-xs text-secondary md:hidden">Printer</div>
+                      <div className="font-medium text-primary truncate">
+                        {printer.name || printer.model}
+                      </div>
+                      <div className="font-mono text-xs text-secondary truncate">{printer.serial}</div>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs text-secondary md:hidden">Splintbot</div>
+                      <div className="text-primary truncate">{printer.device?.name ?? 'No device'}</div>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs text-secondary md:hidden">Organization</div>
+                      <div className="text-primary truncate">{printer.device?.organizationName ?? 'Unassigned'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-secondary md:hidden">Last snapshot</div>
                       {printer.latestSnapshot && (
                         <div className="text-sm">
                           <div className="text-secondary">FW {printer.latestSnapshot.firmware}</div>
@@ -230,6 +247,7 @@ export default function FleetPage() {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
       </main>

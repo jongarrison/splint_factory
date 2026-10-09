@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       where: { id: deviceId },
       update: {
         lastSeenAt: new Date(),
+        ...(name ? { name } : {}),
         // Don't change org here -- handled below for null-org devices
       },
       create: {
@@ -68,14 +69,6 @@ export async function POST(request: NextRequest) {
         } : null,
         operatorValidatedAt: updated.operatorValidatedAt,
       });
-    }
-
-    // Verify device belongs to user's org (handles case where device was already registered to another org)
-    if (device.organizationId !== user.organizationId) {
-      return NextResponse.json(
-        { error: 'Device is registered to a different organization' },
-        { status: 403 }
-      );
     }
 
     return NextResponse.json({

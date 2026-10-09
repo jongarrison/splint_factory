@@ -33,6 +33,7 @@ function LoginPageInner() {
 
   // Device auth state (Electron only)
   const [deviceId, setDeviceId] = useState<string | null>(null)
+  const [deviceHostname, setDeviceHostname] = useState<string | null>(null)
   const [factoryUrl, setFactoryUrl] = useState<string>("")
   const [challenge, setChallenge] = useState<{ challengeId: string; expiresAt: string } | null>(null)
   const [qrError, setQrError] = useState("")
@@ -43,12 +44,13 @@ function LoginPageInner() {
 
   // Detect Electron and get device info
   useEffect(() => {
-    const api = (window as any).electronAPI
+    const api = window.electronAPI
     if (!api) return
     setIsElectron(true)
 
-    api.getEnvironmentInfo().then((info: any) => {
+    api.getEnvironmentInfo().then((info) => {
       setDeviceId(info.deviceId || null)
+      setDeviceHostname(info.hostname || null)
       setFactoryUrl(info.factoryUrl || "")
     }).catch(() => {})
   }, [])
@@ -58,11 +60,11 @@ function LoginPageInner() {
     if (!deviceId) return
     setQrError("")
     try {
-      const hostname = typeof window !== "undefined" ? window.location.hostname : "Unknown"
+      const deviceName = deviceHostname || `Splint Client (${deviceId.substring(0, 8)})`
       const res = await fetch("/api/client-auth/login-challenge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deviceId, deviceName: hostname }),
+        body: JSON.stringify({ deviceId, deviceName }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -80,7 +82,7 @@ function LoginPageInner() {
     } catch {
       setQrError("Network error creating QR code")
     }
-  }, [deviceId])
+  }, [deviceHostname, deviceId])
 
   // Start challenge creation once deviceId is available
   useEffect(() => {
