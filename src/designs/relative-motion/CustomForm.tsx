@@ -289,8 +289,8 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
                   </td>
                   <td className="py-2 px-3">
                     <input
-                      type="text"
-                      inputMode="decimal"
+                      type="number"
+                      step="any"
                       disabled={disabled}
                       value={f.p1_mid_circ}
                       onChange={(e) => updateFinger(idx, { p1_mid_circ: e.target.value })}
@@ -299,8 +299,8 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
                   </td>
                   <td className="py-2 px-3">
                     <input
-                      type="text"
-                      inputMode="decimal"
+                      type="number"
+                      step="any"
                       disabled={disabled}
                       value={f.p1_length}
                       onChange={(e) => updateFinger(idx, { p1_length: e.target.value })}
@@ -309,8 +309,8 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
                   </td>
                   <td className="py-2 px-3">
                     <input
-                      type="text"
-                      inputMode="decimal"
+                      type="number"
+                      step="any"
                       disabled={disabled || isFirst}
                       value={isFirst && f.is_included ? '0' : f.pip_neighbor_fwd_offset}
                       onChange={(e) => updateFinger(idx, { pip_neighbor_fwd_offset: e.target.value })}
@@ -345,8 +345,8 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
         <div>
           <label className="block text-sm font-medium text-secondary">All-fingers circumference (mm)</label>
           <input
-            type="text"
-            inputMode="decimal"
+            type="number"
+            step="any"
             value={model.all_splint_finger_circ}
             onChange={(e) => setField({ all_splint_finger_circ: e.target.value })}
             className="mt-1 input-field"
@@ -373,8 +373,8 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
         <div>
           <label className="block text-sm font-medium text-secondary">Band Width (mm)</label>
           <input
-            type="text"
-            inputMode="decimal"
+            type="number"
+            step="any"
             value={model.longitudinal_band_width_mm}
             onChange={(e) => setField({ longitudinal_band_width_mm: e.target.value })}
             className="mt-1 input-field"

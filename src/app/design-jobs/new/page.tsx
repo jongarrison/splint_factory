@@ -481,8 +481,10 @@ function CreateGeometryJobPage() {
                       )}
                       {param.InputType === 'Float' ? (
                         <input
-                          type="text"
-                          inputMode="decimal"
+                          type="number"
+                          step="any"
+                          min={param.NumberMin}
+                          max={param.NumberMax}
                           id={param.InputName}
                           value={parameterValues[param.InputName] ?? ''}
                           onChange={(e) => handleParameterChange(param.InputName, e.target.value)}
@@ -501,8 +503,10 @@ function CreateGeometryJobPage() {
                         />
                       ) : param.InputType === 'Integer' ? (
                         <input
-                          type="text"
-                          inputMode="numeric"
+                          type="number"
+                          step="1"
+                          min={param.NumberMin}
+                          max={param.NumberMax}
                           id={param.InputName}
                           value={parameterValues[param.InputName] ?? ''}
                           onChange={(e) => handleParameterChange(param.InputName, e.target.value)}
