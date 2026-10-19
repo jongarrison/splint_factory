@@ -232,8 +232,12 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
       </div>
 
       {/* Per-finger rows */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="relative">
+        <p className="mb-1 text-xs text-muted lg:hidden">
+          Swipe left to view all measurements &rarr;
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="text-left text-muted">
               <th className="py-2 pr-3 font-medium">Include</th>
@@ -280,7 +284,7 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
                         const anchor = e.target.value === 'anchor';
                         updateFinger(idx, { is_anchor_finger: anchor, ...(anchor ? {} : { is_slitted: false }) });
                       }}
-                      className="input-field py-1"
+                      className="input-field min-w-28 py-1"
                       data-testid={`role-${f.finger_abbr}`}
                     >
                       <option value="anchor">Anchor</option>
@@ -337,7 +341,12 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
               );
             })}
           </tbody>
-        </table>
+          </table>
+        </div>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-0 right-0 top-5 w-8 bg-gradient-to-r from-transparent to-[var(--surface)] lg:hidden"
+        />
       </div>
 
       {/* Global measurements */}
