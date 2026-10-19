@@ -1,0 +1,1 @@
+* All UIs in splint_factory must work both in desktop and mobile mode
