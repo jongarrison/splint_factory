@@ -1,3 +1,0 @@
-{
-  "buildCommand": "prisma generate && node scripts/pre-migrate.js && prisma migrate deploy && prisma generate && node scripts/sync-designs.js && next build"
-}
