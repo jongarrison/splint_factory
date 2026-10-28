@@ -89,6 +89,13 @@ export default function InvitationsPage() {
     setError('');
 
     try {
+      const emails = Array.from(new Map(
+        inviteEmail
+          .split(/[\s,]+/)
+          .map(email => email.trim())
+          .filter(Boolean)
+          .map(email => [email.toLowerCase(), email])
+      ).values());
       const response = await fetch('/api/invitations', {
         method: 'POST',
         headers: {
@@ -97,7 +104,7 @@ export default function InvitationsPage() {
         body: JSON.stringify({
           organizationId: selectedOrgId,
           expiresInDays: expiresInDays || 7,
-          email: inviteEmail.trim() || undefined,
+          ...(emails.length > 0 ? { emails } : {}),
         }),
       });
 
@@ -107,7 +114,8 @@ export default function InvitationsPage() {
         throw new Error(data.error || 'Failed to create invitation');
       }
 
-      setInvitations(current => [data, ...current]);
+      const createdInvitations = data.invitations || [data];
+      setInvitations(current => [...createdInvitations, ...current]);
       setShowCreateForm(false);
             // Reset form
       setSelectedOrgId('');
@@ -258,19 +266,18 @@ export default function InvitationsPage() {
             <form onSubmit={handleCreateInvitation} className="space-y-4">
               <div>
                 <label htmlFor="inviteEmail" className="block text-sm font-medium text-secondary mb-2">
-                  Email Address (optional)
+                  Email Addresses (optional)
                 </label>
-                <input
-                  type="email"
+                <textarea
                   id="inviteEmail"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  className="input-field text-sm"
+                  className="input-field text-sm min-h-32"
                   data-testid="invite-email-input"
-                  placeholder="user@example.com"
+                  placeholder={'user@example.com\nsecond@example.com'}
                 />
                 <p className="mt-1 text-xs text-muted">
-                  If provided, an invitation email will be sent and the user&apos;s email will be pre-verified on registration. If left blank, you can copy the invitation link manually.
+                  Separate addresses with commas or whitespace. Each address receives its own invitation for the selected organization. If left blank, you can copy one invitation link manually.
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -326,7 +333,7 @@ export default function InvitationsPage() {
                   className="btn-primary px-4 py-2"
                   data-testid="form-submit-btn"
                 >
-                  {creating ? 'Creating...' : 'Create Invitation'}
+                  {creating ? 'Creating...' : 'Create Invitation(s)'}
                 </button>
               </div>
             </form>
