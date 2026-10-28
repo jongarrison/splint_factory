@@ -298,6 +298,7 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
                       disabled={disabled}
                       value={f.p1_mid_circ}
                       onChange={(e) => updateFinger(idx, { p1_mid_circ: e.target.value })}
+                      onWheel={(e) => e.currentTarget.blur()}
                       className="input-field py-1 w-24"
                     />
                   </td>
@@ -308,6 +309,7 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
                       disabled={disabled}
                       value={f.p1_length}
                       onChange={(e) => updateFinger(idx, { p1_length: e.target.value })}
+                      onWheel={(e) => e.currentTarget.blur()}
                       className="input-field py-1 w-24"
                     />
                   </td>
@@ -318,6 +320,7 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
                       disabled={disabled || isFirst}
                       value={isFirst && f.is_included ? '0' : f.pip_neighbor_fwd_offset}
                       onChange={(e) => updateFinger(idx, { pip_neighbor_fwd_offset: e.target.value })}
+                      onWheel={(e) => e.currentTarget.blur()}
                       className="input-field py-1 w-24"
                       title={
                         isFirst
@@ -358,6 +361,7 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
             step="any"
             value={model.all_splint_finger_circ}
             onChange={(e) => setField({ all_splint_finger_circ: e.target.value })}
+            onWheel={(e) => e.currentTarget.blur()}
             className="mt-1 input-field"
             data-testid="all-splint-finger-circ"
           />
@@ -372,6 +376,7 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
             step="any"
             value={model.relative_elevation_angle}
             onChange={(e) => setField({ relative_elevation_angle: e.target.value })}
+            onWheel={(e) => e.currentTarget.blur()}
             className="mt-1 input-field"
             data-testid="relative-elevation-angle"
           />
@@ -386,6 +391,7 @@ export default function RelativeMotionForm({ value, onChange, onValidChange }: C
             step="any"
             value={model.longitudinal_band_width_mm}
             onChange={(e) => setField({ longitudinal_band_width_mm: e.target.value })}
+            onWheel={(e) => e.currentTarget.blur()}
             className="mt-1 input-field"
             data-testid="longitudinal-band-width"
           />

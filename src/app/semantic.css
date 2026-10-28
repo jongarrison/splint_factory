@@ -452,6 +452,16 @@
   background-color: var(--surface);
 }
 
+.input-field[type='number'] {
+  appearance: textfield;
+}
+
+.input-field[type='number']::-webkit-inner-spin-button,
+.input-field[type='number']::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
 .input-field:focus {
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-blue);

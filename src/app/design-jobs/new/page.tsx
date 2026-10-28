@@ -492,6 +492,7 @@ function CreateGeometryJobPage() {
                           id={param.InputName}
                           value={parameterValues[param.InputName] ?? ''}
                           onChange={(e) => handleParameterChange(param.InputName, e.target.value)}
+                          onWheel={(e) => e.currentTarget.blur()}
                           onBlur={(e) => {
                             const val = e.target.value;
                             const numVal = parseFloat(val);
@@ -514,6 +515,7 @@ function CreateGeometryJobPage() {
                           id={param.InputName}
                           value={parameterValues[param.InputName] ?? ''}
                           onChange={(e) => handleParameterChange(param.InputName, e.target.value)}
+                          onWheel={(e) => e.currentTarget.blur()}
                           onBlur={(e) => {
                             const val = e.target.value;
                             const numVal = parseInt(val);
