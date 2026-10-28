@@ -54,6 +54,7 @@ interface PrintJobPhoto {
 interface PrintJob {
   id: string;
   designJobId: string;
+  designRevision: number;
   printStartedAt?: string | null;
   printCompletedAt?: string | null;
   isPrintSuccessful: boolean;
@@ -594,6 +595,10 @@ export default function GeometryJobDetailPage({
                   <dd className="mt-1 text-sm text-primary font-mono">{job.id}</dd>
                 </div>
                 <div>
+                  <dt className="text-sm font-medium text-muted">Current Revision</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="design-job-revision">{job.revision}</dd>
+                </div>
+                <div>
                   <dt className="text-sm font-medium text-muted">Type</dt>
                   <dd className="mt-1">
                     <div className="text-sm font-medium text-primary">{job.design.name}</div>
@@ -703,6 +708,7 @@ export default function GeometryJobDetailPage({
                     <thead>
                       <tr>
                         <th>Print Job ID</th>
+                        <th>Design Revision</th>
                         <th>Status</th>
                         <th>Started</th>
                         <th>Completed</th>
@@ -727,6 +733,9 @@ export default function GeometryJobDetailPage({
                                   {printJob.id.substring(0, 12)}...
                                 </div>
                               </td>
+                              <td className="whitespace-nowrap" data-testid="print-job-design-revision">
+                                {printJob.designRevision}
+                              </td>
                               <td className="whitespace-nowrap" data-testid="print-job-status-cell">
                                 <div className="flex flex-col gap-1">
                                   <PrintStatusBadge printStartedAt={printJob.printStartedAt} printCompletedAt={printJob.printCompletedAt} isPrintSuccessful={printJob.isPrintSuccessful} />
@@ -747,7 +756,7 @@ export default function GeometryJobDetailPage({
                             </tr>
                             {isExpanded && (
                               <tr data-testid="print-job-expanded-row" data-expanded-for={printJob.id}>
-                                <td colSpan={5} className="px-4 pb-4 pt-2 bg-[var(--surface-secondary)]">
+                                <td colSpan={6} className="px-4 pb-4 pt-2 bg-[var(--surface-secondary)]">
                                   <div className="space-y-4">
                                     {/* Summary stats */}
                                     <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">

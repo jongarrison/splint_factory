@@ -718,6 +718,10 @@ export default function PrintQueueDetailPage({
                   </dd>
                 </div>
                 <div>
+                  <dt className="text-sm font-medium text-muted">Design Revision</dt>
+                  <dd className="mt-1 text-sm text-primary" data-testid="print-design-revision">{entry.designRevision}</dd>
+                </div>
+                <div>
                   <dt className="text-sm font-medium text-muted">Design Created</dt>
                   <dd className="mt-1 text-sm text-primary" data-testid="design-created-at">{formatDate(entry.designJob.createdAt)}</dd>
                 </div>
