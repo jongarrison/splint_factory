@@ -38,7 +38,9 @@ function CreateGeometryJobPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateId = searchParams.get('template');
+  const refitId = searchParams.get('refit');
   const designId = searchParams.get('designId');
+  const sourceJobId = refitId || templateId;
   
   const [geometries, setGeometries] = useState<Design[]>([]);
   const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
@@ -65,8 +67,8 @@ function CreateGeometryJobPage() {
       return;
     }
 
-    // designId or template is required (comes from design-menu); redirect if missing
-    if (!designId && !templateId) {
+    // A design or source job is required; these come from the design menu or job detail page.
+    if (!designId && !sourceJobId) {
       router.push('/design-menu');
       return;
     }
@@ -76,14 +78,14 @@ function CreateGeometryJobPage() {
     fetch('/api/design-processing/keep-warm', { method: 'POST' }).catch(() => {});
 
     fetchGeometries();
-  }, [session, status, router, designId, templateId]);
+  }, [session, status, router, designId, sourceJobId]);
 
-  // Load template job if template param is present
+  // Load the source job for copy or refit mode.
   useEffect(() => {
-    if (templateId && geometries.length > 0 && !selectedDesign) {
-      loadTemplateJob(templateId);
+    if (sourceJobId && geometries.length > 0 && !selectedDesign) {
+      loadSourceJob(sourceJobId);
     }
-  }, [templateId, geometries]);
+  }, [sourceJobId, geometries]);
 
   // Pre-select design if designId param is present
   useEffect(() => {
@@ -100,10 +102,11 @@ function CreateGeometryJobPage() {
     trackEvent('design_job_form_viewed', {
       has_design_id: Boolean(designId),
       from_template: Boolean(templateId),
+      is_refit: Boolean(refitId),
     });
-  }, [status, designId, templateId]);
+  }, [status, designId, templateId, refitId]);
 
-  const loadTemplateJob = async (jobId: string) => {
+  const loadSourceJob = async (jobId: string) => {
     try {
       const response = await fetch(`/api/design-jobs/${jobId}`);
       if (!response.ok) throw new Error('Failed to fetch template job');
@@ -118,13 +121,11 @@ function CreateGeometryJobPage() {
         // Parse and set parameter values from template
         const templateParams = JSON.parse(templateJob.inputParameters);
         setParameterValues(templateParams);
-        
-        // Optionally copy job info (leave blank for new job)
-        // setJobID(templateJob.jobLabel || '');
+        if (refitId) setJobLabel(templateJob.jobLabel || '');
       }
     } catch (err) {
-      console.error('Failed to load template job:', err);
-      // Don't show error to user, just fail silently and let them create from scratch
+      console.error('Failed to load source job:', err);
+      if (refitId) setError('Failed to load the design job for refitting.');
     }
   };
 
@@ -259,6 +260,7 @@ function CreateGeometryJobPage() {
       design_id: selectedDesign.id,
       parameter_count: parameterSchema.length,
       has_job_label: jobLabel.trim().length > 0,
+      is_refit: Boolean(refitId),
     });
     
     setSubmitting(true);
@@ -267,8 +269,8 @@ function CreateGeometryJobPage() {
     let responseStatus = 0;
     
     try {
-      const response = await fetch('/api/design-jobs', {
-        method: 'POST',
+      const response = await fetch(refitId ? `/api/design-jobs/${refitId}/refit` : '/api/design-jobs', {
+        method: refitId ? 'PATCH' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -286,17 +288,17 @@ function CreateGeometryJobPage() {
         throw new Error(errorData.error || 'Failed to create design job');
       }
 
-      const createdJob = await response.json();
-      trackEvent('design_job_created', {
+      const savedJob = await response.json();
+      trackEvent(refitId ? 'design_job_refit_requested' : 'design_job_created', {
         design_id: selectedDesign.id,
-        has_job_id: Boolean(createdJob?.id),
+        has_job_id: Boolean(savedJob?.job?.id || savedJob?.id),
       });
       
       // Navigate to job details page to track progress
-      router.push(`/design-jobs/${createdJob.id}`);
+      router.push(`/design-jobs/${refitId || savedJob.id}`);
       
     } catch (err) {
-      trackEvent('design_job_create_failed', {
+      trackEvent(refitId ? 'design_job_refit_failed' : 'design_job_create_failed', {
         design_id: selectedDesign.id,
         status_code: responseStatus,
       });
@@ -331,10 +333,12 @@ function CreateGeometryJobPage() {
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <h1 className="page-title">
-              {selectedDesign ? `New ${selectedDesign.name} Job` : 'Create New Print'}
+              {refitId
+                ? `Refit ${selectedDesign?.name || 'Design'} Job`
+                : selectedDesign ? `New ${selectedDesign.name} Job` : 'Create New Print'}
             </h1>
             <Link
-              href="/design-menu"
+              href={refitId ? `/design-jobs/${refitId}` : '/design-menu'}
               className="btn-neutral px-4 py-2 text-sm"
               data-testid="back-btn"
             >
@@ -587,7 +591,7 @@ function CreateGeometryJobPage() {
 
             <div className="flex justify-end gap-4 pt-4 border-t border-[var(--border)]">
               <Link
-                href="/design-menu"
+                href={refitId ? `/design-jobs/${refitId}` : '/design-menu'}
                 className="btn-neutral px-4 py-2 text-sm"
                 data-testid="cancel-btn"
               >
@@ -599,7 +603,9 @@ function CreateGeometryJobPage() {
                 className="btn-primary px-4 py-2 text-sm"
                 data-testid="submit-btn"
               >
-                {submitting ? 'Creating Job...' : 'Create Job'}
+                {submitting
+                  ? refitId ? 'Refitting...' : 'Creating Job...'
+                  : refitId ? 'Refit and Reprocess' : 'Create Job'}
               </button>
             </div>
           </form>

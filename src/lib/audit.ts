@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 interface AuditEventParams {
@@ -6,7 +7,8 @@ interface AuditEventParams {
   actorId?: string | null;
   targetUserId?: string | null;
   organizationId?: string | null;
-  metadata?: Record<string, unknown> | null;
+  designJobId?: string | null;
+  metadata?: Prisma.InputJsonObject;
 }
 
 export async function writeAuditEvent(params: AuditEventParams): Promise<void> {
@@ -17,6 +19,7 @@ export async function writeAuditEvent(params: AuditEventParams): Promise<void> {
       actorId: params.actorId ?? undefined,
       targetUserId: params.targetUserId ?? undefined,
       organizationId: params.organizationId ?? undefined,
+      designJobId: params.designJobId ?? undefined,
       metadata: params.metadata ?? undefined,
     },
   });

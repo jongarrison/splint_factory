@@ -249,6 +249,7 @@ export async function PUT(
         channel: 'PRINTING',
         actorId: session.user.id,
         organizationId: existingEntry.designJob.owningOrganizationId,
+        designJobId: existingEntry.designJobId,
         metadata: {
           printJobId: id,
           designJobId: existingEntry.designJobId,

@@ -21,6 +21,7 @@ interface GeometryJob {
   design: {
     name: string;
     algorithmName: string;
+    category: 'splint' | 'tool';
   };
   creator: {
     name: string;
@@ -301,14 +302,16 @@ export default function GeometryJobsPage() {
                         >
                           View
                         </Link>
-                        <Link
-                          href={`/design-jobs/new?template=${job.id}`}
-                          className="text-link-alt"
-                          title="Create new job with same settings"
-                          data-testid="copy-job-link"
-                        >
-                          Copy
-                        </Link>
+                        {job.processCompletedAt && job.design.category === 'splint' && (
+                          <Link
+                            href={`/design-jobs/new?refit=${job.id}`}
+                            className="text-link-alt mr-4"
+                            title="Update inputs and reprocess this design job"
+                            data-testid="refit-job-link"
+                          >
+                            Refit
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -234,7 +234,11 @@ export async function POST(request: NextRequest) {
       }
 
       const created = await tx.printJob.create({
-        data: { designJobId },
+        data: {
+          designJobId,
+          designRevision: geometryJob.revision,
+          inputParametersSnapshot: geometryJob.inputParameters,
+        },
         include: { designJob: true }
       });
 

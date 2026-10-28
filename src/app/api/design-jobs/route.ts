@@ -35,6 +35,7 @@ export async function GET() {
       select: {
         // Only fields actually used in the list view
         id: true,
+        designId: true,
         createdAt: true,
         jobLabel: true,
         objectId: true,
@@ -72,7 +73,13 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json(geometryJobs);
+    return NextResponse.json(geometryJobs.map(job => ({
+      ...job,
+      design: {
+        ...job.design,
+        category: getDesignById(job.designId)?.category ?? 'splint',
+      },
+    })));
   } catch (error) {
     console.error('Error fetching geometry jobs:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -194,6 +201,7 @@ export async function POST(request: NextRequest) {
       channel: 'PROCESSING',
       actorId: session.user.id,
       organizationId: user.organizationId,
+      designJobId: geometryJob.id,
       metadata: {
         designJobId: geometryJob.id,
         objectId: geometryJob.objectId,

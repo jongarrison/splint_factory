@@ -173,6 +173,7 @@ model DesignJob {
   owningOrganizationId  String
   createdAt             DateTime      @default(now())
   inputParameters       String
+  revision              Int           @default(1)
   processStartedAt      DateTime?
   processCompletedAt    DateTime?
   isProcessSuccessful   Boolean       @default(false)
@@ -199,6 +200,7 @@ model DesignJob {
   creator               User          @relation("CreatedDesignJobs", fields: [creatorId], references: [id])
   design                Design        @relation("DesignJobs", fields: [designId], references: [id])
   printJobs             PrintJob[]
+  auditEvents           AuditEvent[]
 
   @@map("GeometryProcessingQueue")
 }
@@ -206,6 +208,9 @@ model DesignJob {
 model PrintJob {
   id                  String      @id @default(cuid())
   designJobId         String
+  designRevision      Int         @default(1)
+  inputParametersSnapshot String?
+  printPreparationStartedAt DateTime?
   printStartedAt      DateTime?
   printCompletedAt    DateTime?
   isPrintSuccessful   Boolean     @default(false)
@@ -342,15 +347,18 @@ model AuditEvent {
   actorId         String?   // user who triggered it (null for system events)
   targetUserId    String?   // user being acted upon
   organizationId  String?
+  designJobId     String?
   metadata        Json?     // flexible event-specific data
   actor           User?     @relation("AuditActor", fields: [actorId], references: [id])
   targetUser      User?     @relation("AuditTarget", fields: [targetUserId], references: [id])
+  designJob       DesignJob? @relation(fields: [designJobId], references: [id], onDelete: SetNull)
 
   @@index([eventType])
   @@index([channel])
   @@index([actorId])
   @@index([targetUserId])
   @@index([organizationId])
+  @@index([designJobId])
   @@index([timestamp])
 }
 

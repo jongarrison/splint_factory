@@ -335,8 +335,19 @@ export default function PrintQueuePage() {
       return;
     }
 
+    let preparationClaimed = false;
+    let printStarted = false;
     try {
       setPrintingJobId(entry.id);
+
+      const prepareResponse = await fetch(`/api/print-queue/${entry.id}/prepare`, {
+        method: 'POST',
+      });
+      if (!prepareResponse.ok) {
+        const prepareError = await prepareResponse.json();
+        throw new Error(prepareError.error || 'Print job is unavailable');
+      }
+      preparationClaimed = true;
 
       const printQueueId = entry.id;
       const geometryJobId = entry.designJob.id;
@@ -357,12 +368,16 @@ export default function PrintQueuePage() {
       if (!result.success) {
         throw new Error(result.error || 'Print failed');
       }
+      printStarted = true;
 
       // Refresh so the page reflects the printStartedAt the client just wrote
       await refreshPrintQueue();
 
       showNotification(`Print started: ${entry.designJob.design.name}`, 'success', 5000);
     } catch (err) {
+      if (preparationClaimed && !printStarted) {
+        await fetch(`/api/print-queue/${entry.id}/prepare`, { method: 'DELETE' }).catch(() => {});
+      }
       // No auto-dismiss on error — operator must see and acknowledge this
       showNotification(
         `Print failed: ${err instanceof Error ? err.message : 'Unknown error'}`,

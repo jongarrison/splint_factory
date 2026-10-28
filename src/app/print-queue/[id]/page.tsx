@@ -15,6 +15,8 @@ import { formatDate } from '@/lib/formatDate';
 
 interface PrintQueueEntry {
   id: string;
+  designRevision: number;
+  inputParametersSnapshot?: string | null;
   meshFileName?: string;
   printFileName?: string;
   printStartedAt?: string;
@@ -30,6 +32,7 @@ interface PrintQueueEntry {
   photos?: Array<{ id: string; photoUrl: string; progress: number; capturedAt: string }>;
   designJob: {
     id: string;
+    revision: number;
     objectId?: string;
     createdAt: string;
     jobLabel?: string;
@@ -242,9 +245,20 @@ export default function PrintQueueDetailPage({
       return;
     }
 
+    let preparationClaimed = false;
+    let printStarted = false;
     try {
       setPrintingJobId(entry.id);
       setError(null);
+
+      const prepareResponse = await fetch(`/api/print-queue/${entry.id}/prepare`, {
+        method: 'POST',
+      });
+      if (!prepareResponse.ok) {
+        const prepareError = await prepareResponse.json();
+        throw new Error(prepareError.error || 'Print job is unavailable');
+      }
+      preparationClaimed = true;
 
       // Get the print queue ID and geometry processing queue ID
       const printQueueId = entry.id;
@@ -268,6 +282,7 @@ export default function PrintQueueDetailPage({
       if (!result.success) {
         throw new Error(result.error || 'Print failed');
       }
+      printStarted = true;
 
       // Update the print queue entry to mark as started
       await fetch(`/api/print-queue/${entry.id}`, {
@@ -285,6 +300,9 @@ export default function PrintQueueDetailPage({
       
       alert(`Print job "${result.jobName}" started successfully!`);
     } catch (err) {
+      if (preparationClaimed && !printStarted) {
+        await fetch(`/api/print-queue/${entry.id}/prepare`, { method: 'DELETE' }).catch(() => {});
+      }
       setError(err instanceof Error ? err.message : 'Failed to start print');
       console.error('Print error:', err);
     } finally {
@@ -495,8 +513,11 @@ export default function PrintQueueDetailPage({
     return null;
   }
 
-  const parameterData = parseParameterData(entry.designJob.inputParameters);
+  const parameterData = parseParameterData(
+    entry.inputParametersSnapshot || entry.designJob.inputParameters,
+  );
   const parameterSchema = parseParameterSchema(entry.designJob.design.inputParameterSchema);
+  const wasDesignRefit = entry.designRevision < entry.designJob.revision;
 
   return (
     <div className="page-shell" data-testid="print-queue-detail-page">
@@ -531,6 +552,16 @@ export default function PrintQueueDetailPage({
             >
               &#x2715;
             </button>
+          </div>
+        )}
+
+        {wasDesignRefit && (
+          <div className="banner-info mb-6 rounded-lg px-6 py-4" role="status" data-testid="print-design-refit-notice">
+            <p className="font-semibold">Design inputs were refit after this print</p>
+            <p className="text-sm opacity-80">
+              This print used revision {entry.designRevision}. The design job is now revision {entry.designJob.revision}.
+              Input values below show the measurements used for this print.
+            </p>
           </div>
         )}
 

@@ -78,7 +78,13 @@ export async function POST(
     });
 
     if (ownJob) {
-      const printJob = await prisma.printJob.create({ data: { designJobId: ownJob.id } });
+      const printJob = await prisma.printJob.create({
+        data: {
+          designJobId: ownJob.id,
+          designRevision: ownJob.revision,
+          inputParametersSnapshot: ownJob.inputParameters,
+        },
+      });
       return NextResponse.json({ mode: 'print', printJobId: printJob.id }, { status: 201 });
     }
 
@@ -127,6 +133,7 @@ export async function POST(
         channel: 'PROCESSING',
         actorId: session.user.id,
         organizationId: user.organizationId,
+        designJobId: cloned.id,
         metadata: {
           designJobId: cloned.id,
           objectId: cloned.objectId,
@@ -140,7 +147,13 @@ export async function POST(
         },
       });
 
-      const printJob = await prisma.printJob.create({ data: { designJobId: cloned.id } });
+      const printJob = await prisma.printJob.create({
+        data: {
+          designJobId: cloned.id,
+          designRevision: cloned.revision,
+          inputParametersSnapshot: cloned.inputParameters,
+        },
+      });
       return NextResponse.json({ mode: 'print', printJobId: printJob.id }, { status: 201 });
     }
 
@@ -166,6 +179,7 @@ export async function POST(
       channel: 'PROCESSING',
       actorId: session.user.id,
       organizationId: user.organizationId,
+      designJobId: designJob.id,
       metadata: {
         designJobId: designJob.id,
         objectId: designJob.objectId,

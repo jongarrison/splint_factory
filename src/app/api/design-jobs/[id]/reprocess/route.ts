@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getBlobStorageInstance } from '@/lib/blob-storage';
+import { logAuditEvent } from '@/lib/audit';
 
 // POST /api/design-jobs/[id]/reprocess - Reset job state so geo processor picks it up again
 export async function POST(
@@ -34,6 +35,7 @@ export async function POST(
       where: { id },
       select: {
         id: true,
+        owningOrganizationId: true,
         meshBlobPathname: true,
         printBlobPathname: true,
       },
@@ -79,6 +81,15 @@ export async function POST(
     });
 
     console.log(`Reprocess requested for design job ${id} by user ${session.user.id}`);
+
+    logAuditEvent({
+      eventType: 'DESIGN_JOB_REPROCESS_REQUESTED',
+      channel: 'PROCESSING',
+      actorId: session.user.id,
+      organizationId: existingJob.owningOrganizationId,
+      designJobId: id,
+      metadata: { revision: updatedJob.revision },
+    });
 
     return NextResponse.json({
       message: 'Job queued for reprocessing',

@@ -15,6 +15,7 @@ import { formatBytes } from '@/lib/formatBytes';
 
 interface GeometryJob {
   id: string;
+  revision: number;
   objectId?: string;
   createdAt: string;
   inputParameters: string;
@@ -31,6 +32,7 @@ interface GeometryJob {
     name: string;
     algorithmName: string;
     inputParameterSchema: string;
+    category: 'splint' | 'tool';
   };
   creator: {
     id: string;
@@ -69,6 +71,19 @@ interface InputParameterDefinition {
   InputType: string;
 }
 
+interface DesignJobEvent {
+  id: string;
+  timestamp: string;
+  eventType: string;
+  channel: string;
+  metadata: unknown;
+  actor: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
+}
+
 export default function GeometryJobDetailPage({ 
   params 
 }: { 
@@ -79,6 +94,7 @@ export default function GeometryJobDetailPage({
   const searchParams = useSearchParams();
   const highlightedPrintJobId = searchParams.get('printJobId');
   const [job, setJob] = useState<GeometryJob | null>(null);
+  const [jobEvents, setJobEvents] = useState<DesignJobEvent[]>([]);
   const [printJobs, setPrintJobs] = useState<PrintJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPrintJobs, setLoadingPrintJobs] = useState(true);
@@ -111,6 +127,7 @@ export default function GeometryJobDetailPage({
     if (id) {
       fetchJob();
       fetchPrintJobs();
+      fetchJobEvents();
     }
   }, [session, status, router, id]);
 
@@ -198,6 +215,7 @@ export default function GeometryJobDetailPage({
       if (response.ok) {
         const data = await response.json();
         setJob(data);
+        if (data.processCompletedAt) fetchJobEvents();
       }
     } catch {
       // Silently ignore polling errors
@@ -217,6 +235,15 @@ export default function GeometryJobDetailPage({
       console.error('Error fetching print jobs:', err);
     } finally {
       setLoadingPrintJobs(false);
+    }
+  };
+
+  const fetchJobEvents = async () => {
+    try {
+      const response = await fetch(`/api/design-jobs/${id}/events`);
+      if (response.ok) setJobEvents(await response.json());
+    } catch (err) {
+      console.error('Error fetching design job history:', err);
     }
   };
 
@@ -439,14 +466,26 @@ export default function GeometryJobDetailPage({
                   Debug Locally
                 </button>
               )}
-              <Link
-                href={`/design-jobs/new?template=${job.id}`}
-                className="btn-alt px-4 py-2 text-sm"
-                title="Create new job with same settings"
-                data-testid="copy-job-btn"
-              >
-                New Copy
-              </Link>
+              {session?.user?.role === 'SYSTEM_ADMIN' && (
+                <Link
+                  href={`/design-jobs/new?template=${job.id}`}
+                  className="btn-alt px-4 py-2 text-sm"
+                  title="Create an internal test job with the same settings"
+                  data-testid="copy-job-btn"
+                >
+                  New Test Variant
+                </Link>
+              )}
+              {job.processCompletedAt && job.design.category === 'splint' && (
+                <Link
+                  href={`/design-jobs/new?refit=${job.id}`}
+                  className="btn-primary px-4 py-2 text-sm"
+                  title="Update inputs and reprocess this design job"
+                  data-testid="refit-job-btn"
+                >
+                  Refit
+                </Link>
+              )}
               {isElectronClient && (
                 <Link
                   href="/print-queue"
@@ -829,6 +868,43 @@ export default function GeometryJobDetailPage({
               Developer Info
             </summary>
             <div className="space-y-6">
+
+          {/* Job History */}
+          <div className="card shadow" data-testid="design-job-history-card">
+            <div className="card-header">
+              <h2 className="text-lg font-medium text-primary">Job History</h2>
+            </div>
+            <div className="card-body">
+              {jobEvents.length === 0 ? (
+                <p className="text-sm text-muted italic">No audit events recorded for this job.</p>
+              ) : (
+                <div className="divide-y divide-[var(--border)]">
+                  {jobEvents.map(event => (
+                    <div key={event.id} className="py-3 first:pt-0 last:pb-0">
+                      <div className="flex flex-wrap justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-medium text-primary">
+                            {event.eventType.replaceAll('_', ' ')}
+                          </p>
+                          <p className="text-xs text-muted">
+                            {event.actor ? event.actor.name || event.actor.email : 'System'}
+                            {' - '}{event.channel}
+                          </p>
+                        </div>
+                        <time className="text-xs text-muted">{formatDate(event.timestamp)}</time>
+                      </div>
+                      {event.metadata != null && (
+                        <details className="mt-2">
+                          <summary className="text-xs text-link cursor-pointer">Event details</summary>
+                          <pre className="display-field mt-2">{JSON.stringify(event.metadata, null, 2)}</pre>
+                        </details>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Machine Files */}
           {job.printFileName && (

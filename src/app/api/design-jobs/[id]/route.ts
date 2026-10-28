@@ -68,6 +68,7 @@ export async function GET(
     const enrichedDesign = {
       ...geometryJob.design,
       inputParameterSchema: registryDesign ? JSON.stringify(registryDesign.inputParameters) : '[]',
+      category: registryDesign?.category ?? 'splint',
     };
 
     return NextResponse.json({ ...geometryJob, design: enrichedDesign });

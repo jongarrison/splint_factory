@@ -305,7 +305,9 @@ export async function POST(request: NextRequest) {
       if (isSuccess) {
         printQueueEntry = await tx.printJob.create({
           data: {
-            designJobId
+            designJobId,
+            designRevision: updatedGeometryJob.revision,
+            inputParametersSnapshot: updatedGeometryJob.inputParameters,
           }
         });
       }
@@ -340,6 +342,7 @@ export async function POST(request: NextRequest) {
         channel: 'PROCESSING',
         targetUserId: geometryJob.creatorId,
         organizationId: geometryJob.owningOrganizationId,
+        designJobId,
         metadata: {
           ...processingMetadata,
           error: errorMessage?.slice(0, 1000) || 'No error message provided',
@@ -355,6 +358,7 @@ export async function POST(request: NextRequest) {
         channel: 'PROCESSING',
         targetUserId: geometryJob.creatorId,
         organizationId: geometryJob.owningOrganizationId,
+        designJobId,
         metadata: { ...processingMetadata, recoveredFromFailure },
       });
 
@@ -364,6 +368,7 @@ export async function POST(request: NextRequest) {
           channel: 'PROCESSING',
           targetUserId: geometryJob.creatorId,
           organizationId: geometryJob.owningOrganizationId,
+          designJobId,
           metadata: processingMetadata,
         });
       }
