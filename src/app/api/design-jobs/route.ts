@@ -6,8 +6,8 @@ import { logAuditEvent } from '@/lib/audit';
 import { getDesignById } from '@/designs/registry';
 import { validateDesignInput } from '@/designs/validate-input';
 
-// GET /api/design-jobs - List geometry processing queue entries for user's organization
-export async function GET() {
+// GET /api/design-jobs - List geometry processing queue entries in the authorized organization scope
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     
@@ -24,14 +24,27 @@ export async function GET() {
       }
     });
 
-    if (!user?.organizationId) {
+    if (!user || (user.role !== 'SYSTEM_ADMIN' && !user.organizationId)) {
       return NextResponse.json({ error: 'User must be part of an organization' }, { status: 403 });
     }
 
+    const requestedOrganizationId = request.nextUrl.searchParams.get('organizationId');
+    if (
+      user.role !== 'SYSTEM_ADMIN' &&
+      requestedOrganizationId &&
+      requestedOrganizationId !== user.organizationId
+    ) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    const organizationId = user.role === 'SYSTEM_ADMIN'
+      ? requestedOrganizationId || user.organizationId
+      : user.organizationId;
+
     const geometryJobs = await prisma.designJob.findMany({
-      where: {
-        owningOrganizationId: user.organizationId
-      },
+      where: organizationId && organizationId !== 'all'
+        ? { owningOrganizationId: organizationId }
+        : undefined,
       select: {
         // Only fields actually used in the list view
         id: true,
@@ -57,6 +70,12 @@ export async function GET() {
           select: {
             name: true
             // Exclude: id, email (not displayed in list)
+          }
+        },
+        owningOrganization: {
+          select: {
+            id: true,
+            name: true
           }
         },
         printJobs: {

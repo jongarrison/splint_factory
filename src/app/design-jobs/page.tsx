@@ -10,6 +10,7 @@ import { formatDate } from '@/lib/formatDate';
 
 interface GeometryJob {
   id: string;
+  designId: string;
   objectId?: string;
   createdAt: string;
   jobLabel?: string;
@@ -24,6 +25,10 @@ interface GeometryJob {
     category: 'splint' | 'tool';
   };
   creator: {
+    name: string | null;
+  };
+  owningOrganization: {
+    id: string;
     name: string;
   };
   printJobs: Array<{
@@ -33,12 +38,79 @@ interface GeometryJob {
   }>;
 }
 
+interface FilterOptions {
+  isSystemAdmin: boolean;
+  defaultOrganizationId: string | null;
+  organizations: Array<{ id: string; name: string }>;
+  designs: Array<{ id: string; name: string }>;
+}
+
+const STATUS_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'processing', label: 'Processing' },
+  { value: 'generated', label: 'Generated' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'disabled', label: 'Disabled' },
+  { value: 'awaiting-review', label: 'Awaiting Review' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'reject-print', label: 'Rejected - Print' },
+  { value: 'reject-design', label: 'Rejected - Design' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'archived', label: 'Archived' },
+] as const;
+
+const ALL_STATUS_VALUES = STATUS_OPTIONS.map((statusOption) => statusOption.value);
+
+function getJobStatuses(job: GeometryJob) {
+  const statuses = new Set<string>();
+  if (!job.isEnabled) statuses.add('disabled');
+  else if (job.processCompletedAt && job.isProcessSuccessful) statuses.add('generated');
+  else if (job.processCompletedAt) statuses.add('failed');
+  else if (job.processStartedAt) statuses.add('processing');
+  else statuses.add('pending');
+
+  const printStatuses = new Set(job.printJobs.map((printJob) => printJob.printAcceptance));
+  if (printStatuses.has('ACCEPTED')) statuses.add('accepted');
+  if (printStatuses.has('REJECT_PRINT')) statuses.add('reject-print');
+  if (printStatuses.has('REJECT_DESIGN')) statuses.add('reject-design');
+  if (printStatuses.has('ARCHIVED')) statuses.add('archived');
+  if (printStatuses.has('REJECTED')) statuses.add('rejected');
+  if (job.printJobs.some((printJob) => printJob.printAcceptance === null && printJob.printCompletedAt)) {
+    statuses.add('awaiting-review');
+  }
+  return statuses;
+}
+
 export default function GeometryJobsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [searchObjectId, setSearchObjectId] = useState('');
   const [submittedObjectId, setSubmittedObjectId] = useState('');
-  const [searchError, setSearchError] = useState('');
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
+  const [filterOptionsError, setFilterOptionsError] = useState('');
+  const [creatorName, setCreatorName] = useState('');
+  const [appliedCreatorName, setAppliedCreatorName] = useState('');
+  const [selectedDesignId, setSelectedDesignId] = useState('');
+  const [appliedDesignId, setAppliedDesignId] = useState('');
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<string>>(
+    () => new Set(ALL_STATUS_VALUES)
+  );
+  const [appliedStatuses, setAppliedStatuses] = useState<Set<string>>(
+    () => new Set(ALL_STATUS_VALUES)
+  );
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [appliedCreatedFrom, setAppliedCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
+  const [appliedCreatedTo, setAppliedCreatedTo] = useState('');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [appliedSortOrder, setAppliedSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+  const isSystemAdmin = session?.user?.role === 'SYSTEM_ADMIN';
+  const organizationFilterValue = selectedOrganizationId || session?.user?.organizationId || '';
+  const jobsEndpoint = isSystemAdmin && organizationFilterValue
+    ? `/api/design-jobs?organizationId=${encodeURIComponent(organizationFilterValue)}`
+    : '/api/design-jobs';
   
   // Use smart polling hook for real-time updates
   const { 
@@ -48,7 +120,7 @@ export default function GeometryJobsPage() {
     lastUpdate,
     refresh: refreshGeometryJobs,
     isFetching
-  } = useSmartPolling<GeometryJob[]>('/api/design-jobs', {
+  } = useSmartPolling<GeometryJob[]>(jobsEndpoint, {
     enabled: !!session?.user
   });
 
@@ -61,22 +133,107 @@ export default function GeometryJobsPage() {
     }
   }, [session, status, router]);
 
-  const handleSearchByObjectId = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearchError('');
+  useEffect(() => {
+    if (!session?.user) return;
 
-    const normalizedObjectId = searchObjectId.trim().toUpperCase();
-    if (!normalizedObjectId) {
-      setSearchError('Please enter an Object ID');
-      return;
-    }
+    const abortController = new AbortController();
+    const organizationId = isSystemAdmin
+      ? organizationFilterValue
+      : session.user.organizationId;
+    const query = organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : '';
 
-    setSubmittedObjectId(normalizedObjectId);
+    fetch(`/api/design-jobs/filter-options${query}`, { signal: abortController.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Failed to load filter options');
+        return response.json() as Promise<FilterOptions>;
+      })
+      .then((options) => {
+        setFilterOptions(options);
+        setFilterOptionsError('');
+        if (isSystemAdmin && !selectedOrganizationId && options.defaultOrganizationId) {
+          setSelectedOrganizationId(options.defaultOrganizationId);
+        }
+        setSelectedDesignId((currentDesignId) =>
+          currentDesignId && !options.designs.some((design) => design.id === currentDesignId)
+            ? ''
+            : currentDesignId
+        );
+        setAppliedDesignId((currentDesignId) =>
+          currentDesignId && !options.designs.some((design) => design.id === currentDesignId)
+            ? ''
+            : currentDesignId
+        );
+      })
+      .catch((fetchError) => {
+        if (fetchError instanceof DOMException && fetchError.name === 'AbortError') return;
+        setFilterOptionsError(fetchError instanceof Error ? fetchError.message : 'Failed to load filter options');
+      });
+
+    return () => abortController.abort();
+  }, [session, isSystemAdmin, selectedOrganizationId, organizationFilterValue]);
+
+  const applyFilters = (event: React.FormEvent) => {
+    event.preventDefault();
+    setSubmittedObjectId(searchObjectId.trim().toUpperCase());
+    setAppliedCreatorName(creatorName.trim());
+    setAppliedDesignId(selectedDesignId);
+    setAppliedStatuses(new Set(selectedStatuses));
+    setAppliedCreatedFrom(createdFrom);
+    setAppliedCreatedTo(createdTo);
+    setAppliedSortOrder(sortOrder);
   };
 
-  const displayedGeometryJobs = submittedObjectId
-    ? geometryJobs?.filter(job => job.objectId?.toUpperCase().includes(submittedObjectId))
-    : geometryJobs;
+  const normalizedCreatorName = appliedCreatorName.toLocaleLowerCase();
+  const displayedGeometryJobs = geometryJobs
+    ?.filter((job) => !submittedObjectId || job.objectId?.toUpperCase().includes(submittedObjectId))
+    .filter((job) => !normalizedCreatorName || job.creator.name?.toLocaleLowerCase().includes(normalizedCreatorName))
+    .filter((job) => !appliedDesignId || job.designId === appliedDesignId)
+    .filter((job) => {
+      const jobStatuses = getJobStatuses(job);
+      return [...appliedStatuses].some((selectedStatus) => jobStatuses.has(selectedStatus));
+    })
+    .filter((job) => !appliedCreatedFrom || new Date(job.createdAt) >= new Date(`${appliedCreatedFrom}T00:00:00`))
+    .filter((job) => !appliedCreatedTo || new Date(job.createdAt) <= new Date(`${appliedCreatedTo}T23:59:59.999`))
+    .sort((firstJob, secondJob) => {
+      const difference = new Date(secondJob.createdAt).getTime() - new Date(firstJob.createdAt).getTime();
+      return appliedSortOrder === 'newest' ? difference : -difference;
+    });
+
+  const activeFilterCount = [
+    Boolean(submittedObjectId),
+    Boolean(normalizedCreatorName),
+    Boolean(appliedDesignId),
+    appliedStatuses.size !== ALL_STATUS_VALUES.length,
+    Boolean(appliedCreatedFrom),
+    Boolean(appliedCreatedTo),
+    appliedSortOrder !== 'newest',
+  ].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setSearchObjectId('');
+    setSubmittedObjectId('');
+    setCreatorName('');
+    setAppliedCreatorName('');
+    setSelectedDesignId('');
+    setAppliedDesignId('');
+    setSelectedStatuses(new Set(ALL_STATUS_VALUES));
+    setAppliedStatuses(new Set(ALL_STATUS_VALUES));
+    setCreatedFrom('');
+    setAppliedCreatedFrom('');
+    setCreatedTo('');
+    setAppliedCreatedTo('');
+    setSortOrder('newest');
+    setAppliedSortOrder('newest');
+  };
+
+  const toggleStatus = (statusValue: string) => {
+    setSelectedStatuses((currentStatuses) => {
+      const nextStatuses = new Set(currentStatuses);
+      if (nextStatuses.has(statusValue)) nextStatuses.delete(statusValue);
+      else nextStatuses.add(statusValue);
+      return nextStatuses;
+    });
+  };
 
   const getStatusBadge = (job: GeometryJob) => {
     const processingBadge = (() => {
@@ -142,43 +299,152 @@ export default function GeometryJobsPage() {
         <div className="mb-8">
           <h1 className="page-title">Design Generation Jobs</h1>
 
-          {/* ObjectID Search */}
-          <form onSubmit={handleSearchByObjectId} className="mt-4 flex gap-2 max-w-md" data-testid="object-id-search-form">
-            <div className="flex-1">
-              <input
-                type="text"
-                value={searchObjectId}
-                onChange={(e) => {
-                  setSearchObjectId(e.target.value.toUpperCase());
-                  setSearchError('');
-                }}
-                placeholder="Search by Object ID..."
-                className="input-field uppercase shadow-sm"
-                data-testid="object-id-search-input"
-              />
+          <form onSubmit={applyFilters} data-testid="design-jobs-filter-form">
+          <div className="mt-4 flex flex-wrap items-end gap-3">
+            <div className="flex gap-2 w-full sm:w-auto sm:min-w-96">
+              <div className="flex-1">
+                <label htmlFor="object-id-filter" className="block text-xs text-muted mb-1">Object ID</label>
+                <input
+                  id="object-id-filter"
+                  type="text"
+                  value={searchObjectId}
+                  onChange={(e) => setSearchObjectId(e.target.value.toUpperCase())}
+                  placeholder="Partial Object ID"
+                  className="input-field uppercase shadow-sm"
+                  data-testid="object-id-search-input"
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn-primary px-4 py-2 text-sm self-end"
+                data-testid="apply-filters-btn"
+              >
+                Apply filters
+              </button>
             </div>
-            <button
-              type="submit"
-              className="btn-primary px-4 py-2 text-sm"
-              data-testid="object-id-search-btn"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              Search
-            </button>
-          </form>
 
-          {searchError && (
-            <div className="mt-2 text-sm text-error" data-testid="object-id-search-error">
-              {searchError}
+            {isSystemAdmin && (
+              <div className="w-full sm:w-64" data-testid="organization-filter-container">
+                <label htmlFor="organization-filter" className="block text-xs text-muted mb-1">Organization</label>
+                <select
+                  id="organization-filter"
+                  value={organizationFilterValue}
+                  onChange={(event) => {
+                    setSelectedOrganizationId(event.target.value);
+                    setSelectedDesignId('');
+                    setAppliedDesignId('');
+                  }}
+                  className="input-field"
+                  data-testid="organization-filter"
+                >
+                  <option value="all">ALL ORGS</option>
+                  {filterOptions?.organizations.map((organization) => (
+                    <option key={organization.id} value={organization.id}>{organization.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+          </div>
+
+          <details className="group mt-3">
+            <summary
+              className="flex w-fit items-center cursor-pointer px-1 py-2 text-sm font-medium text-muted hover:text-[var(--text-secondary)]"
+              data-testid="toggle-filters-btn"
+            >
+              <span className="mr-2 transition-transform group-open:rotate-90">&#9654;</span>
+              <span data-testid="filters-label">
+                Filters{activeFilterCount ? ` (${activeFilterCount})` : ''}
+              </span>
+            </summary>
+            <div className="mt-1 border border-[var(--border-color)] bg-[var(--surface-secondary)] p-4" data-testid="expanded-filters">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                <div>
+                  <label htmlFor="creator-filter" className="block text-xs text-muted mb-1">Submitted by</label>
+                  <input
+                    id="creator-filter"
+                    type="text"
+                    value={creatorName}
+                    onChange={(event) => setCreatorName(event.target.value)}
+                    placeholder="Partial name"
+                    className="input-field"
+                    data-testid="creator-filter"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="design-filter" className="block text-xs text-muted mb-1">Design type</label>
+                  <select
+                    id="design-filter"
+                    value={selectedDesignId}
+                    onChange={(event) => setSelectedDesignId(event.target.value)}
+                    className="input-field"
+                    data-testid="design-filter"
+                  >
+                    <option value="">All design types</option>
+                    {filterOptions?.designs.map((design) => (
+                      <option key={design.id} value={design.id}>{design.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <details className="relative" data-testid="status-filter">
+                  <summary className="input-field cursor-pointer list-none">
+                    {selectedStatuses.size === ALL_STATUS_VALUES.length
+                      ? 'All statuses'
+                      : `Status: ${selectedStatuses.size} selected`}
+                  </summary>
+                  <div className="absolute z-20 mt-1 w-64 border border-[var(--border-color)] bg-[var(--surface)] p-3 shadow-lg">
+                    <div className="flex justify-between mb-2 text-xs">
+                      <button type="button" className="text-link" onClick={() => setSelectedStatuses(new Set(ALL_STATUS_VALUES))}>Select all</button>
+                      <button type="button" className="text-link" onClick={() => setSelectedStatuses(new Set())}>Clear</button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {STATUS_OPTIONS.map((statusOption) => (
+                        <label key={statusOption.value} className="flex items-center gap-2 text-sm text-primary">
+                          <input
+                            type="checkbox"
+                            checked={selectedStatuses.has(statusOption.value)}
+                            onChange={() => toggleStatus(statusOption.value)}
+                            data-status-value={statusOption.value}
+                          />
+                          {statusOption.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </details>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label htmlFor="created-from-filter" className="block text-xs text-muted mb-1">Created from</label>
+                    <input id="created-from-filter" type="date" value={createdFrom} onChange={(event) => setCreatedFrom(event.target.value)} className="input-field" data-testid="created-from-filter" />
+                  </div>
+                  <div>
+                    <label htmlFor="created-to-filter" className="block text-xs text-muted mb-1">Created to</label>
+                    <input id="created-to-filter" type="date" value={createdTo} onChange={(event) => setCreatedTo(event.target.value)} className="input-field" data-testid="created-to-filter" />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="sort-order" className="block text-xs text-muted mb-1">Sort</label>
+                  <select id="sort-order" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as 'newest' | 'oldest')} className="input-field" data-testid="sort-order">
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button type="button" className="text-link text-sm" onClick={clearFilters} data-testid="clear-filters-btn">Clear filters</button>
+              </div>
             </div>
-          )}
+          </details>
+          </form>
         </div>
 
-        {error && (
+        {(error || filterOptionsError) && (
           <div className="mb-6 alert-error" role="alert" data-testid="design-jobs-error">
-            {error}
+            {error || filterOptionsError}
           </div>
         )}
 
@@ -225,9 +491,9 @@ export default function GeometryJobsPage() {
           <div className="overflow-x-auto">
             {!displayedGeometryJobs || displayedGeometryJobs.length === 0 ? (
               <div className="text-center py-12" data-testid="design-jobs-empty">
-                {submittedObjectId ? (
+                {geometryJobs && geometryJobs.length > 0 ? (
                   <div className="text-muted text-lg">
-                    No design jobs found matching Object ID: {submittedObjectId}
+                    No design jobs match the selected filters.
                   </div>
                 ) : (
                   <>
@@ -262,6 +528,14 @@ export default function GeometryJobsPage() {
                       onClick={() => router.push(`/design-jobs/${job.id}`)}
                       data-testid="design-job-row"
                       data-job-id={job.id}
+                      data-object-id={job.objectId || ''}
+                      data-creator-name={job.creator.name || ''}
+                      data-design-id={job.designId}
+                      data-design-name={job.design.name}
+                      data-status={Array.from(getJobStatuses(job)).join(',')}
+                      data-created-at={job.createdAt}
+                      data-organization-id={job.owningOrganization.id}
+                      data-organization-name={job.owningOrganization.name}
                     >
                       <td>
                         <div className="text-xs text-muted">Object:</div>
@@ -289,7 +563,10 @@ export default function GeometryJobsPage() {
                       </td>
                       <td className="whitespace-nowrap text-muted">
                         <div>{formatDate(job.createdAt)}</div>
-                        <div className="text-xs">by {job.creator.name}</div>
+                        <div className="text-xs">by {job.creator.name || 'Unknown'}</div>
+                        {isSystemAdmin && selectedOrganizationId === 'all' && (
+                          <div className="text-xs" data-testid="job-organization">{job.owningOrganization.name}</div>
+                        )}
                       </td>
                       <td
                         className="whitespace-nowrap text-right"
