@@ -224,13 +224,25 @@ model PrintJob {
   printedByUserId     String?
   acceptedByUserId    String?
   printerSerial       String?
+  outcome             PrintOutcome?
+  failureEvidence     Json?
+  replacementForPrintJobId String? @unique
   designJob           DesignJob   @relation(fields: [designJobId], references: [id])
   printedBy           User?       @relation("PrintOperator", fields: [printedByUserId], references: [id])
   acceptedBy          User?       @relation("PrintReviewer", fields: [acceptedByUserId], references: [id])
   printer             Printer?    @relation(fields: [printerSerial], references: [serial])
   photos              PrintJobPhoto[]
+  replacementFor      PrintJob?    @relation("PrintReplacement", fields: [replacementForPrintJobId], references: [id])
+  replacement         PrintJob?    @relation("PrintReplacement")
 
   @@map("PrintQueue")
+}
+
+enum PrintOutcome {
+  SUCCEEDED
+  FAILED
+  OPERATOR_CANCELLED
+  AMBIGUOUS_STOP
 }
 
 model PrintJobPhoto {
@@ -341,6 +353,7 @@ model ClientAuthChallenge {
 
 model AuditEvent {
   id              String    @id @default(cuid())
+  eventKey        String?   @unique
   timestamp       DateTime  @default(now())
   eventType       String    // e.g. "USER_REGISTERED", "EMAIL_SENT", "EMAIL_VERIFIED"
   channel         String    // e.g. "AUTH", "EMAIL", "SYSTEM", "BILLING", "PRINT"
@@ -348,6 +361,9 @@ model AuditEvent {
   targetUserId    String?   // user being acted upon
   organizationId  String?
   designJobId     String?
+  clientDeviceId  String?
+  printerSerial   String?
+  printJobId      String?
   metadata        Json?     // flexible event-specific data
   actor           User?     @relation("AuditActor", fields: [actorId], references: [id])
   targetUser      User?     @relation("AuditTarget", fields: [targetUserId], references: [id])
@@ -359,6 +375,9 @@ model AuditEvent {
   @@index([targetUserId])
   @@index([organizationId])
   @@index([designJobId])
+  @@index([clientDeviceId])
+  @@index([printerSerial])
+  @@index([printJobId])
   @@index([timestamp])
 }
 

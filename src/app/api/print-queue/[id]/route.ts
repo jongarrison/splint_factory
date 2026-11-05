@@ -193,6 +193,9 @@ export async function PUT(
     
     if (isPrintSuccessful !== undefined) {
       updateData.isPrintSuccessful = isPrintSuccessful;
+      if (isPrintSuccessful === true) {
+        updateData.outcome = 'SUCCEEDED';
+      }
     }
     
     if (printNote !== undefined) {

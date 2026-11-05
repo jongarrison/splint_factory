@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 const PREPARATION_LEASE_MS = 10 * 60 * 1000;
 
@@ -27,7 +28,7 @@ async function authorizedPrintJob(userId: string, printJobId: string) {
 }
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
@@ -40,29 +41,59 @@ export async function POST(
     return NextResponse.json({ error: 'Print job not found or access denied' }, { status: 404 });
   }
 
-  const preparationCutoff = new Date(Date.now() - PREPARATION_LEASE_MS);
-  const claimed = await prisma.printJob.updateMany({
-    where: {
-      id,
-      isEnabled: true,
-      printStartedAt: null,
-      printCompletedAt: null,
-      OR: [
-        { printPreparationStartedAt: null },
-        { printPreparationStartedAt: { lt: preparationCutoff } },
-      ],
-    },
-    data: { printPreparationStartedAt: new Date() },
-  });
-
-  if (claimed.count === 0) {
-    return NextResponse.json(
-      { error: 'Print job is unavailable or already being prepared' },
-      { status: 409 },
-    );
+  const body = await request.json().catch(() => null);
+  const printerSerial = body?.printerSerial;
+  if (!printerSerial || typeof printerSerial !== 'string') {
+    return NextResponse.json({ error: 'Printer serial is required' }, { status: 400 });
   }
 
-  return NextResponse.json({ success: true });
+  const preparationCutoff = new Date(Date.now() - PREPARATION_LEASE_MS);
+  try {
+    const claimed = await prisma.$transaction(async (tx) => {
+      const competing = await tx.printJob.findFirst({
+        where: {
+          id: { not: id },
+          printerSerial,
+          isEnabled: true,
+          printCompletedAt: null,
+          OR: [
+            { printStartedAt: { not: null } },
+            { printPreparationStartedAt: { gte: preparationCutoff } },
+          ],
+        },
+        select: { id: true },
+      });
+      if (competing) return { count: 0 };
+
+      return tx.printJob.updateMany({
+        where: {
+          id,
+          isEnabled: true,
+          printStartedAt: null,
+          printCompletedAt: null,
+          OR: [
+            { printPreparationStartedAt: null },
+            { printPreparationStartedAt: { lt: preparationCutoff } },
+          ],
+        },
+        data: { printPreparationStartedAt: new Date(), printerSerial },
+      });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+    if (claimed.count === 0) {
+      return NextResponse.json(
+        { error: 'Printer or print job is unavailable or already being prepared' },
+        { status: 409 },
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
+      return NextResponse.json({ error: 'Printer is already being prepared' }, { status: 409 });
+    }
+    throw error;
+  }
 }
 
 export async function DELETE(

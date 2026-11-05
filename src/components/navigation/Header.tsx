@@ -169,6 +169,12 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                     >
                       Print Queue
                     </Link>
+                    <Link
+                      href="/printer-help"
+                      className="text-secondary hover:text-[var(--text-primary)] px-3 py-2 text-sm font-medium"
+                    >
+                      Printer Help
+                    </Link>
                   </>
                 ) : (
                   <>
@@ -251,6 +257,15 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                 className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                               >
                                 Print Queue
+                              </Link>
+
+                              {/* Printer Help - All roles */}
+                              <Link
+                                href="/printer-help"
+                                onClick={() => setShowAdminDropdown(false)}
+                                className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                              >
+                                Printer Help
                               </Link>
                               {/* System Status - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (

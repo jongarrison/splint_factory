@@ -251,8 +251,14 @@ export default function PrintQueueDetailPage({
       setPrintingJobId(entry.id);
       setError(null);
 
+      const printerConfig = await window.electronAPI.loadPrinterConfig();
+      if (!printerConfig.success || !printerConfig.config?.serial) {
+        throw new Error(printerConfig.error || 'Printer configuration is unavailable');
+      }
       const prepareResponse = await fetch(`/api/print-queue/${entry.id}/prepare`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ printerSerial: printerConfig.config.serial }),
       });
       if (!prepareResponse.ok) {
         const prepareError = await prepareResponse.json();

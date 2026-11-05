@@ -57,6 +57,9 @@ export async function GET(request: NextRequest) {
         printAcceptance: true,
         progress: true,
         progressLastReportAt: true,
+        outcome: true,
+        replacementForPrintJobId: true,
+        replacement: { select: { id: true } },
         // Nested geometry processing queue - ONLY fields needed for list view
         designJob: {
           select: {

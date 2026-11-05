@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -21,6 +21,14 @@ interface AuditEvent {
   actor: AuditPerson | null
   targetUser: AuditPerson | null
   organizationId: string | null
+  designJobId: string | null
+  clientDeviceId: string | null
+  printerSerial: string | null
+  printJobId: string | null
+  organization: { id: string; name: string | null } | null
+  designJob: { id: string; objectId: string | null } | null
+  clientDevice: { id: string; name: string | null } | null
+  printer: { serial: string; name: string | null; model: string | null } | null
 }
 
 interface AuditResponse {
@@ -50,6 +58,7 @@ export default function AuditLogPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filtersReady, setFiltersReady] = useState(false)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search)
@@ -89,6 +98,15 @@ export default function AuditLogPage() {
   }, [channel, eventType, filtersReady, page, router, session, status])
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1
+
+  const toggleExpanded = (id: string) => {
+    setExpandedIds(current => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   return (
     <div className="page-shell" data-testid="admin-audit-log-page">
@@ -156,29 +174,105 @@ export default function AuditLogPage() {
                 {!loading && data?.events.length === 0 && (
                   <tr><td colSpan={6} className="px-4 py-8 text-center text-muted">No matching audit events.</td></tr>
                 )}
-                {data?.events.map(event => (
-                  <tr key={event.id}>
-                    <td className="px-4 py-3 text-sm whitespace-nowrap text-muted">{formatDate(event.timestamp)}</td>
-                    <td className="px-4 py-3 text-sm">{event.channel}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-primary whitespace-nowrap">
-                      {event.eventType.replaceAll('_', ' ')}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {event.actor ? <Link href={`/admin/users/${event.actor.id}`} className="text-link hover:underline">{personLabel(event.actor)}</Link> : <span className="text-muted">System</span>}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {event.targetUser ? <Link href={`/admin/users/${event.targetUser.id}`} className="text-link hover:underline">{personLabel(event.targetUser)}</Link> : <span className="text-muted">None</span>}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {event.metadata ? (
-                        <details>
-                          <summary className="text-link cursor-pointer">View</summary>
-                          <pre className="mt-2 max-w-md whitespace-pre-wrap break-words text-xs text-secondary">{JSON.stringify(event.metadata, null, 2)}</pre>
-                        </details>
-                      ) : <span className="text-muted">None</span>}
-                    </td>
-                  </tr>
-                ))}
+                {data?.events.map(event => {
+                  const expanded = expandedIds.has(event.id)
+                  return (
+                    <Fragment key={event.id}>
+                      <tr>
+                        <td className="px-4 py-3 text-sm whitespace-nowrap text-muted">{formatDate(event.timestamp)}</td>
+                        <td className="px-4 py-3 text-sm">{event.channel}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-primary whitespace-nowrap">
+                          {event.eventType.replaceAll('_', ' ')}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {event.actor ? <Link href={`/admin/users/${event.actor.id}`} className="text-link hover:underline">{personLabel(event.actor)}</Link> : <span className="text-muted">System</span>}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {event.targetUser ? <Link href={`/admin/users/${event.targetUser.id}`} className="text-link hover:underline">{personLabel(event.targetUser)}</Link> : <span className="text-muted">None</span>}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <button
+                            type="button"
+                            onClick={() => toggleExpanded(event.id)}
+                            className="text-link hover:underline"
+                            aria-expanded={expanded}
+                          >
+                            {expanded ? 'Hide' : 'View'}
+                          </button>
+                        </td>
+                      </tr>
+                      {expanded && (
+                        <tr>
+                          <td colSpan={6} className="border-t border-[var(--border)] bg-[var(--surface-secondary)] px-6 py-5">
+                            <div className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                              <div>
+                                <div className="text-xs font-medium uppercase text-muted">Object</div>
+                                {event.designJob ? (
+                                  <Link href={`/design-jobs/${event.designJob.id}`} className="text-link hover:underline">
+                                    {event.designJob.objectId || 'Object ID unavailable'}
+                                  </Link>
+                                ) : <div className="text-secondary">None</div>}
+                                {event.designJobId && <div className="break-all font-mono text-xs text-muted">{event.designJobId}</div>}
+                              </div>
+                              <div>
+                                <div className="text-xs font-medium uppercase text-muted">Organization</div>
+                                {event.organization ? (
+                                  <>
+                                    <Link href={`/admin/organizations/${event.organization.id}`} className="text-link hover:underline">
+                                      {event.organization.name || 'Unknown organization'}
+                                    </Link>
+                                    <div className="break-all font-mono text-xs text-muted">{event.organization.id}</div>
+                                  </>
+                                ) : <div className="text-secondary">None</div>}
+                              </div>
+                              <div>
+                                <div className="text-xs font-medium uppercase text-muted">Splintbot</div>
+                                {event.clientDevice ? (
+                                  <>
+                                    <div className="text-primary">{event.clientDevice.name || 'Unknown Splintbot'}</div>
+                                    <div className="break-all font-mono text-xs text-muted">{event.clientDevice.id}</div>
+                                  </>
+                                ) : <div className="text-secondary">None</div>}
+                              </div>
+                              <div>
+                                <div className="text-xs font-medium uppercase text-muted">Printer</div>
+                                {event.printer ? (
+                                  <>
+                                    <div className="text-primary">
+                                      {event.printer.name || event.printer.model || 'Unknown printer'}
+                                      {event.printer.name && event.printer.model ? ` (${event.printer.model})` : ''}
+                                    </div>
+                                    <div className="break-all font-mono text-xs text-muted">{event.printer.serial}</div>
+                                  </>
+                                ) : <div className="text-secondary">None</div>}
+                              </div>
+                              <div>
+                                <div className="text-xs font-medium uppercase text-muted">Print Job</div>
+                                {event.printJobId ? (
+                                  <Link href={`/print-queue/${event.printJobId}`} className="break-all font-mono text-xs text-link hover:underline">
+                                    {event.printJobId}
+                                  </Link>
+                                ) : <div className="text-secondary">None</div>}
+                              </div>
+                              <div>
+                                <div className="text-xs font-medium uppercase text-muted">Audit Event</div>
+                                <div className="break-all font-mono text-xs text-secondary">{event.id}</div>
+                              </div>
+                            </div>
+                            <div className="mt-5">
+                              <div className="mb-2 text-xs font-medium uppercase text-muted">Event Data</div>
+                              {event.metadata ? (
+                                <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-md border border-[var(--border)] bg-[var(--background)] p-3 text-xs text-secondary">
+                                  {JSON.stringify(event.metadata, null, 2)}
+                                </pre>
+                              ) : <div className="text-sm text-secondary">No event-specific data.</div>}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>

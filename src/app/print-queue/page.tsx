@@ -29,6 +29,9 @@ interface PrintQueueEntry {
   hasPrintFile: boolean;
   progress?: number | null;
   progressLastReportAt?: string | null;
+  outcome?: string | null;
+  replacementForPrintJobId?: string | null;
+  replacement?: { id: string } | null;
   designJob: {
     id: string;
     objectId?: string;
@@ -70,8 +73,8 @@ export default function PrintQueuePage() {
     entry: PrintQueueEntry;
   } | null>(null);
 
-  // MQTT-based printer status (Electron only)
   const [printerBusy, setPrinterBusy] = useState(false);
+  const [printerBusyReason, setPrinterBusyReason] = useState<string | null>(null);
 
   // Device auth state (Electron only)
   const [deviceLocked, setDeviceLocked] = useState(false);
@@ -193,17 +196,22 @@ export default function PrintQueuePage() {
         showNotification(statusUpdate.message, type, duration);
       });
 
-      // Subscribe to MQTT printer status to know if printer is physically busy
-      const unsubscribePrinterStatus = electronAPI.printer.subscribeToStatus((status: {
-        printJob: { active: boolean };
-      }) => {
-        setPrinterBusy(status.printJob.active);
-      });
+      // Older clients rely on Factory's preparation claim until their bridge gains live availability.
+      const unsubscribePrinterAvailability =
+        typeof electronAPI.printer.subscribeToAvailability === 'function'
+          ? electronAPI.printer.subscribeToAvailability((availability: {
+              busy: boolean;
+              reason: string | null;
+            }) => {
+              setPrinterBusy(availability.busy);
+              setPrinterBusyReason(availability.reason);
+            })
+          : () => {};
       
       // Cleanup subscriptions on unmount
       return () => {
         unsubscribePrintStatus();
-        unsubscribePrinterStatus();
+        unsubscribePrinterAvailability();
       };
     }
   }, []);
@@ -340,8 +348,14 @@ export default function PrintQueuePage() {
     try {
       setPrintingJobId(entry.id);
 
+      const printerConfig = await window.electronAPI.loadPrinterConfig();
+      if (!printerConfig.success || !printerConfig.config?.serial) {
+        throw new Error(printerConfig.error || 'Printer configuration is unavailable');
+      }
       const prepareResponse = await fetch(`/api/print-queue/${entry.id}/prepare`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ printerSerial: printerConfig.config.serial }),
       });
       if (!prepareResponse.ok) {
         const prepareError = await prepareResponse.json();
@@ -727,7 +741,7 @@ export default function PrintQueuePage() {
                                     Sending
                                   </>
                                 ) : printerBusy ? (
-                                  'Printer Busy'
+                                  printerBusyReason || 'Printer Busy'
                                 ) : (
                                   <>
                                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

@@ -72,6 +72,16 @@ export async function GET(request: NextRequest) {
         actor: { select: { id: true, name: true, email: true } },
         targetUser: { select: { id: true, name: true, email: true } },
         organizationId: true,
+        designJobId: true,
+        clientDeviceId: true,
+        printerSerial: true,
+        printJobId: true,
+        designJob: {
+          select: {
+            id: true,
+            objectId: true,
+          },
+        },
       },
     }),
     prisma.auditEvent.count({ where }),
@@ -87,9 +97,43 @@ export async function GET(request: NextRequest) {
     }),
   ])
 
+  const organizationIds = [...new Set(events.flatMap(event => event.organizationId ? [event.organizationId] : []))]
+  const clientDeviceIds = [...new Set(events.flatMap(event => event.clientDeviceId ? [event.clientDeviceId] : []))]
+  const printerSerials = [...new Set(events.flatMap(event => event.printerSerial ? [event.printerSerial] : []))]
+  const [organizations, clientDevices, printers] = await Promise.all([
+    prisma.organization.findMany({
+      where: { id: { in: organizationIds } },
+      select: { id: true, name: true },
+    }),
+    prisma.clientDevice.findMany({
+      where: { id: { in: clientDeviceIds } },
+      select: { id: true, name: true },
+    }),
+    prisma.printer.findMany({
+      where: { serial: { in: printerSerials } },
+      select: { serial: true, name: true, model: true },
+    }),
+  ])
+  const organizationsById = new Map(organizations.map(organization => [organization.id, organization]))
+  const clientDevicesById = new Map(clientDevices.map(device => [device.id, device]))
+  const printersBySerial = new Map(printers.map(printer => [printer.serial, printer]))
+
   return NextResponse.json({
     events: events.map(event => ({
       ...event,
+      organization: event.organizationId
+        ? organizationsById.get(event.organizationId) || { id: event.organizationId, name: null }
+        : null,
+      clientDevice: event.clientDeviceId
+        ? clientDevicesById.get(event.clientDeviceId) || { id: event.clientDeviceId, name: null }
+        : null,
+      printer: event.printerSerial
+        ? printersBySerial.get(event.printerSerial) || {
+            serial: event.printerSerial,
+            name: null,
+            model: null,
+          }
+        : null,
       metadata: sanitizeMetadata(event.metadata),
     })),
     page,
