@@ -213,6 +213,10 @@
   background-color: var(--hover-bg);
 }
 
+.data-table.no-row-highlight tbody tr:hover {
+  background-color: transparent;
+}
+
 /* ----------------------------------------------------------------------------
    BANNER (color-only)
    For complex flex banners that have inner layout (spinner + text).

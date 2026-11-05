@@ -691,7 +691,7 @@ export default function PrintQueuePage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="data-table" data-testid="print-queue-table">
+                <table className="data-table no-row-highlight" data-testid="print-queue-table">
                   <thead>
                     <tr>
                       <th className="px-2 py-2">
