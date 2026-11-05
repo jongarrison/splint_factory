@@ -52,6 +52,14 @@ interface PrintQueueEntry {
   };
 }
 
+function getHistorySortTime(entry: PrintQueueEntry) {
+  const timestamp = entry.printCompletedAt ??
+    entry.progressLastReportAt ??
+    entry.printStartedAt ??
+    entry.createdAt;
+  return new Date(timestamp).getTime();
+}
+
 export default function PrintQueuePage() {
   const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
@@ -279,17 +287,14 @@ export default function PrintQueuePage() {
       viewMode === 'active' ? isActivePrint(entry) : !isActivePrint(entry)
     )
     .sort((a, b) => {
-      // Get creation times
-      const timeA = new Date(a.designJob.createdAt).getTime();
-      const timeB = new Date(b.designJob.createdAt).getTime();
-      
       if (viewMode === 'active') {
-        // Active: oldest first (ascending)
-        return timeA - timeB;
-      } else {
-        // History: newest first (descending)
-        return timeB - timeA;
+        // Keep the work queue ordered by the age of the originating design job.
+        return new Date(a.designJob.createdAt).getTime() -
+          new Date(b.designJob.createdAt).getTime();
       }
+
+      // Completed work is most useful in the order it left the printer.
+      return getHistorySortTime(b) - getHistorySortTime(a);
     });
 
   const getProgressInfo = (entry: PrintQueueEntry) => {
