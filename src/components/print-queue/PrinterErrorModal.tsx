@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   PrinterAlert,
@@ -130,9 +130,11 @@ function PrinterErrorModal({
           </div>
         </details>
 
-        <p className="mb-4 text-xs text-[var(--text-muted)]">
-          Power cycle: turn the printer off with its physical switch, wait for the display and fans to stop, turn it on, and wait for Splint Queue to confirm it is ready.
-        </p>
+        {!recoveryState.replacementId && (
+          <p className="mb-4 text-xs text-[var(--text-muted)]">
+            Record the print outcome below before restarting the printer. Splint Queue will then guide and verify the power cycle.
+          </p>
+        )}
 
         {printerRecovery.printJobId === alert.printJobId && printerRecovery.phase !== 'idle' && (
           <div className="mb-4 rounded-lg border border-[var(--status-error-text)]/50 bg-[var(--status-error-bg)] p-3 text-sm text-[var(--text)]">
@@ -178,14 +180,14 @@ function PrinterErrorModal({
           </div>
         )}
 
-        {canFailAndReplace && (
+        {canFailAndReplace && !recoveryState.replacementId && (
           <div className="mb-3">
             <label className="mb-2 block text-sm text-[var(--text)]">
-              Outcome
+              Confirm how the print ended
               <select
                 value={classification}
                 onChange={(event) => onClassificationChange(event.target.value as FailureClassification)}
-                disabled={recoveryState.pending || Boolean(recoveryState.replacementId)}
+                disabled={recoveryState.pending}
                 className="mt-1 w-full rounded border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--text)]"
               >
                 <option value="FAILED">Confirmed failure</option>
@@ -196,14 +198,16 @@ function PrinterErrorModal({
             <button
               type="button"
               onClick={onFailAndReplace}
-              disabled={recoveryState.pending || Boolean(recoveryState.replacementId)}
+              disabled={recoveryState.pending}
               className="btn-primary w-full py-2 text-sm font-semibold disabled:opacity-50"
             >
               {recoveryState.pending
                 ? 'Recording Failure...'
-                : recoveryState.replacementId
-                  ? `Replacement Created${objectId ? ` for Object ${objectId}` : ''}`
-                  : 'Mark Failed and Create Replacement'}
+                : classification === 'FAILED'
+                  ? 'Mark Failed and Begin Recovery'
+                  : classification === 'OPERATOR_CANCELLED'
+                    ? 'Record Cancellation and Begin Recovery'
+                    : 'Record Stopped Print and Begin Recovery'}
             </button>
             {recoveryState.error && (
               <p className="mt-2 text-xs text-[var(--status-error-text)]">{recoveryState.error}</p>
@@ -211,13 +215,21 @@ function PrinterErrorModal({
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="btn-alt w-full py-2 text-sm font-semibold"
-        >
-          {alert.blocking ? 'Hide Details' : 'Acknowledge'}
-        </button>
+        {recoveryState.replacementId && (
+          <p className="mb-3 rounded-lg border border-[var(--status-success-text)]/40 bg-[var(--status-success-bg)] p-3 text-sm text-[var(--status-success-text)]">
+            Outcome recorded and replacement created{objectId ? ` for Object ${objectId}` : ''}. Complete the guided printer restart before printing again.
+          </p>
+        )}
+
+        {!alert.blocking && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-alt w-full py-2 text-sm font-semibold"
+          >
+            Acknowledge
+          </button>
+        )}
       </div>
     </div>
   );
@@ -228,7 +240,6 @@ function PrinterErrorModal({
  */
 export default function PrinterErrorModalListener() {
   const [alerts, setAlerts] = useState<PrinterAlert[]>([]);
-  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
   const [recoveryState, setRecoveryState] = useState<{
     pending: boolean;
     replacementId?: string;
@@ -263,13 +274,6 @@ export default function PrinterErrorModalListener() {
           (a, b) => Number(b.blocking) - Number(a.blocking) || a.firstSeenAt - b.firstSeenAt
         );
       });
-      if (action === 'cleared') {
-        setHiddenIds((current) => {
-          const next = new Set(current);
-          next.delete(alert.id);
-          return next;
-        });
-      }
     });
     const unsubscribeRecovery = api.subscribeToRecoveryStatus(setPrinterRecovery);
 
@@ -369,10 +373,7 @@ export default function PrinterErrorModalListener() {
     };
   }, [auditRetry, printerRecovery.auditEvents]);
 
-  const visibleAlert = useMemo(
-    () => alerts.find((alert) => !hiddenIds.has(alert.id)) || null,
-    [alerts, hiddenIds]
-  );
+  const visibleAlert = alerts[0] || null;
 
   useEffect(() => {
     setRecoveryState({ pending: false });
@@ -411,11 +412,6 @@ export default function PrinterErrorModalListener() {
   }
 
   const handleClose = async () => {
-    if (visibleAlert.blocking) {
-      setHiddenIds((current) => new Set(current).add(visibleAlert.id));
-      return;
-    }
-
     const result = await window.electronAPI.printer.acknowledgeAlert(visibleAlert.id);
     if (result.acknowledged) {
       setAlerts((current) => current.filter((alert) => alert.id !== visibleAlert.id));
@@ -444,6 +440,11 @@ export default function PrinterErrorModalListener() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to create replacement.');
+      const localRecovery =
+        await window.electronAPI.printer.beginPowerCycleRecovery(visibleAlert.printJobId);
+      if (!localRecovery.started) {
+        throw new Error('Failure was recorded, but Splint Queue could not begin printer recovery.');
+      }
       setRecoveryState({ pending: false, replacementId: result.replacement.id });
     } catch (error) {
       console.error('Failed to record print failure:', error);

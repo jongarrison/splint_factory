@@ -102,6 +102,11 @@ interface ElectronAPI {
     getActiveAlerts: () => Promise<PrinterAlert[]>;
     getRecoveryStatus: () => Promise<PrinterRecoveryStatus>;
     acknowledgeRecovery: () => Promise<{ acknowledged: boolean }>;
+    beginPowerCycleRecovery: (printJobId: string) => Promise<{
+      started: boolean;
+      reason?: 'print_attempt_not_found' | 'printer_not_terminal';
+      status?: PrinterRecoveryStatus;
+    }>;
     acknowledgeRecoveryAudit: (eventKey: string) => Promise<{ acknowledged: boolean }>;
     acknowledgeAlert: (alertId: string) => Promise<{
       acknowledged: boolean;
