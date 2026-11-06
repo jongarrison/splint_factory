@@ -89,6 +89,8 @@ export default function GeometryJobsPage() {
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [filterOptionsError, setFilterOptionsError] = useState('');
+  const [jobLabel, setJobLabel] = useState('');
+  const [appliedJobLabel, setAppliedJobLabel] = useState('');
   const [creatorName, setCreatorName] = useState('');
   const [appliedCreatorName, setAppliedCreatorName] = useState('');
   const [selectedDesignId, setSelectedDesignId] = useState('');
@@ -175,6 +177,7 @@ export default function GeometryJobsPage() {
   const applyFilters = (event: React.FormEvent) => {
     event.preventDefault();
     setSubmittedObjectId(searchObjectId.trim().toUpperCase());
+    setAppliedJobLabel(jobLabel.trim());
     setAppliedCreatorName(creatorName.trim());
     setAppliedDesignId(selectedDesignId);
     setAppliedStatuses(new Set(selectedStatuses));
@@ -183,9 +186,11 @@ export default function GeometryJobsPage() {
     setAppliedSortOrder(sortOrder);
   };
 
+  const normalizedJobLabel = appliedJobLabel.toLocaleLowerCase();
   const normalizedCreatorName = appliedCreatorName.toLocaleLowerCase();
   const displayedGeometryJobs = geometryJobs
     ?.filter((job) => !submittedObjectId || job.objectId?.toUpperCase().includes(submittedObjectId))
+    .filter((job) => !normalizedJobLabel || job.jobLabel?.toLocaleLowerCase().includes(normalizedJobLabel))
     .filter((job) => !normalizedCreatorName || job.creator.name?.toLocaleLowerCase().includes(normalizedCreatorName))
     .filter((job) => !appliedDesignId || job.designId === appliedDesignId)
     .filter((job) => {
@@ -201,6 +206,7 @@ export default function GeometryJobsPage() {
 
   const activeFilterCount = [
     Boolean(submittedObjectId),
+    Boolean(normalizedJobLabel),
     Boolean(normalizedCreatorName),
     Boolean(appliedDesignId),
     appliedStatuses.size !== ALL_STATUS_VALUES.length,
@@ -212,6 +218,8 @@ export default function GeometryJobsPage() {
   const clearFilters = () => {
     setSearchObjectId('');
     setSubmittedObjectId('');
+    setJobLabel('');
+    setAppliedJobLabel('');
     setCreatorName('');
     setAppliedCreatorName('');
     setSelectedDesignId('');
@@ -358,7 +366,20 @@ export default function GeometryJobsPage() {
               </span>
             </summary>
             <div className="mt-1 border border-[var(--border-color)] bg-[var(--surface-secondary)] p-4" data-testid="expanded-filters">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
+                <div>
+                  <label htmlFor="label-filter" className="block text-xs text-muted mb-1">Label</label>
+                  <input
+                    id="label-filter"
+                    type="text"
+                    value={jobLabel}
+                    onChange={(event) => setJobLabel(event.target.value)}
+                    placeholder="Partial print queue label"
+                    className="input-field"
+                    data-testid="label-filter"
+                  />
+                </div>
+
                 <div>
                   <label htmlFor="creator-filter" className="block text-xs text-muted mb-1">Submitted by</label>
                   <input
@@ -529,6 +550,7 @@ export default function GeometryJobsPage() {
                       data-testid="design-job-row"
                       data-job-id={job.id}
                       data-object-id={job.objectId || ''}
+                      data-job-label={job.jobLabel || ''}
                       data-creator-name={job.creator.name || ''}
                       data-design-id={job.designId}
                       data-design-name={job.design.name}
@@ -538,14 +560,14 @@ export default function GeometryJobsPage() {
                       data-organization-name={job.owningOrganization.name}
                     >
                       <td>
-                        <div className="text-xs text-muted">Object:</div>
+                        <div className="text-xs text-muted">Object ID:</div>
                         <div className="text-sm font-mono font-semibold text-[var(--accent-blue)]">
                           {job.objectId || 'N/A'}
                           {job.isDebugRequest && (
                             <span className="ml-1 status-badge status-neutral font-sans font-normal">Test</span>
                           )}
                         </div>
-                        <div className="text-xs text-muted mt-1">Job:</div>
+                        <div className="text-xs text-muted mt-1">Label:</div>
                         <div className="text-sm text-primary">
                           {job.jobLabel || 'N/A'}
                         </div>

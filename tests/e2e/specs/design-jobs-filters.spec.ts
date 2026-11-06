@@ -37,10 +37,18 @@ test.describe('design jobs filters', () => {
     await page.getByTestId('clear-filters-btn').click();
     await expect(page.getByTestId('filters-label')).toHaveText('Filters');
 
+    await page.getByTestId('label-filter').fill('__NO_LABEL_MATCH__');
+    await expect(page.getByTestId('filters-label')).toHaveText('Filters');
+    await page.getByTestId('apply-filters-btn').click();
+    await expect(page.getByTestId('filters-label')).toHaveText('Filters (1)');
+    await expect(page.getByTestId('design-jobs-empty')).toContainText('No design jobs match');
+    await page.getByTestId('clear-filters-btn').click();
+
     const rows = page.getByTestId('design-job-row');
     if (await rows.count()) {
       const firstRow = rows.first();
       await expect(firstRow).toHaveAttribute('data-job-id', /.+/);
+      await expect(firstRow).toHaveAttribute('data-job-label');
       await expect(firstRow).toHaveAttribute('data-design-id', /.+/);
       await expect(firstRow).toHaveAttribute('data-status', /.+/);
       await expect(firstRow).toHaveAttribute('data-created-at', /.+/);

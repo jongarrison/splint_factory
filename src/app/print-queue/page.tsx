@@ -776,11 +776,11 @@ export default function PrintQueuePage() {
                           </div>
                         </td>
                         <td className="px-2 py-2">
-                          <div className="text-xs text-muted">Object:</div>
+                          <div className="text-xs text-muted">Object ID:</div>
                           <div className="text-sm font-mono font-semibold text-link">
                             {entry.designJob.objectId || 'N/A'}
                           </div>
-                          <div className="text-xs text-muted mt-1">Print Queue Label:</div>
+                          <div className="text-xs text-muted mt-1">Label:</div>
                           <div className="text-sm text-primary">
                             {entry.designJob.jobLabel || 'N/A'}
                           </div>
