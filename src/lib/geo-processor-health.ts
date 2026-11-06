@@ -2,7 +2,8 @@ import { prisma } from '@/lib/prisma';
 
 export const PROCESSOR_HEARTBEAT_ID = 'geo_processor';
 
-const DEFAULT_OFFLINE_THRESHOLD_MS = 120_000;
+// Queue polling pauses during geometry generation, slicing, and uploads.
+const DEFAULT_OFFLINE_THRESHOLD_MS = 10 * 60 * 1000;
 const DEFAULT_OFFLINE_REMINDER_INTERVAL_MS = 60 * 60 * 1000;
 
 // Keep-warm lease: each user-triggered signal extends the cutoff by this much.

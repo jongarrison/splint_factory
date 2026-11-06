@@ -12,8 +12,6 @@ import { getDesignById } from '@/designs/registry';
 // GET /api/design-processing/next-job - Get next geometry processing record for external processing software
 export async function GET(request: NextRequest) {
   try {
-    ensureInternalTaskRuntimeStarted();
-
     // Try API key authentication first
     const apiAuth = await validateApiKey(request);
     
@@ -35,6 +33,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
     }
+
+    ensureInternalTaskRuntimeStarted();
 
     // Find the oldest unprocessed geometry processing queue entry
     // Include jobs that are either:
