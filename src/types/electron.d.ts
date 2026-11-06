@@ -99,6 +99,13 @@ interface ElectronAPI {
   getPrinterStatusInfo: (printerConfig?: PrinterConfig) => Promise<PrinterStatus>;
   printer: {
     getAvailability: () => Promise<PrinterAvailability>;
+    resolvePrintAttempt: (printJobId: string) => Promise<{
+      resolved: boolean;
+      alreadyResolved?: boolean;
+      reason?: 'invalid_print_job_id' | 'print_attempt_not_found' | 'different_print_attempt';
+      activePrintJobId?: string;
+      availability?: PrinterAvailability;
+    }>;
     getActiveAlerts: () => Promise<PrinterAlert[]>;
     getRecoveryStatus: () => Promise<PrinterRecoveryStatus>;
     acknowledgeRecovery: () => Promise<{ acknowledged: boolean }>;

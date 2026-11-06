@@ -420,8 +420,15 @@ export default function PrintQueuePage() {
         if (!response.ok) {
           throw new Error('Failed to mark print as done');
         }
-        refreshPrintQueue();
-        showNotification('Print marked as done', 'success', 3000);
+        const resolver = window.electronAPI?.printer?.resolvePrintAttempt;
+        if (typeof resolver === 'function') {
+          const resolution = await resolver(printId);
+          if (!resolution.resolved && resolution.reason !== 'print_attempt_not_found') {
+            throw new Error('Print was marked done, but the splintbot is tracking a different print');
+          }
+        }
+        await refreshPrintQueue();
+        showNotification('Print marked as done and tracking released', 'success', 3000);
         return;
       }
       // Record acceptance for reject/archive actions
@@ -732,8 +739,19 @@ export default function PrintQueuePage() {
                             {/* Print button - shows for all users but only enabled in Electron client */}
                             {!entry.printStartedAt && !entry.printCompletedAt && entry.hasPrintFile && (
                           <button
-                                onClick={() => isElectronClient && !printerBusy ? setPrintConfirmModal({ entry }) : null}
-                                disabled={!isElectronClient || printingJobId === entry.id || printerBusy}
+                                onClick={() => {
+                                  if (!isElectronClient) return;
+                                  if (printerBusy) {
+                                    showNotification(
+                                      `${printerBusyReason || 'Printer is not ready'}. Finish, cancel, or reset the current printer task before starting another print.`,
+                                      'error',
+                                      null
+                                    );
+                                    return;
+                                  }
+                                  setPrintConfirmModal({ entry });
+                                }}
+                                disabled={!isElectronClient || printingJobId === entry.id}
                                 className="btn-alt px-4 py-1.5 text-sm font-semibold min-w-[80px] inline-flex items-center justify-center gap-1"
                                 data-testid="print-btn"
                               >
@@ -745,8 +763,6 @@ export default function PrintQueuePage() {
                                     </svg>
                                     Sending
                                   </>
-                                ) : printerBusy ? (
-                                  printerBusyReason || 'Printer Busy'
                                 ) : (
                                   <>
                                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

@@ -410,7 +410,10 @@ export default function PrintQueueDetailPage({
     }
   };
 
-  const handleDeleteSubmit = async (printId: string, action: 'DELETE' | 'REJECT_DESIGN' | 'MARK_DONE') => {
+  const handleDeleteSubmit = async (
+    printId: string,
+    action: 'DELETE' | 'REJECT_DESIGN' | 'REJECT_PRINT' | 'ARCHIVED' | 'MARK_DONE'
+  ) => {
     setUpdating(true);
     setError(null);
     
@@ -424,29 +427,36 @@ export default function PrintQueueDetailPage({
         if (!response.ok) {
           throw new Error('Failed to mark print as done');
         }
+        const resolver = window.electronAPI?.printer?.resolvePrintAttempt;
+        if (typeof resolver === 'function') {
+          const resolution = await resolver(printId);
+          if (!resolution.resolved && resolution.reason !== 'print_attempt_not_found') {
+            throw new Error('Print was marked done, but the splintbot is tracking a different print');
+          }
+        }
         await fetchEntry();
         return;
       }
-      // If rejecting design, record that before disabling
-      if (action === 'REJECT_DESIGN') {
+      if (action === 'REJECT_DESIGN' || action === 'REJECT_PRINT' || action === 'ARCHIVED') {
         const acceptanceResponse = await fetch(`/api/print-queue/${printId}/acceptance`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ printAcceptance: 'REJECT_DESIGN' }),
+          body: JSON.stringify({ printAcceptance: action }),
         });
         if (!acceptanceResponse.ok) {
-          throw new Error('Failed to record design rejection');
+          throw new Error('Failed to record print action');
         }
       }
 
-      const response = await fetch(`/api/print-queue/${printId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isEnabled: false }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete print job');
+      if (action !== 'ARCHIVED') {
+        const response = await fetch(`/api/print-queue/${printId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isEnabled: false }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to remove print job');
+        }
       }
 
       // Redirect back to the list after successful deletion

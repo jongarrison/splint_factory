@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 const RECOVERY_EVENT_TYPES = new Set([
   'PRINT_AUTO_STOP_SENT',
   'PRINT_OPERATOR_STOP_SENT',
+  'PRINT_OPERATOR_MARKED_DONE',
   'PRINT_STOP_VERIFIED',
   'PRINT_STOP_ESCALATED',
   'PRINT_RECOVERY_VERIFIED',
@@ -47,7 +48,9 @@ export async function POST(
     return NextResponse.json({ error: 'Print job not found or access denied' }, { status: 404 });
   }
 
-  const actorId = eventType === 'PRINT_OPERATOR_STOP_SENT' ? session.user.id : null;
+  const actorId = ['PRINT_OPERATOR_STOP_SENT', 'PRINT_OPERATOR_MARKED_DONE'].includes(eventType)
+    ? session.user.id
+    : null;
 
   try {
     const auditEvent = await prisma.auditEvent.create({
