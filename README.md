@@ -158,6 +158,7 @@ The project includes VS Code tasks and GitHub Copilot instructions:
 | `DATABASE_URL` | Prisma database connection | `file:./dev.db` |
 | `NEXTAUTH_SECRET` | NextAuth.js secret key | Generate a secure string |
 | `NEXTAUTH_URL` | Application URL | `http://localhost:3000` |
+| `CRON_SECRET` | Bearer token used to authenticate Vercel Cron requests | Required in production |
 
 ## 🔐 Authentication System
 
@@ -216,6 +217,7 @@ model User {
    DATABASE_URL=your-production-database-url
    NEXTAUTH_SECRET=your-secure-random-string
    NEXTAUTH_URL=https://your-domain.vercel.app
+   CRON_SECRET=your-secure-random-string
    ```
 
 4. **Database Migration** (if using external database):

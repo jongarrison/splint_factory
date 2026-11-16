@@ -77,41 +77,42 @@ export async function updateProcessorPing(pingTime: Date = new Date(), version?:
   });
 }
 
-export async function clearProcessorOfflineState(): Promise<void> {
-  await prisma.processorHeartbeat.upsert({
-    where: { id: PROCESSOR_HEARTBEAT_ID },
-    update: {
-      offlineSince: null,
-      lastOfflineAlertSentAt: null,
-    },
-    create: {
-      id: PROCESSOR_HEARTBEAT_ID,
-    },
-  });
+interface ProcessorOfflineAlertClaim {
+  lastPingAt: Date;
+  previousOfflineSince: Date | null;
+  previousAlertSentAt: Date | null;
+  claimedAt: Date;
 }
 
-export async function setProcessorOfflineState(offlineSince: Date): Promise<void> {
-  const heartbeat = await getOrCreateProcessorHeartbeat();
-
-  if (heartbeat.offlineSince) {
-    return;
-  }
-
-  await prisma.processorHeartbeat.update({
-    where: { id: PROCESSOR_HEARTBEAT_ID },
-    data: { offlineSince },
+/** Atomically reserves one alert for an unchanged heartbeat snapshot. */
+export async function claimProcessorOfflineAlert(claim: ProcessorOfflineAlertClaim): Promise<boolean> {
+  const result = await prisma.processorHeartbeat.updateMany({
+    where: {
+      id: PROCESSOR_HEARTBEAT_ID,
+      lastPingAt: claim.lastPingAt,
+      offlineSince: claim.previousOfflineSince,
+      lastOfflineAlertSentAt: claim.previousAlertSentAt,
+    },
+    data: {
+      offlineSince: claim.previousOfflineSince ?? claim.lastPingAt,
+      lastOfflineAlertSentAt: claim.claimedAt,
+    },
   });
+
+  return result.count === 1;
 }
 
-export async function setProcessorOfflineAlertSent(sentAt: Date): Promise<void> {
-  await prisma.processorHeartbeat.upsert({
-    where: { id: PROCESSOR_HEARTBEAT_ID },
-    update: {
-      lastOfflineAlertSentAt: sentAt,
-    },
-    create: {
+/** Releases an unchanged alert claim so a failed email can be retried. */
+export async function releaseProcessorOfflineAlertClaim(claim: ProcessorOfflineAlertClaim): Promise<void> {
+  await prisma.processorHeartbeat.updateMany({
+    where: {
       id: PROCESSOR_HEARTBEAT_ID,
-      lastOfflineAlertSentAt: sentAt,
+      lastPingAt: claim.lastPingAt,
+      lastOfflineAlertSentAt: claim.claimedAt,
+    },
+    data: {
+      offlineSince: claim.previousOfflineSince,
+      lastOfflineAlertSentAt: claim.previousAlertSentAt,
     },
   });
 }

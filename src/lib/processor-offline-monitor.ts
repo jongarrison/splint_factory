@@ -1,95 +1,47 @@
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
-import { logAuditEvent } from '@/lib/audit';
+import { writeAuditEvent } from '@/lib/audit';
 import {
-  clearProcessorOfflineState,
+  claimProcessorOfflineAlert,
   getOrCreateProcessorHeartbeat,
   getProcessorOfflineReminderIntervalMs,
   getProcessorOfflineThresholdMs,
-  setProcessorOfflineAlertSent,
-  setProcessorOfflineState,
+  releaseProcessorOfflineAlertClaim,
 } from '@/lib/geo-processor-health';
-import { registerInternalTask } from '@/lib/internal-task-scheduler';
+import {
+  formatProcessorOfflineDuration,
+  getProcessorOfflineAlertKind,
+} from '@/lib/processor-offline-policy';
 import ProcessorOfflineAlertEmail from '@/emails/processor-offline-alert';
-
-const PROCESSOR_OFFLINE_MONITOR_TASK_KEY = 'processor-offline-monitor';
-const DEFAULT_MONITOR_INTERVAL_MS = 60_000;
-
-function getMonitorIntervalMs(): number {
-  const rawValue = process.env.PROCESSOR_OFFLINE_MONITOR_INTERVAL_MS;
-  const parsed = rawValue ? Number(rawValue) : NaN;
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return DEFAULT_MONITOR_INTERVAL_MS;
-  }
-
-  return Math.floor(parsed);
-}
 
 function buildAdminUrl(): string {
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
   return `${baseUrl.replace(/\/$/, '')}/admin`;
 }
 
-function formatDuration(durationMs: number): string {
-  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${seconds}s`;
-  }
-
-  if (minutes > 0) {
-    return `${minutes}m ${seconds}s`;
-  }
-
-  return `${seconds}s`;
+export interface ProcessorOfflineEvaluationResult {
+  status: 'healthy' | 'not_due' | 'heartbeat_changed' | 'alert_sent' | 'reminder_sent' | 'no_recipients';
+  lastPingAt: string | null;
 }
 
-async function evaluateProcessorOfflineState(): Promise<void> {
-  const heartbeat = await getOrCreateProcessorHeartbeat();
+/** Evaluates and conditionally claims one processor alert for the cron invocation. */
+export async function evaluateProcessorOfflineState(): Promise<ProcessorOfflineEvaluationResult> {
   const thresholdMs = getProcessorOfflineThresholdMs();
   const reminderIntervalMs = getProcessorOfflineReminderIntervalMs();
   const now = new Date();
+  let heartbeat = await getOrCreateProcessorHeartbeat();
+  let alertKind = getProcessorOfflineAlertKind(heartbeat, now, thresholdMs, reminderIntervalMs);
 
   if (!heartbeat.lastPingAt) {
-    return;
+    return { status: 'healthy', lastPingAt: null };
   }
 
-  const msSinceLastPing = now.getTime() - heartbeat.lastPingAt.getTime();
-  const isOffline = msSinceLastPing >= thresholdMs;
-
-  if (!isOffline) {
-    if (heartbeat.offlineSince || heartbeat.lastOfflineAlertSentAt) {
-      await clearProcessorOfflineState();
-      logAuditEvent({
-        eventType: 'PROCESSOR_OFFLINE_RECOVERED',
-        channel: 'SYSTEM',
-        metadata: {
-          recoveredAt: now.toISOString(),
-          lastPingAt: heartbeat.lastPingAt.toISOString(),
-        },
-      });
-    }
-    return;
-  }
-
-  const offlineSince = heartbeat.offlineSince ?? now;
-  const isInitialOfflineAlert = !heartbeat.lastOfflineAlertSentAt;
-
-  if (!heartbeat.offlineSince) {
-    await setProcessorOfflineState(offlineSince);
-  }
-
-  const shouldSendReminder = Boolean(
-    heartbeat.lastOfflineAlertSentAt
-      && now.getTime() - heartbeat.lastOfflineAlertSentAt.getTime() >= reminderIntervalMs,
-  );
-
-  if (!isInitialOfflineAlert && !shouldSendReminder) {
-    return;
+  if (!alertKind) {
+    const isHealthy = now.getTime() - heartbeat.lastPingAt.getTime() < thresholdMs;
+    return {
+      status: isHealthy ? 'healthy' : 'not_due',
+      lastPingAt: heartbeat.lastPingAt.toISOString(),
+    };
   }
 
   const recipients = await prisma.user.findMany({
@@ -103,12 +55,46 @@ async function evaluateProcessorOfflineState(): Promise<void> {
     },
   });
 
+  // Recipient lookup may take long enough for a new processor ping to arrive.
+  heartbeat = await getOrCreateProcessorHeartbeat();
+  alertKind = getProcessorOfflineAlertKind(heartbeat, now, thresholdMs, reminderIntervalMs);
+  if (!heartbeat.lastPingAt || !alertKind) {
+    return {
+      status: 'heartbeat_changed',
+      lastPingAt: heartbeat.lastPingAt?.toISOString() ?? null,
+    };
+  }
+
+  const claim = {
+    lastPingAt: heartbeat.lastPingAt,
+    previousOfflineSince: heartbeat.offlineSince,
+    previousAlertSentAt: heartbeat.lastOfflineAlertSentAt,
+    claimedAt: now,
+  };
+  const claimed = await claimProcessorOfflineAlert(claim);
+  if (!claimed) {
+    return { status: 'heartbeat_changed', lastPingAt: heartbeat.lastPingAt.toISOString() };
+  }
+
+  // A processor ping clears the claim; verify once more immediately before email delivery.
+  const claimedHeartbeat = await getOrCreateProcessorHeartbeat();
+  if (
+    claimedHeartbeat.lastPingAt?.getTime() !== heartbeat.lastPingAt.getTime()
+    || claimedHeartbeat.lastOfflineAlertSentAt?.getTime() !== now.getTime()
+  ) {
+    return {
+      status: 'heartbeat_changed',
+      lastPingAt: claimedHeartbeat.lastPingAt?.toISOString() ?? null,
+    };
+  }
+
   const recipientEmails = recipients.map((recipient) => recipient.email).filter(Boolean);
-  const isReminder = !isInitialOfflineAlert;
+  const isReminder = alertKind === 'reminder';
+  const offlineSince = heartbeat.offlineSince ?? heartbeat.lastPingAt;
+  const msSinceLastPing = now.getTime() - heartbeat.lastPingAt.getTime();
 
   if (recipientEmails.length === 0) {
-    await setProcessorOfflineAlertSent(now);
-    logAuditEvent({
+    await writeAuditEvent({
       eventType: 'PROCESSOR_OFFLINE_ALERT_SKIPPED_NO_RECIPIENTS',
       channel: 'SYSTEM',
       metadata: {
@@ -117,24 +103,28 @@ async function evaluateProcessorOfflineState(): Promise<void> {
         lastPingAt: heartbeat.lastPingAt.toISOString(),
       },
     });
-    return;
+    return { status: 'no_recipients', lastPingAt: heartbeat.lastPingAt.toISOString() };
   }
 
-  await sendEmail({
-    to: recipientEmails,
-    subject: isReminder ? 'Reminder: Design Processor still offline' : 'Design Processor Offline',
-    react: ProcessorOfflineAlertEmail({
-      isReminder,
-      lastPingTime: heartbeat.lastPingAt.toISOString(),
-      offlineDuration: formatDuration(now.getTime() - offlineSince.getTime()),
-      adminUrl: buildAdminUrl(),
-      thresholdSeconds: Math.floor(thresholdMs / 1000),
-      reminderMinutes: Math.floor(reminderIntervalMs / 60_000),
-    }),
-  });
+  try {
+    await sendEmail({
+      to: recipientEmails,
+      subject: isReminder ? 'Reminder: Design Processor still offline' : 'Design Processor Offline',
+      react: ProcessorOfflineAlertEmail({
+        isReminder,
+        lastPingTime: heartbeat.lastPingAt.toISOString(),
+        timeSinceLastPing: formatProcessorOfflineDuration(msSinceLastPing),
+        adminUrl: buildAdminUrl(),
+        thresholdSeconds: Math.floor(thresholdMs / 1000),
+        reminderMinutes: Math.floor(reminderIntervalMs / 60_000),
+      }),
+    });
+  } catch (error) {
+    await releaseProcessorOfflineAlertClaim(claim);
+    throw error;
+  }
 
-  await setProcessorOfflineAlertSent(now);
-  logAuditEvent({
+  await writeAuditEvent({
     eventType: isReminder ? 'PROCESSOR_OFFLINE_REMINDER_SENT' : 'PROCESSOR_OFFLINE_ALERT_SENT',
     channel: 'SYSTEM',
     metadata: {
@@ -145,15 +135,9 @@ async function evaluateProcessorOfflineState(): Promise<void> {
       secondsSinceLastPing: Math.floor(msSinceLastPing / 1000),
     },
   });
-}
 
-export function registerProcessorOfflineMonitorTask(): void {
-  registerInternalTask({
-    key: PROCESSOR_OFFLINE_MONITOR_TASK_KEY,
-    label: 'Processor Offline Monitor',
-    description: 'Evaluates processor heartbeat and sends transition/reminder alerts.',
-    intervalMs: getMonitorIntervalMs(),
-    runOnStartup: true,
-    task: evaluateProcessorOfflineState,
-  });
+  return {
+    status: isReminder ? 'reminder_sent' : 'alert_sent',
+    lastPingAt: heartbeat.lastPingAt.toISOString(),
+  };
 }

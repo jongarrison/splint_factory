@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       react: ProcessorOfflineAlertEmail({
         isReminder: false,
         lastPingTime: lastPing.toISOString(),
-        offlineDuration: 'test notification',
+        timeSinceLastPing: 'test notification',
         adminUrl: buildAdminUrl(request),
         thresholdSeconds: Math.floor(getProcessorOfflineThresholdMs() / 1000),
         reminderMinutes: Math.floor(getProcessorOfflineReminderIntervalMs() / 60_000),

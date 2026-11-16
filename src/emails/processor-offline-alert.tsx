@@ -13,7 +13,7 @@ import {
 interface ProcessorOfflineAlertEmailProps {
   isReminder: boolean;
   lastPingTime: string;
-  offlineDuration: string;
+  timeSinceLastPing: string;
   adminUrl: string;
   thresholdSeconds: number;
   reminderMinutes: number;
@@ -22,7 +22,7 @@ interface ProcessorOfflineAlertEmailProps {
 export default function ProcessorOfflineAlertEmail({
   isReminder,
   lastPingTime,
-  offlineDuration,
+  timeSinceLastPing,
   adminUrl,
   thresholdSeconds,
   reminderMinutes,
@@ -39,7 +39,7 @@ export default function ProcessorOfflineAlertEmail({
 
           <Section style={detailsSection}>
             <Text style={detailRow}><strong>Last check-in:</strong> {lastPingTime}</Text>
-            <Text style={detailRow}><strong>Offline duration:</strong> {offlineDuration}</Text>
+            <Text style={detailRow}><strong>Time since last check-in:</strong> {timeSinceLastPing}</Text>
             <Text style={detailRow}><strong>Offline threshold:</strong> {thresholdSeconds}s</Text>
             <Text style={detailRow}><strong>Reminder interval:</strong> {reminderMinutes}m</Text>
           </Section>

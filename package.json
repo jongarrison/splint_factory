@@ -15,6 +15,7 @@
     "debug:processor-health": "tsx scripts/debug-processor-health.ts",
     "debug:internal-tasks": "tsx scripts/debug-internal-tasks.ts",
     "debug:monitor": "npm run debug:processor-health && npm run debug:internal-tasks",
+    "test:unit": "tsx --test $(find src -name '*.test.ts' -print)",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:prod": "E2E_BASE_URL=https://splintfactory.com playwright test",

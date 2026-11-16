@@ -2,7 +2,6 @@ import {
   ensureInternalTaskSchedulerStarted,
   listInternalTaskStatuses,
 } from '@/lib/internal-task-scheduler';
-import { registerProcessorOfflineMonitorTask } from '@/lib/processor-offline-monitor';
 import { registerDailyDigestTask } from '@/lib/daily-digest-task';
 import { registerAuditLogCleanupTask } from '@/lib/audit-log-cleanup-task';
 
@@ -19,7 +18,6 @@ export function ensureInternalTaskRuntimeStarted(): void {
     return;
   }
 
-  registerProcessorOfflineMonitorTask();
   registerDailyDigestTask();
   registerAuditLogCleanupTask();
   ensureInternalTaskSchedulerStarted();
