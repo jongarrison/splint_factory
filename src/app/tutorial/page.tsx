@@ -123,23 +123,42 @@ export default function TutorialPage() {
 
           <article className="min-w-0">
             <header className="border-b border-[var(--border)] pb-8">
-              <p className="text-sm font-semibold uppercase tracking-wide text-[var(--accent-blue)]">
-                Getting Started
-              </p>
-              <h1 className="mt-2 text-3xl font-semibold text-primary sm:text-4xl">
-                Make and print a custom splint
-              </h1>
-              <p className="mt-4 max-w-3xl text-lg leading-8 text-secondary">
-                This guide follows one splint from design selection through measurement, processing,
-                printing, and basic printer care.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link href="/design-menu" className="btn-primary px-4 py-2 text-sm">
-                  Open Design Menu
-                </Link>
-                <Link href="/print-queue" className="btn-neutral px-4 py-2 text-sm">
-                  Open Print Queue
-                </Link>
+              <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_280px]">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-[var(--accent-blue)]">
+                    Getting Started
+                  </p>
+                  <h1 className="mt-2 text-3xl font-semibold text-primary sm:text-4xl">
+                    Make and print a custom splint
+                  </h1>
+                  <p className="mt-4 max-w-3xl text-lg leading-8 text-secondary">
+                    This guide follows one splint from design selection through measurement, processing,
+                    printing, and basic printer care.
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <Link href="/design-menu" className="btn-primary px-4 py-2 text-sm">
+                      Open Design Menu
+                    </Link>
+                    <Link href="/print-queue" className="btn-neutral px-4 py-2 text-sm">
+                      Open Print Queue
+                    </Link>
+                  </div>
+                </div>
+
+                <figure className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+                  <Image
+                    src="/images/tutorial/splint-factory-system.jpg"
+                    alt="Splintbot touchscreen beside a Bambu Lab P1S printer and AMS"
+                    width={1170}
+                    height={1600}
+                    sizes="(min-width: 768px) 280px, 100vw"
+                    className="h-auto w-full"
+                    priority
+                  />
+                  <figcaption className="border-t border-[var(--border)] px-4 py-3 text-xs leading-5 text-secondary">
+                    A Splintbot print station with touchscreen, printer, and filament system.
+                  </figcaption>
+                </figure>
               </div>
             </header>
 
