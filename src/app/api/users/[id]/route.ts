@@ -58,19 +58,60 @@ export async function GET(
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
-  const auditEvents = await prisma.auditEvent.findMany({
-    where: { OR: [{ actorId: id }, { targetUserId: id }] },
-    orderBy: { timestamp: 'desc' },
-    take: 50,
-    select: {
-      id: true,
-      timestamp: true,
-      eventType: true,
-      channel: true,
-      metadata: true,
-      actor: { select: { id: true, name: true, email: true } },
-    },
-  })
+  const [designJobs, printJobs, auditEvents] = await Promise.all([
+    prisma.designJob.findMany({
+      where: { creatorId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        objectId: true,
+        jobLabel: true,
+        createdAt: true,
+        processStartedAt: true,
+        processCompletedAt: true,
+        isProcessSuccessful: true,
+        isEnabled: true,
+        design: { select: { name: true } },
+      },
+    }),
+    prisma.printJob.findMany({
+      where: { designJob: { creatorId: id } },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        createdAt: true,
+        printStartedAt: true,
+        printCompletedAt: true,
+        isPrintSuccessful: true,
+        progress: true,
+        printAcceptance: true,
+        printNote: true,
+        designJob: {
+          select: {
+            id: true,
+            objectId: true,
+            jobLabel: true,
+            design: { select: { name: true } },
+          },
+        },
+      },
+    }),
+    prisma.auditEvent.findMany({
+      where: { OR: [{ actorId: id }, { targetUserId: id }] },
+      orderBy: { timestamp: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        timestamp: true,
+        eventType: true,
+        channel: true,
+        metadata: true,
+        actor: { select: { id: true, name: true, email: true } },
+      },
+    }),
+  ])
 
-  return NextResponse.json({ user, auditEvents })
+  return NextResponse.json({ user, designJobs, printJobs, auditEvents })
 }

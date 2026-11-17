@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Header from '@/components/navigation/Header'
+import PrintAcceptanceBadge from '@/components/PrintAcceptanceBadge'
+import PrintStatusBadge from '@/components/PrintStatusBadge'
 
 interface SupportData {
   user: {
@@ -34,6 +36,33 @@ interface SupportData {
       usedAt: string | null
     }>
   }
+  designJobs: Array<{
+    id: string
+    objectId: string | null
+    jobLabel: string | null
+    createdAt: string
+    processStartedAt: string | null
+    processCompletedAt: string | null
+    isProcessSuccessful: boolean
+    isEnabled: boolean
+    design: { name: string }
+  }>
+  printJobs: Array<{
+    id: string
+    createdAt: string
+    printStartedAt: string | null
+    printCompletedAt: string | null
+    isPrintSuccessful: boolean
+    progress: number | null
+    printAcceptance: string | null
+    printNote: string | null
+    designJob: {
+      id: string
+      objectId: string | null
+      jobLabel: string | null
+      design: { name: string }
+    }
+  }>
   auditEvents: Array<{
     id: string
     timestamp: string
@@ -46,6 +75,26 @@ interface SupportData {
 
 function formatDate(value: string | null) {
   return value ? new Date(value).toLocaleString() : 'Not recorded'
+}
+
+function DesignJobStatus({
+  job,
+}: {
+  job: SupportData['designJobs'][number]
+}) {
+  if (!job.isEnabled) {
+    return <span className="status-badge status-neutral">Disabled</span>
+  }
+  if (job.processCompletedAt && job.isProcessSuccessful) {
+    return <span className="status-badge status-success">Generated</span>
+  }
+  if (job.processCompletedAt) {
+    return <span className="status-badge status-error">Failed</span>
+  }
+  if (job.processStartedAt) {
+    return <span className="status-badge status-warning">Processing</span>
+  }
+  return <span className="status-badge status-pending">Pending</span>
 }
 
 export default function UserSupportPage() {
@@ -79,7 +128,7 @@ export default function UserSupportPage() {
     return <div className="page-shell"><Header /><div className="max-w-4xl mx-auto p-8"><div className="alert-error">{error}</div></div></div>
   }
 
-  const { user, auditEvents } = data
+  const { user, designJobs, printJobs, auditEvents } = data
 
   return (
     <div className="page-shell" data-testid="admin-user-detail-page">
@@ -127,7 +176,65 @@ export default function UserSupportPage() {
         </section>
 
         <section className="card overflow-hidden">
-          <div className="card-header"><h2 className="text-lg font-semibold text-primary">Recent Activity</h2></div>
+          <div className="card-header"><h2 className="text-lg font-semibold text-primary">Recent Design Jobs</h2></div>
+          {designJobs.length === 0 ? <p className="p-6 text-muted text-sm">This user has not created any design jobs.</p> : (
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead><tr><th className="px-6 py-3">Job</th><th className="px-6 py-3">Design</th><th className="px-6 py-3">Created</th><th className="px-6 py-3">Status</th></tr></thead>
+                <tbody>
+                  {designJobs.map(job => (
+                    <tr key={job.id}>
+                      <td className="px-6 py-4 text-sm">
+                        <Link href={`/design-jobs/${job.id}`} className="font-mono font-semibold text-link">{job.objectId || 'No Object ID'}</Link>
+                        <div className="mt-1 text-xs text-muted">{job.jobLabel || 'No queue label'}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-primary">{job.design.name}</td>
+                      <td className="px-6 py-4 text-sm text-secondary">{formatDate(job.createdAt)}</td>
+                      <td className="px-6 py-4 text-sm"><DesignJobStatus job={job} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="card overflow-hidden">
+          <div className="card-header"><h2 className="text-lg font-semibold text-primary">Recent Print Jobs</h2></div>
+          {printJobs.length === 0 ? <p className="p-6 text-muted text-sm">No print jobs are associated with this user&apos;s designs.</p> : (
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead><tr><th className="px-6 py-3">Job</th><th className="px-6 py-3">Design</th><th className="px-6 py-3">Created</th><th className="px-6 py-3">Status</th></tr></thead>
+                <tbody>
+                  {printJobs.map(job => (
+                    <tr key={job.id}>
+                      <td className="px-6 py-4 text-sm">
+                        <Link href={`/print-queue/${job.id}`} className="font-mono font-semibold text-link">{job.designJob.objectId || 'No Object ID'}</Link>
+                        <div className="mt-1 text-xs text-muted">{job.designJob.jobLabel || 'No queue label'}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-primary">{job.designJob.design.name}</td>
+                      <td className="px-6 py-4 text-sm text-secondary">{formatDate(job.createdAt)}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <div className="flex flex-wrap gap-2">
+                          <PrintStatusBadge
+                            printStartedAt={job.printStartedAt}
+                            printCompletedAt={job.printCompletedAt}
+                            isPrintSuccessful={job.isPrintSuccessful}
+                            progress={job.progress}
+                          />
+                          <PrintAcceptanceBadge printAcceptance={job.printAcceptance} printNote={job.printNote} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="card overflow-hidden">
+          <div className="card-header"><h2 className="text-lg font-semibold text-primary">Recent Log Activity</h2></div>
           {auditEvents.length === 0 ? <p className="p-6 text-muted text-sm">No audit events are associated with this user.</p> : (
             <div className="divide-y divide-[var(--border)]">
               {auditEvents.map(event => <div key={event.id} className="p-4 text-sm"><div className="flex flex-wrap justify-between gap-2"><span className="font-medium text-primary">{event.eventType.replaceAll('_', ' ')}</span><span className="text-muted">{formatDate(event.timestamp)}</span></div><div className="text-muted mt-1">{event.channel}{event.actor ? ` by ${event.actor.name || event.actor.email}` : ''}</div></div>)}
