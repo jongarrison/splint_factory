@@ -89,8 +89,8 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
               </h1>
             </Link>
             
-            {/* About link - visible in browser mode */}
-            {variant === 'browser' && (
+            {/* Keep About public when there is no user menu. */}
+            {variant === 'browser' && !session && (
               <Link
                 href="/about"
                 className="ml-4 text-sm font-medium text-secondary hover:text-[var(--text-primary)] transition-colors"
@@ -194,54 +194,12 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                           </svg>
                         </button>
                         
-{showAdminDropdown && (
+                        {showAdminDropdown && (
                           <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-[var(--surface-secondary)] ring-1 ring-[var(--border)] z-50">
                             <div className="py-1">
-                              {/* Organizations - SYSTEM_ADMIN only */}
-                              {session?.user?.role === 'SYSTEM_ADMIN' && (
-                                <Link
-                                  href="/admin/organizations"
-                                  onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                                >
-                                  Organizations
-                                </Link>
-                              )}
-                              
-                              {/* User Management - SYSTEM_ADMIN, ORG_ADMIN */}
-                              {(session?.user?.role === 'SYSTEM_ADMIN' || session?.user?.role === 'ORG_ADMIN') && (
-                                <Link
-                                  href="/admin/users"
-                                  onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                                >
-                                  User Management
-                                </Link>
-                              )}
-                              
-                              {/* Invitations - SYSTEM_ADMIN, ORG_ADMIN */}
-                              {(session?.user?.role === 'SYSTEM_ADMIN' || session?.user?.role === 'ORG_ADMIN') && (
-                                <Link
-                                  href="/admin/invitations"
-                                  onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                                >
-                                  Invitations
-                                </Link>
-                              )}
-                              
-                              {/* API Keys - SYSTEM_ADMIN only */}
-                              {session?.user?.role === 'SYSTEM_ADMIN' && (
-                                <Link
-                                  href="/admin/api-keys"
-                                  onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                                >
-                                  API Keys
-                                </Link>
-                              )}
-                              
-                              {/* Geometry Jobs (aka Design Generation Jobs) - All roles */}
+                              <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                                Work
+                              </p>
                               <Link
                                 href="/design-jobs"
                                 onClick={() => setShowAdminDropdown(false)}
@@ -249,8 +207,6 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                               >
                                 Design Jobs
                               </Link>
-                              
-                              {/* Print Queue - All roles */}
                               <Link
                                 href="/print-queue"
                                 onClick={() => setShowAdminDropdown(false)}
@@ -258,8 +214,6 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                               >
                                 Print Queue
                               </Link>
-
-                              {/* Printer Help - All roles */}
                               <Link
                                 href="/printer-help"
                                 onClick={() => setShowAdminDropdown(false)}
@@ -267,62 +221,87 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                               >
                                 Printer Help
                               </Link>
-                              {/* System Status - SYSTEM_ADMIN only */}
-                              {session?.user?.role === 'SYSTEM_ADMIN' && (
-                                <Link
-                                  href="/admin"
-                                  onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                                >
-                                  System Status
-                                </Link>
+
+                              {(session?.user?.role === 'SYSTEM_ADMIN' || session?.user?.role === 'ORG_ADMIN') && (
+                                <>
+                                  <div className="my-1 border-t border-[var(--border)]" />
+                                  <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                                    Organization
+                                  </p>
+                                  <Link
+                                    href="/admin/users"
+                                    onClick={() => setShowAdminDropdown(false)}
+                                    className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                  >
+                                    User Management
+                                  </Link>
+                                  <Link
+                                    href="/admin/invitations"
+                                    onClick={() => setShowAdminDropdown(false)}
+                                    className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                  >
+                                    Invitations
+                                  </Link>
+                                </>
                               )}
 
-                              {/* Audit Log - SYSTEM_ADMIN only */}
                               {session?.user?.role === 'SYSTEM_ADMIN' && (
-                                <Link
-                                  href="/admin/audit-log"
-                                  onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                                >
-                                  Audit Log
-                                </Link>
+                                <>
+                                  <div className="my-1 border-t border-[var(--border)]" />
+                                  <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                                    System Administration
+                                  </p>
+                                  <Link
+                                    href="/admin/organizations"
+                                    onClick={() => setShowAdminDropdown(false)}
+                                    className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                  >
+                                    Organizations
+                                  </Link>
+                                  <Link
+                                    href="/admin/fleet"
+                                    onClick={() => setShowAdminDropdown(false)}
+                                    className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                  >
+                                    Printer Fleet
+                                  </Link>
+                                  <Link
+                                    href="/admin"
+                                    onClick={() => setShowAdminDropdown(false)}
+                                    className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                  >
+                                    System Status
+                                  </Link>
+                                  <Link
+                                    href="/admin/audit-log"
+                                    onClick={() => setShowAdminDropdown(false)}
+                                    className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                  >
+                                    Audit Log
+                                  </Link>
+                                  <Link
+                                    href="/admin/api-keys"
+                                    onClick={() => setShowAdminDropdown(false)}
+                                    className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                  >
+                                    API Keys
+                                  </Link>
+                                  <Link
+                                    href="/admin/email"
+                                    onClick={() => setShowAdminDropdown(false)}
+                                    className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                  >
+                                    Email
+                                  </Link>
+                                  <Link
+                                    href="/admin/links"
+                                    onClick={() => setShowAdminDropdown(false)}
+                                    className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                  >
+                                    Link Tracking
+                                  </Link>
+                                </>
                               )}
-                              
-                              {/* Printer Fleet - SYSTEM_ADMIN only */}
-                              {session?.user?.role === 'SYSTEM_ADMIN' && (
-                                <Link
-                                  href="/admin/fleet"
-                                  onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                                >
-                                  Printer Fleet
-                                </Link>
-                              )}
-                              
-                              {/* Link Tracking - SYSTEM_ADMIN only */}
-                              {session?.user?.role === 'SYSTEM_ADMIN' && (
-                                <Link
-                                  href="/admin/links"
-                                  onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                                >
-                                  Link Tracking
-                                </Link>
-                              )}
-                              
-                              {/* Email Admin - SYSTEM_ADMIN only */}
-                              {session?.user?.role === 'SYSTEM_ADMIN' && (
-                                <Link
-                                  href="/admin/email"
-                                  onClick={() => setShowAdminDropdown(false)}
-                                  className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-                                >
-                                  Email
-                                </Link>
-                              )}
-                              
-
                             </div>
                           </div>
                         )}
@@ -365,14 +344,14 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                     </svg>
                   </button>
                   {showUserDropdown && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-[var(--surface-secondary)] ring-1 ring-[var(--border)] z-50">
+                    <div className="absolute right-0 mt-2 w-72 rounded-md shadow-lg bg-[var(--surface-secondary)] ring-1 ring-[var(--border)] z-50">
                       <div className="py-1">
                         <Link
                           href="/profile"
                           onClick={() => setShowUserDropdown(false)}
-                          className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                          className="block break-all px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                         >
-                          Profile
+                          {session.user?.email ? `Profile ${session.user.email}` : 'Profile'}
                         </Link>
                         {session.user?.organizationId && (session.user?.role === 'SYSTEM_ADMIN' || session.user?.role === 'ORG_ADMIN') && (
                           <Link
@@ -383,6 +362,20 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                             {session.user.organizationName ? `${session.user.organizationName} Settings` : 'Organization Settings'}
                           </Link>
                         )}
+                        <Link
+                          href="/tutorial"
+                          onClick={() => setShowUserDropdown(false)}
+                          className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                        >
+                          Splint Factory Tutorial
+                        </Link>
+                        <Link
+                          href="/about"
+                          onClick={() => setShowUserDropdown(false)}
+                          className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                        >
+                          About Splint Factory
+                        </Link>
                         <div className="border-t border-[var(--border)] my-1"></div>
                         <div
                           onClick={() => setShowUserDropdown(false)}

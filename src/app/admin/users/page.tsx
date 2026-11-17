@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -35,6 +35,8 @@ export default function UsersPage() {
   const [updating, setUpdating] = useState<string>('');
   
   // Filter state
+  const [userFilter, setUserFilter] = useState<string>('');
+  const [appliedUserFilter, setAppliedUserFilter] = useState<string>('');
   const [selectedOrgId, setSelectedOrgId] = useState<string>('all');
   const [selectedRole, setSelectedRole] = useState<string>('all');
 
@@ -155,8 +157,21 @@ export default function UsersPage() {
     });
   };
 
+  const handleApplyUserFilter = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAppliedUserFilter(userFilter.trim());
+  };
+
   // Filter users based on selected criteria
+  const normalizedUserFilter = appliedUserFilter.toLocaleLowerCase();
   const filteredUsers = users.filter(user => {
+    if (
+      normalizedUserFilter &&
+      !user.email.toLocaleLowerCase().includes(normalizedUserFilter) &&
+      !user.name?.toLocaleLowerCase().includes(normalizedUserFilter)
+    ) {
+      return false;
+    }
     if (selectedOrgId !== 'all' && user.organizationId !== selectedOrgId) {
       return false;
     }
@@ -214,6 +229,34 @@ export default function UsersPage() {
         )}
 
         <div className="card p-4 mb-6" data-testid="filters-card">
+          <form
+            onSubmit={handleApplyUserFilter}
+            className="mb-4 border-b border-[var(--border)] pb-4"
+            data-testid="user-filter-form"
+          >
+            <label htmlFor="userFilter" className="block text-sm font-medium text-secondary mb-2">
+              Filter by Name or Email
+            </label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                id="userFilter"
+                type="text"
+                value={userFilter}
+                onChange={(event) => setUserFilter(event.target.value)}
+                className="input-field flex-1"
+                placeholder="Enter a name or email"
+                data-testid="user-filter"
+              />
+              <button
+                type="submit"
+                className="btn-primary px-4 py-2 text-sm"
+                data-testid="apply-user-filter"
+              >
+                Apply
+              </button>
+            </div>
+          </form>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div>
               <label htmlFor="orgFilter" className="block text-sm font-medium text-secondary mb-2">
