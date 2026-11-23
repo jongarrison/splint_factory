@@ -29,6 +29,7 @@ model Organization {
   invitationLinks InvitationLink[]
   users           User[]
   visibleDesigns  OrganizationDesign[]
+  designSurveyResponses DesignSurveyResponse[]
   clientDevices   ClientDevice[]
   conferenceSettings SystemSettings[]               @relation("ConferenceOrganization")
 }
@@ -60,6 +61,8 @@ model User {
   authorizedChallenges ClientAuthChallenge[]     @relation("ChallengeAuthorizer")
   printedJobs          PrintJob[]                @relation("PrintOperator")
   reviewedPrints       PrintJob[]                @relation("PrintReviewer")
+  submittedDesignSurveys DesignSurveyResponse[] @relation("SubmittedDesignSurveys")
+  reviewedDesignSurveys DesignSurveyResponse[]  @relation("ReviewedDesignSurveys")
   actorEvents          AuditEvent[]              @relation("AuditActor")
   targetEvents         AuditEvent[]              @relation("AuditTarget")
   passwordResetTokens  PasswordResetToken[]
@@ -136,9 +139,34 @@ model Design {
   createdAt              DateTime                  @default(now())
   updatedAt              DateTime                  @default(now()) @updatedAt
   designJobs             DesignJob[]               @relation("DesignJobs")
+  surveyResponses        DesignSurveyResponse[]
   organizations          OrganizationDesign[]
 
   @@map("NamedGeometry")
+}
+
+model DesignSurveyResponse {
+  id                   String       @id @default(cuid())
+  createdAt            DateTime     @default(now())
+  submittedByUserId    String
+  organizationId       String
+  submissionKey        String       @db.Uuid
+  designId             String
+  objectId             String?
+  formVersion          Int
+  answers              Json         @db.JsonB
+  isRead               Boolean      @default(false)
+  adminNote            String?
+  lastReviewedByUserId String?
+  lastReviewedByName   String?
+  lastReviewedAt       DateTime?
+  submittedBy          User         @relation("SubmittedDesignSurveys", fields: [submittedByUserId], references: [id], onDelete: Restrict)
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  design               Design       @relation(fields: [designId], references: [id], onDelete: Restrict)
+  lastReviewedBy       User?        @relation("ReviewedDesignSurveys", fields: [lastReviewedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([submittedByUserId, submissionKey])
+  @@index([createdAt, id])
 }
 
 model OrganizationDesign {

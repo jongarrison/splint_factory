@@ -280,6 +280,13 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                     Audit Log
                                   </Link>
                                   <Link
+                                    href="/admin/design-survey"
+                                    onClick={() => setShowAdminDropdown(false)}
+                                    className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                  >
+                                    Splint Design Survey Responses
+                                  </Link>
+                                  <Link
                                     href="/admin/api-keys"
                                     onClick={() => setShowAdminDropdown(false)}
                                     className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
@@ -369,6 +376,15 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                         >
                           Splint Factory Tutorial
                         </Link>
+                        {session.user?.organizationId && (
+                          <Link
+                            href="/design-survey"
+                            onClick={() => setShowUserDropdown(false)}
+                            className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                          >
+                            Splint Design Survey
+                          </Link>
+                        )}
                         <Link
                           href="/about"
                           onClick={() => setShowUserDropdown(false)}

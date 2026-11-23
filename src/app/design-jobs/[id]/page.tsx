@@ -15,6 +15,7 @@ import { formatBytes } from '@/lib/formatBytes';
 
 interface GeometryJob {
   id: string;
+  owningOrganizationId: string;
   revision: number;
   objectId?: string;
   createdAt: string;
@@ -475,6 +476,11 @@ export default function GeometryJobDetailPage({
                   data-testid="copy-job-btn"
                 >
                   New Test Variant
+                </Link>
+              )}
+              {session?.user?.organizationId === job.owningOrganizationId && job.design.category === 'splint' && (
+                <Link href={`/design-survey?job=${encodeURIComponent(job.id)}`} className="btn-neutral px-4 py-2 text-sm">
+                  Splint Design Survey
                 </Link>
               )}
               {job.processCompletedAt && job.design.category === 'splint' && (
