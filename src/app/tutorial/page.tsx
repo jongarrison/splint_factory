@@ -253,7 +253,7 @@ export default function TutorialPage() {
                 <StepCard
                   number="2"
                   title="Measure in millimeters"
-                  text="Follow each field label carefully. Circumference location, tension, finger selection, and offset direction can change the generated fit."
+                  text="Use the diagram and field labels to check measurement location and units."
                 />
                 <StepCard
                   number="3"
@@ -289,11 +289,6 @@ export default function TutorialPage() {
                     </figure>
                   ))}
               </div>
-
-              <Callout title="Before submitting">
-                Recheck every value against the patient and the diagram. A valid number can still be
-                the wrong anatomical measurement, so units and measurement location matter.
-              </Callout>
             </section>
 
             <section id="print-queue" className="scroll-mt-24 border-b border-[var(--border)] py-10">
@@ -313,7 +308,7 @@ export default function TutorialPage() {
                   <QueueStep
                     number="2"
                     title="Match the job"
-                    text="Confirm the queue label, design name, and Object ID before printing. The Print button is enabled only on Splintbot when the print file and printer are ready."
+                    text="Find your job by its queue label, design name, or Object ID."
                   />
                   <QueueStep
                     number="3"
@@ -322,26 +317,16 @@ export default function TutorialPage() {
                   />
                   <QueueStep
                     number="4"
-                    title="Select Print and confirm"
-                    text="Start only one job. Splintbot uploads the print file and displays printer preparation and progress; wait for the printer to begin before leaving it."
+                    title="Start the print"
+                    text="Select Print on Splintbot. It uploads the file and shows printer preparation and progress."
                   />
                   <QueueStep
                     number="5"
-                    title="Inspect the first layer"
-                    text="Confirm that the first layer adheres evenly. If material lifts, strings, or collects on the nozzle, stop the print and follow the Printer Help guidance."
-                  />
-                  <QueueStep
-                    number="6"
                     title="Finish and review"
-                    text="Let the plate cool, remove the splint, and remove skirt or brim material. Use Review Print in the queue to record print and design quality."
+                    text="Remove the splint and any skirt or brim material. Use Review Print in the queue to record print and design quality. To share feedback on fit or design, open Splint Design Survey from the User menu or the design job."
                   />
                 </ol>
               </div>
-
-              <Callout title="Print controls are local">
-                You can view the queue from a browser, but the Print button works only on the
-                Splintbot connected to that printer.
-              </Callout>
             </section>
 
             <section id="build-plate" className="scroll-mt-24 border-b border-[var(--border)] py-10">
@@ -355,7 +340,6 @@ export default function TutorialPage() {
                 <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
                   <h3 className="text-lg font-semibold text-primary">Between prints</h3>
                   <ul className="mt-4 space-y-3 text-sm leading-6 text-secondary">
-                    <ChecklistItem>Wait for the plate and printed part to cool.</ChecklistItem>
                     <ChecklistItem>Remove the plate by its edges and flex it gently to release the print.</ChecklistItem>
                     <ChecklistItem>Remove every piece of skirt, brim, and loose filament.</ChecklistItem>
                     <ChecklistItem>Avoid touching the printable surface with bare fingers.</ChecklistItem>
@@ -366,7 +350,7 @@ export default function TutorialPage() {
                 <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
                   <h3 className="text-lg font-semibold text-primary">When adhesion decreases</h3>
                   <ol className="mt-4 space-y-3 text-sm leading-6 text-secondary">
-                    <ChecklistItem>Remove the cool plate from the printer.</ChecklistItem>
+                    <ChecklistItem>Remove the plate from the printer.</ChecklistItem>
                     <ChecklistItem>Wash the print surface with warm water and plain dish soap using a clean, soft sponge.</ChecklistItem>
                     <ChecklistItem>Rinse thoroughly and dry with a clean lint-free towel or fresh paper towel.</ChecklistItem>
                     <ChecklistItem>Hold only the edges while reinstalling the dry plate.</ChecklistItem>
