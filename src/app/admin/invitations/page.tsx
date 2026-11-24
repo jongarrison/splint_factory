@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -42,28 +42,33 @@ export default function InvitationsPage() {
   const [error, setError] = useState<string>('');
   const [creating, setCreating] = useState(false);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [copiedInvitationId, setCopiedInvitationId] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [organizationFilter, setOrganizationFilter] = useState('');
+  const [emailSearch, setEmailSearch] = useState('');
+  const [appliedEmailSearch, setAppliedEmailSearch] = useState('');
   
     // Form state
   const [selectedOrgId, setSelectedOrgId] = useState('');
   const [expiresInDays, setExpiresInDays] = useState<number | ''>(7);
   const [inviteEmail, setInviteEmail] = useState('');
 
-  useEffect(() => {
-    if (status === 'loading') return;
-    
-    if (!session?.user) {
-      router.push('/login');
-      return;
+  const isSystemAdmin = session?.user?.role === 'SYSTEM_ADMIN';
+
+  const fetchData = useCallback(() => {
+    const params = new URLSearchParams();
+    if (isSystemAdmin && organizationFilter) {
+      params.set('organizationId', organizationFilter);
     }
+    if (appliedEmailSearch) {
+      params.set('email', appliedEmailSearch);
+    }
+    const query = params.size > 0 ? `?${params.toString()}` : '';
 
-    fetchData();
-  }, [session, status, router]);
-
-  const fetchData = () => {
+    setLoading(true);
     Promise.all([
-      fetch('/api/invitations').then(res => res.json()),
+      fetch(`/api/invitations${query}`).then(res => res.json()),
       fetch('/api/organizations').then(res => res.json())
     ])
       .then(([invitationsData, orgsData]) => {
@@ -81,7 +86,26 @@ export default function InvitationsPage() {
         setError(err.message);
       })
       .finally(() => setLoading(false));
-  };
+  }, [appliedEmailSearch, isSystemAdmin, organizationFilter]);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (!session?.user) {
+      router.push('/login');
+      return;
+    }
+
+    if (!organizationFilter) {
+      const defaultOrganizationFilter = session.user.organizationId || (isSystemAdmin ? 'all' : '');
+      if (defaultOrganizationFilter) {
+        setOrganizationFilter(defaultOrganizationFilter);
+        return;
+      }
+    }
+
+    fetchData();
+  }, [fetchData, isSystemAdmin, organizationFilter, router, session, status]);
 
   const handleCreateInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,13 +138,11 @@ export default function InvitationsPage() {
         throw new Error(data.error || 'Failed to create invitation');
       }
 
-      const createdInvitations = data.invitations || [data];
-      setInvitations(current => [...createdInvitations, ...current]);
       setShowCreateForm(false);
-            // Reset form
       setSelectedOrgId('');
       setExpiresInDays(7);
       setInviteEmail('');
+      fetchData();
     } catch (err: unknown) {
       console.error('Error creating invitation:', err);
       setError(err instanceof Error ? err.message : 'Failed to create invitation');
@@ -173,39 +195,49 @@ export default function InvitationsPage() {
     return `${window.location.origin}/register?invitation=${token}`;
   };
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (text: string, invitationId: string) => {
     try {
-      // Check if navigator.clipboard is available
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text);
-        console.log('Copied to clipboard successfully');
-        return;
-      }
-      
-      // Fallback method for older browsers or insecure contexts
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      
-      const successful = document.execCommand('copy');
-      document.body.removeChild(textArea);
-      
-      if (successful) {
-        console.log('Copied to clipboard successfully (fallback method)');
       } else {
-        throw new Error('Fallback copy method failed');
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        if (!successful) {
+          throw new Error('Fallback copy method failed');
+        }
       }
+
+      setCopiedInvitationId(invitationId);
+      window.setTimeout(() => {
+        setCopiedInvitationId(current => current === invitationId ? null : current);
+      }, 2000);
     } catch (err) {
       console.error('Failed to copy to clipboard:', err);
-      // Show user feedback that copy failed
       alert('Failed to copy to clipboard. Please copy the URL manually.');
     }
   };
+
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    setAppliedEmailSearch(emailSearch.trim());
+  };
+
+  const visibleInvitations = invitations.filter(
+    invitation => showAll || (!invitation.usedAt && new Date(invitation.expiresAt) >= new Date())
+  );
+  const availableOrganizations = isSystemAdmin
+    ? organizations
+    : organizations.filter(organization => organization.id === session?.user?.organizationId);
 
   if (loading) {
     return (
@@ -226,8 +258,8 @@ export default function InvitationsPage() {
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="page-title">Invitation Management</h1>
-              <p className="text-muted mt-2">Create and manage invitation links for your organization</p>
+              <h1 className="page-title">User Invitation Management</h1>
+              <p className="text-muted mt-2">Create and manage user invitation links</p>
             </div>
             <div className="flex gap-4">
               <Link 
@@ -294,7 +326,7 @@ export default function InvitationsPage() {
                     required
                   >
                     <option value="">Select Organization</option>
-                    {organizations.map((org) => (
+                    {availableOrganizations.map((org) => (
                       <option key={org.id} value={org.id}>{org.name}</option>
                     ))}
                   </select>
@@ -340,11 +372,67 @@ export default function InvitationsPage() {
           </div>
         )}
 
-        {/* Invitations List */}
+        <form onSubmit={handleSearch} className="card p-6 mb-8">
+          <div className={`grid grid-cols-1 gap-4 ${isSystemAdmin ? 'md:grid-cols-2' : ''}`}>
+            {isSystemAdmin && (
+              <div>
+                <label htmlFor="organizationFilter" className="block text-sm font-medium text-secondary mb-2">
+                  Organization
+                </label>
+                <select
+                  id="organizationFilter"
+                  value={organizationFilter}
+                  onChange={(event) => setOrganizationFilter(event.target.value)}
+                  className="input-field text-sm"
+                  data-testid="organization-filter"
+                >
+                  <option value="all">All orgs</option>
+                  {organizations.map((organization) => (
+                    <option key={organization.id} value={organization.id}>
+                      {organization.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div>
+              <label htmlFor="emailSearch" className="block text-sm font-medium text-secondary mb-2">
+                Search email
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="emailSearch"
+                  type="search"
+                  value={emailSearch}
+                  onChange={(event) => setEmailSearch(event.target.value)}
+                  className="input-field text-sm"
+                  placeholder="Partial email address"
+                  data-testid="email-search"
+                />
+                <button type="submit" className="btn-primary px-4 py-2">
+                  Search
+                </button>
+                {appliedEmailSearch && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmailSearch('');
+                      setAppliedEmailSearch('');
+                    }}
+                    className="btn-neutral px-4 py-2"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </form>
+
         <div className="card">
           <div className="px-6 py-4 border-b border-[var(--border)] flex justify-between items-center">
             <h2 className="text-xl font-semibold text-primary">
-              {showAll ? 'All' : 'Active'} Invitations ({(showAll ? invitations : invitations.filter(i => !i.usedAt && new Date(i.expiresAt) >= new Date())).length})
+              {showAll ? 'All' : 'Active'} Invitations ({visibleInvitations.length})
             </h2>
             <button
               onClick={() => setShowAll(!showAll)}
@@ -355,19 +443,21 @@ export default function InvitationsPage() {
             </button>
           </div>
 
-          {invitations.length === 0 ? (
+          {visibleInvitations.length === 0 ? (
             <div className="p-8 text-center text-muted">
               <div className="mb-4">
                 <svg className="mx-auto h-12 w-12 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
               </div>
-              <p className="text-lg">No invitation links created yet</p>
-              <p className="text-sm">Create your first invitation link to get started</p>
+              <p className="text-lg">No matching invitations</p>
+              <p className="text-sm">
+                {showAll ? 'Try changing the organization or email search.' : 'Try changing the filters or showing invitation history.'}
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-[var(--border)]">
-              {invitations.filter(inv => showAll || (!inv.usedAt && new Date(inv.expiresAt) >= new Date())).map((invitation) => {
+              {visibleInvitations.map((invitation) => {
                 const invitationUrl = getInvitationUrl(invitation.token);
                 const isExpired = new Date(invitation.expiresAt) < new Date();
                 const isUsed = !!invitation.usedAt;
@@ -401,7 +491,7 @@ export default function InvitationsPage() {
                           )}
                         </div>
                         
-                        {invitation.email ? (
+                        {invitation.email && (
                           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                             <span className={invitation.emailAcceptedAt ? 'text-[var(--status-success-text)]' : invitation.emailLastError ? 'text-[var(--status-error-text)]' : 'text-muted'}>
                               {invitation.emailAcceptedAt
@@ -421,23 +511,23 @@ export default function InvitationsPage() {
                               </button>
                             )}
                           </div>
-                        ) : (
-                          <div className="mt-3 flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={invitationUrl}
-                              readOnly
-                              className="flex-1 p-2 text-sm rounded font-mono border border-[var(--border)] bg-[var(--surface-secondary)] text-primary"
-                            />
-                            <button
-                              onClick={() => copyToClipboard(invitationUrl)}
-                              className="btn-neutral px-3 py-2 text-sm"
-                              data-testid="copy-link-btn"
-                            >
-                              Copy
-                            </button>
-                          </div>
                         )}
+                        <div className="mt-3 flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={invitationUrl}
+                            readOnly
+                            aria-label={`Invitation link for ${invitation.email || invitation.organization.name}`}
+                            className="flex-1 p-2 text-sm rounded font-mono border border-[var(--border)] bg-[var(--surface-secondary)] text-primary"
+                          />
+                          <button
+                            onClick={() => copyToClipboard(invitationUrl, invitation.id)}
+                            className="btn-neutral px-3 py-2 text-sm"
+                            data-testid="copy-link-btn"
+                          >
+                            {copiedInvitationId === invitation.id ? 'Copied' : 'Copy link'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

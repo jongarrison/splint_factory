@@ -240,7 +240,7 @@ export default function Header({ variant = 'browser', hideMaintenanceBanner = fa
                                     onClick={() => setShowAdminDropdown(false)}
                                     className="block px-4 py-2 text-sm text-secondary hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                                   >
-                                    Invitations
+                                    User Invitations
                                   </Link>
                                 </>
                               )}

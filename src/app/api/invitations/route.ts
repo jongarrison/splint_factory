@@ -4,8 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { randomBytes } from 'crypto'
 import { sendInvitationEmail } from '@/lib/send-invitation-email'
 
-// GET /api/invitations - List invitations for current user's organization
-export async function GET() {
+// GET /api/invitations - List invitations visible to the current administrator
+export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     
@@ -13,23 +13,45 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user with organization
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { organization: true }
+      select: { organizationId: true, role: true }
     })
 
-    if (!user?.organizationId) {
+    if (!user || user.role === 'MEMBER') {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
+    const requestedOrganizationId = request.nextUrl.searchParams.get('organizationId')
+    const emailSearch = request.nextUrl.searchParams.get('email')?.trim()
+
+    if (
+      user.role !== 'SYSTEM_ADMIN' &&
+      requestedOrganizationId &&
+      requestedOrganizationId !== user.organizationId
+    ) {
+      return NextResponse.json({ error: 'Cannot view invitations for other organizations' }, { status: 403 })
+    }
+
+    const organizationId = user.role === 'SYSTEM_ADMIN'
+      ? requestedOrganizationId || user.organizationId
+      : user.organizationId
+
+    if (!organizationId) {
       return NextResponse.json({ error: 'User not assigned to organization' }, { status: 400 })
     }
 
-    // Get invitations for user's organization
     const invitations = await prisma.invitationLink.findMany({
-      where: { organizationId: user.organizationId },
+      where: {
+        ...(organizationId !== 'all' ? { organizationId } : {}),
+        ...(emailSearch
+          ? { email: { contains: emailSearch, mode: 'insensitive' } }
+          : {}),
+      },
       include: {
         createdBy: { select: { id: true, name: true, email: true } },
         usedBy: { select: { id: true, name: true, email: true } },
-        organization: { select: { name: true } }
+        organization: { select: { id: true, name: true } }
       },
       orderBy: { createdAt: 'desc' }
     })
