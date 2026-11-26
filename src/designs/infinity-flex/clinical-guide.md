@@ -4,9 +4,7 @@
 
 The **Infinity Flex** is a custom-fabricated finger orthosis designed primarily for patients requiring joint stabilization and support due to hypermobility or instability. It can also be useful for managing stability issues associated with Osteoarthritis (OA) and Rheumatoid Arthritis (RA).
 
-This design features a slit option, specifically developed to accommodate patients with significantly enlarged joints where the PIP circumference exceeds the phalanx measurements, allowing the splint to expand during donning and then secure properly for support.
-
-**Note:** The slit may reduce the strength in the orthosis to prevent hyperextension.
+New Infinity Flex splints do not have a slit. If the PIP joint is significantly larger than the proximal phalanx, check whether the proximal ring can pass over the joint before choosing this design.
 
 ## Measurement Instructions
 
@@ -27,7 +25,7 @@ Precise measurements are critical for the parametric design process to ensure a 
 ### Fitting & Workflow
 
 1. **Select Design:** Choose the Infinity Flex model from the Splint Factory dashboard.
-2. **Input Data:** Enter the precise measurements and select the "slit" feature if required for fitting over a large joint.
+2. **Input Data:** Enter the precise measurements.
 3. **Process:** Generate the custom 3D design and release the print job to the SplintBot.
 4. **Print:** Select the job from the print queue. Ensure first-layer adhesion for a successful print.
 5. **Fitting:** Remove any "skirt" or brim material used for adhesion before placing on the patient.

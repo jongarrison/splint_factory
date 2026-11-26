@@ -51,6 +51,8 @@ function CreateGeometryJobPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeHints, setActiveHints] = useState<DesignHint[]>([]);
+  // Keep the processor's slit field until the updated Infinity Flex generator is ready.
+  const disableInfinityFlexSlit = !refitId && selectedDesign?.slug === 'infinity-flex';
   // Validity reported by a design's bespoke form (only used when one is rendered).
   const [customFormValid, setCustomFormValid] = useState(false);
   const hasTrackedFormOpenRef = useRef(false);
@@ -276,7 +278,9 @@ function CreateGeometryJobPage() {
         },
         body: JSON.stringify({
           designId: selectedDesign.id,
-          inputParameters: JSON.stringify(parameterValues),
+          inputParameters: JSON.stringify(
+            disableInfinityFlexSlit ? { ...parameterValues, include_slit: false } : parameterValues
+          ),
           jobLabel: jobLabel.trim() || null,
         }),
       });
@@ -474,6 +478,8 @@ function CreateGeometryJobPage() {
                 </h3>
                 <div className="grid grid-cols-1 gap-4">
                   {parameterSchema.map((param) => {
+                    if (disableInfinityFlexSlit && param.InputName === 'include_slit') return null;
+
                     const fieldError = validation.errors[param.InputName];
                     const errClass = fieldErrorClass(fieldError);
                     return (

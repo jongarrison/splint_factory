@@ -37,7 +37,17 @@ test.describe('sanity: full design-job-to-print-queue flow', () => {
       // Inputs use id === InputName (see design-jobs/new/page.tsx).
       await page.locator(`#${inputName}`).fill(String(value));
     }
-    await page.getByTestId('submit-btn').click();
+    await expect(page.locator('#include_slit')).toHaveCount(0);
+    const [createRequest] = await Promise.all([
+      page.waitForRequest(request =>
+        new URL(request.url()).pathname === '/api/design-jobs' && request.method() === 'POST'
+      ),
+      page.getByTestId('submit-btn').click(),
+    ]);
+    expect(JSON.parse(createRequest.postDataJSON().inputParameters)).toEqual({
+      ...INFINITY_FLEX.params,
+      include_slit: false,
+    });
 
     // 4. Should redirect to the detail page: /design-jobs/<id>.
     await page.waitForURL(/\/design-jobs\/[^/]+$/, { timeout: 30_000 });

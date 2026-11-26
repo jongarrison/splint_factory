@@ -26,7 +26,7 @@ const clinicalSynopses: Record<string, string> = {
   'infinity-extend':
     'Supports the PIP joint in extension for conditions such as trigger finger and boutonniere deformity while maintaining alignment for healing and function.',
   'infinity-flex':
-    'Limits PIP hyperextension for joint instability, hypermobility, OA, or RA. An optional slit can help the splint pass over an enlarged joint.',
+    'Limits PIP hyperextension for joint instability, hypermobility, OA, or RA.',
   'relative-motion':
     'Positions one or more fingers in relative flexion or extension to support tendon repair, extensor lag, sagittal band injury, intrinsic sprain, and other selected indications.',
 };
