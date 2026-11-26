@@ -11,6 +11,7 @@ interface OrgDetail {
   description: string | null;
   isActive: boolean;
   screenLockTimeoutMinutes: number;
+  printAutoArchiveHours: number;
   createdAt: string;
   _count: { users: number };
 }
@@ -37,6 +38,7 @@ export default function OrganizationDetailPage({
   const [orgDescription, setOrgDescription] = useState('');
   const [orgIsActive, setOrgIsActive] = useState(true);
   const [orgScreenLockTimeout, setOrgScreenLockTimeout] = useState('1');
+  const [orgPrintAutoArchiveHours, setOrgPrintAutoArchiveHours] = useState('24');
   const [savingOrg, setSavingOrg] = useState(false);
   const [allGeometries, setAllGeometries] = useState<GeometrySummary[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -78,6 +80,7 @@ export default function OrganizationDetailPage({
       setOrgDescription(orgData.description || '');
       setOrgIsActive(orgData.isActive);
       setOrgScreenLockTimeout(String(orgData.screenLockTimeoutMinutes));
+      setOrgPrintAutoArchiveHours(String(orgData.printAutoArchiveHours));
       setAllGeometries(
         geoData
           .sort((a, b) => a.name.localeCompare(b.name))
@@ -119,7 +122,8 @@ export default function OrganizationDetailPage({
     orgName !== org.name ||
     orgDescription !== (org.description || '') ||
     orgIsActive !== org.isActive ||
-    parseInt(orgScreenLockTimeout) !== org.screenLockTimeoutMinutes
+    parseInt(orgScreenLockTimeout) !== org.screenLockTimeoutMinutes ||
+    parseInt(orgPrintAutoArchiveHours) !== org.printAutoArchiveHours
   );
 
   const saveOrg = async () => {
@@ -135,6 +139,7 @@ export default function OrganizationDetailPage({
           description: orgDescription,
           isActive: orgIsActive,
           screenLockTimeoutMinutes: parseInt(orgScreenLockTimeout) || 1,
+          printAutoArchiveHours: parseInt(orgPrintAutoArchiveHours) || 24,
         }),
       });
       if (!res.ok) {
@@ -293,6 +298,31 @@ export default function OrganizationDetailPage({
               />
               <p className="text-xs text-muted mt-1">
                 How long before the touchscreen device locks and requires QR scan to unlock.
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-1">
+                Completed Print Auto-Archive (hours)
+              </label>
+              <input
+                type="number"
+                min="-1"
+                max="720"
+                step="1"
+                value={orgPrintAutoArchiveHours}
+                onChange={(e) => setOrgPrintAutoArchiveHours(e.target.value)}
+                onBlur={() => {
+                  const value = parseInt(orgPrintAutoArchiveHours);
+                  if (value === -1) return;
+                  if (isNaN(value) || value < 1) setOrgPrintAutoArchiveHours('1');
+                  else if (value > 720) setOrgPrintAutoArchiveHours('720');
+                  else setOrgPrintAutoArchiveHours(String(value));
+                }}
+                className="input-field text-sm w-32"
+                data-testid="print-auto-archive-hours-input"
+              />
+              <p className="text-xs text-muted mt-1">
+                Successful completed prints move to Print Queue history after this interval if they have not been reviewed. Set to -1 to disable.
               </p>
             </div>
             <p className="text-xs text-muted">

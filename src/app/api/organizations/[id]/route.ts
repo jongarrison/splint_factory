@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { logAuditEvent } from '@/lib/audit';
+import {
+  DISABLED_PRINT_AUTO_ARCHIVE_HOURS,
+  MAX_PRINT_AUTO_ARCHIVE_HOURS,
+  MIN_PRINT_AUTO_ARCHIVE_HOURS,
+} from '@/lib/print-auto-archive';
 
 // GET /api/organizations/[id] - Get organization details (any member of this org, or SYSTEM_ADMIN)
 export async function GET(
@@ -75,7 +81,13 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, description, isActive, screenLockTimeoutMinutes } = body;
+    const {
+      name,
+      description,
+      isActive,
+      screenLockTimeoutMinutes,
+      printAutoArchiveHours,
+    } = body;
 
     if (name !== undefined && (!name || typeof name !== 'string' || !name.trim())) {
       return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 });
@@ -86,6 +98,24 @@ export async function PUT(
       const timeout = Number(screenLockTimeoutMinutes);
       if (!Number.isInteger(timeout) || timeout < 1 || timeout > 480) {
         return NextResponse.json({ error: 'Screen lock timeout must be between 1 and 480 minutes' }, { status: 400 });
+      }
+    }
+
+    if (printAutoArchiveHours !== undefined) {
+      const hours = Number(printAutoArchiveHours);
+      if (
+        !Number.isInteger(hours) ||
+        (
+          hours !== DISABLED_PRINT_AUTO_ARCHIVE_HOURS &&
+          (hours < MIN_PRINT_AUTO_ARCHIVE_HOURS || hours > MAX_PRINT_AUTO_ARCHIVE_HOURS)
+        )
+      ) {
+        return NextResponse.json(
+          {
+            error: `Print auto-archive interval must be -1 (disabled) or between ${MIN_PRINT_AUTO_ARCHIVE_HOURS} and ${MAX_PRINT_AUTO_ARCHIVE_HOURS} hours`,
+          },
+          { status: 400 },
+        );
       }
     }
 
@@ -101,9 +131,26 @@ export async function PUT(
         ...(description !== undefined && { description: description?.trim() || null }),
         ...(isActive !== undefined && { isActive }),
         ...(screenLockTimeoutMinutes !== undefined && { screenLockTimeoutMinutes: Number(screenLockTimeoutMinutes) }),
+        ...(printAutoArchiveHours !== undefined && { printAutoArchiveHours: Number(printAutoArchiveHours) }),
       },
       include: { _count: { select: { users: true } } },
     });
+
+    if (
+      printAutoArchiveHours !== undefined &&
+      Number(printAutoArchiveHours) !== existing.printAutoArchiveHours
+    ) {
+      logAuditEvent({
+        eventType: 'PRINT_AUTO_ARCHIVE_SETTINGS_CHANGED',
+        channel: 'PRINTING',
+        actorId: session.user.id,
+        organizationId: id,
+        metadata: {
+          previousHours: existing.printAutoArchiveHours,
+          newHours: Number(printAutoArchiveHours),
+        },
+      });
+    }
 
     return NextResponse.json(updated);
   } catch (error) {

@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/processor-offline",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/print-auto-archive",
+      "schedule": "0 */6 * * *"
     }
   ]
 }
